@@ -179,10 +179,12 @@ def main(config: DictConfig) -> int:
         encode_source=config.vf.encode_source, 
         source_encoder_output_dim=config.vf.source_encoder_output_dim,
         source_encoder_mlp_kwargs=source_encoder_mlp_kwargs,
-        use_resnet_blocks=config.vf.use_resnet_blocks,
+        conditioning_type=config.vf.conditioning_type,
         n_resnet_blocks=config.vf.n_resnet_blocks,
         resnet_dropout_prob=config.vf.resnet_dropout_prob,
         resnet_normalization=resnet_normalization,
+        use_classifier_free_guidance=config.vf.use_classifier_free_guidance,
+        cfg_null_condition_token=config.vf.cfg_null_condition_token,
     )
 
     # resolving the dictionary settings from omegaconf
@@ -238,6 +240,10 @@ def main(config: DictConfig) -> int:
         state_transforms=state_transforms,
         callbacks=callbacks,
         grad_steps_log_interval=config.training.grad_steps_log_interval,
+        num_treatments_to_load=config.training.num_treatments_to_load,
+        num_samples_per_validation_step=config.training.num_samples_per_validation_step,
+        cfg_prob_unconditional=config.training.cfg_prob_unconditional,
+        validation_cfg_guidance_strength=config.training.validation_cfg_guidance_strength,
     )
     if config.callbacks.verbose:
         logger.info("Training finished!")
