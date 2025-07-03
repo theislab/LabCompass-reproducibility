@@ -1,18 +1,1 @@
 Using environment  rapids_singlecell
-Applying transformation for cofactor=1
-Applying transformation for cofactor=5
-Applying transformation for cofactor=10
-Applying transformation for cofactor=50
-Applying transformation for cofactor=100
-Applying transformation for cofactor=200
-Applying transformation for cofactor=300
-Applying transformation for cofactor=500
-Applying transformation for cofactor=700
-Applying transformation for cofactor=1000
-Applying transformation for cofactor=2500
-Applying transformation for cofactor=5000
-Applying transformation for cofactor=7500
-Applying transformation for cofactor=10000
-X_arcsinh_cof1
-[2025-07-02 17:24:43.688] [CUML] [info] Unused keyword parameter: random_state during cuML estimator initialization
-

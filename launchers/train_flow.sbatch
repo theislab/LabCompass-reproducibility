@@ -23,5 +23,5 @@ CONFIG_NAME="train_flow"
 
 ## Morphogen unconditional
 echo "Running experiment on Morphogen Dataset (Brain Organoids) in the unconditional case";
-conda run -n $ENV_NAME python $WDIR/train_flow.py --config-path $MORPHOGEN_CONFIG_PATH --config-name $CONFIG_NAME \
+conda run -n $ENV_NAME python ./scripts/train_flow.py --config-path $MORPHOGEN_CONFIG_PATH --config-name $CONFIG_NAME \
          callbacks.wandb_project_name="CFM_morphogen_unconditional";

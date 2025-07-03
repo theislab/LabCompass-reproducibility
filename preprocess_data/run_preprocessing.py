@@ -1,6 +1,5 @@
 import numpy as np
 import scanpy as sc
-import rapids_singlecell as rsc
 
 
 # paths
@@ -12,8 +11,13 @@ COFACTORS = [
     1, 5, 10, 50, 100, 200, 300, 500, 700, 1_000, 2_500, 5_000, 7_500, 10_000
 ]
 
+# flag whether to use gpu acceleration
+USE_RAPIDS = False
 
 if __name__ == "__main__":
+
+    if USE_RAPIDS:
+        import rapids_singlecell as sc
 
     adata = sc.read_h5ad(READ_PATH)
     for cofactor in COFACTORS:
@@ -35,10 +39,10 @@ if __name__ == "__main__":
         louvain_key = f"{data_id}_louvain"
 
         # computing pca, neighbors and umap
-        rsc.pp.pca(adata, layer=data_id, key_added=pca_key)
-        rsc.pp.neighbors(adata, use_rep=pca_key, key_added=neighbors_key)
-        rsc.tl.umap(adata, neighbors_key=neighbors_key, key_added=umap_key)
-        rsc.tl.louvain(adata, neighbors_key=neighbors_key, key_added=louvain_key)
-        rsc.tl.leiden(adata, neighbors_key=neighbors_key, key_added=leiden_key)
+        sc.pp.pca(adata, layer=data_id, key_added=pca_key)
+        sc.pp.neighbors(adata, use_rep=pca_key, key_added=neighbors_key)
+        sc.tl.umap(adata, neighbors_key=neighbors_key, key_added=umap_key)
+        sc.tl.louvain(adata, neighbors_key=neighbors_key, key_added=louvain_key)
+        sc.tl.leiden(adata, neighbors_key=neighbors_key, key_added=leiden_key)
     
     adata.write_h5ad(DUMP_PATH)

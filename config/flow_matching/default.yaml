@@ -1,0 +1,8 @@
+flow_type: "rectified"
+flow_kwargs: null
+coupling_type: "independent"
+coupling_kwargs: null
+time_sampler: "uniform"
+device_id: "cuda"
+generate_from_noise: True
+noise_distribution: "gaussian"
