@@ -21,7 +21,7 @@ time_encoder_mlp_kwargs:
   final_activation_class: "identity"
 use_guidance: False
 encode_conditions: False
-perturbation_latent_dim: null
+perturbation_encoder_output_dim: null
 perturbation_layers_before_pooling: null
 perturbation_covariates_not_pooled: null
 perturbation_pooling: null
@@ -36,7 +36,7 @@ decoder_mlp_kwargs:
   final_activation_class: "identity"
 use_source_as_condition: False
 encode_source: False
-source_latent_dim: 10
+source_encoder_output_dim: 10
 source_encoder_mlp_kwargs: null
 use_resnet_blocks: True
 n_resnet_blocks: 3

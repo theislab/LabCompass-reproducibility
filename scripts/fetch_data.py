@@ -20,7 +20,7 @@ EXPERIMENTAL_COLUMNS = [
 def fetch_adata_goattgens_sfc(
     h5ad_data_path: str,
     mode: Literal["unconditional", "protocol_one_hot", "protocol_axis_one_hot"] = "unconditional",
-    transformation: Literal["arcsinh", "logabs"] = "arcsin",
+    transformation: Literal["arcsinh", "logabs"] = "arcsinh",
     cofactor: int = 100,
     protocol_columns: Sequence[str] = EXPERIMENTAL_COLUMNS,
     obsm_key_added="X_repr",
@@ -34,10 +34,10 @@ def fetch_adata_goattgens_sfc(
 
     if transformation == "arcsinh": 
         adata.obsm[obsm_key_added] = np.arcsinh(adata.X/cofactor)
-    if transformation == "logabs":
+    elif transformation == "logabs":
         adata.obsm[obsm_key_added] = np.sign(adata.X)*np.log(np.abs(adata.X / cofactor))
     else:
-        msg = f"Tranformation {transformation} is not supported, available options are [\"arcsinh\", \"logabs\"]"
+        msg = f"Transformation {transformation} is not supported, available options are [\"arcsinh\", \"logabs\"]"
         raise ValueError(msg)
     
     if mode == "unconditional":
