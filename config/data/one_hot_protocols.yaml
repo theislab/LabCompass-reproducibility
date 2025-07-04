@@ -4,7 +4,7 @@ perturbations: ["protocol"]
 perturbations_in_obsm: null
 perturbation_covariates: null
 perturbation_reps:
-  protocol: 'protocol_one_hot'
+  protocol: ['protocol_one_hot', ]
 load_target_covariates: False
 target_covariates: null
 target_covariates_in_obsm: null

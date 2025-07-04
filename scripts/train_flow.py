@@ -19,7 +19,7 @@ from sc_exp_design.config import NeuralVelocityFieldConfig
 from sc_exp_design.models import FlowMatching
 from sc_exp_design.utils import set_reproducibility
 
-from utils import (
+from train_utils import (
     parse_mlp_config_dictionary,
     resolve_omegaconf_to_dictionary,
     TimeSamplers,
