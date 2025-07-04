@@ -6,3 +6,5 @@ state_transforms: "none"
 grad_steps_log_interval: 100
 num_treatments_to_load: null
 num_samples_per_validation_step: null
+cfg_prob_unconditional: 0.0
+validation_cfg_guidance_strength: 1.0

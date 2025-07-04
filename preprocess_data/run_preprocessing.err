@@ -1,4 +1,0 @@
-/tmp/tmp1eyakipm: line 3: 710304 Killed                  python ./run_preprocessing.py
-
-ERROR conda.cli.main_run:execute(125): `conda run python ./run_preprocessing.py` failed. (See above for error)
-slurmstepd: error: Detected 1 oom_kill event in StepId=26634545.batch. Some of the step tasks have been OOM Killed.

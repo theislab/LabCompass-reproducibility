@@ -1,0 +1,29 @@
+dataset_name: "goettgens_sfc"
+h5ad_data_kwargs:
+  mode: "protocol_axis_one_hot"
+  transformation: "arcsinh"
+  cofactor: 100
+  protocol_columns: [
+    'mtg_[µm]',
+    'rhflt3l_[ng/ml]',
+    'gm-csf_[ng/ml]',
+    'tpo_[ng/ml]',
+    'sr1_[nm]',
+    'um171_[nm]',
+    'um729_[µm]',
+    'scf_[ng/ml]',
+    'butyzamide_[nm]',
+    'retinoic_acid_[µm]',
+    'ldl_[ng/ml]',
+    'il3_[ng/ml]',
+    'o2_[%]',
+  ]
+  obsm_key_added: "X_repr"
+  uns_key_added: "one_hot"
+split_data: True
+split_kwargs:
+  mode: "shuffle"
+  validation_size: 0.3
+  n_splits: 3
+  split_idx_to_return: 1
+  random_state: 42
