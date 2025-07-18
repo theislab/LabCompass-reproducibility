@@ -52,3 +52,17 @@ def get_one_hot_encoded_protocol_axis(
         key = f"{column}{sep}{uns_key_added}"
         adata.uns[key] = get_onehot_dict(adata.obs[column].unique())
     return adata
+
+
+def get_concatenated_scatter_features(
+    adata,
+    scatter_columns,
+    scatter_transformation,
+    obsm_key_to_concatenate_with,
+    key_added,
+):
+    scatter_df = adata.obs[scatter_columns]
+    X_scatter = scatter_transformation(scatter_df.values)
+    X_rep = adata.obsm[obsm_key_to_concatenate_with]
+    adata.obsm[key_added] = np.concatenate((X_rep, X_scatter), axis=-1)
+    return adata

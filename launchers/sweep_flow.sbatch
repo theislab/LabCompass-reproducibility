@@ -6,10 +6,9 @@
 #SBATCH --partition=gpu_p
 #SBATCH --qos=gpu_long
 #SBATCH --gres=gpu:1
-#SBATCH --constraint="a100_80gb|h100_80gb"
 #SBATCH --mem=256G
 #SBATCH --cpus-per-task=6
-#SBATCH --nice=0
+#SBATCH --nice=10000
 #SBATCH --time=3-00:00:00
 
 ## set environment name
@@ -29,14 +28,14 @@ CONFIG_NAME="train_flow"
 GOETTGENS_CONFIG_PATH=../config;
 
 ## Spectral Flow Cytometry unconditional
-# echo "Running experiment on Spectral Flow Cytometry data in the unconditional case";
-# conda run -n $ENV_NAME python ./train_flow.py --multirun --config-path $GOETTGENS_CONFIG_PATH --config-name $CONFIG_NAME \
-#         +hparams_search=train_flow_unconditional +launcher=slurm \
-#          callbacks.wandb_project_name="SFC_Goettgens";
+echo "Running experiment on Spectral Flow Cytometry data in the unconditional case";
+conda run -n $ENV_NAME python ./train_flow.py --multirun --config-path $GOETTGENS_CONFIG_PATH --config-name $CONFIG_NAME \
+        +hparams_search=train_flow_unconditional +launcher=slurm \
+         callbacks.wandb_project_name="SFC_Goettgens";
 
 ## Spectral Flow Cytometry one hot protocols
 # echo "Running experiment on Spectral Flow Cytometry data with one hot encoded protocols";
-# conda run -n $ENV_NAME python ./scripts/train_flow.py --multirun --config-path $GOETTGENS_CONFIG_PATH --config-name $CONFIG_NAME \
+# conda run -n $ENV_NAME python ./train_flow.py --multirun --config-path $GOETTGENS_CONFIG_PATH --config-name $CONFIG_NAME \
 #        +hparams_search=train_flow_one_hot_protocols +launcher=slurm \
 #          callbacks.wandb_project_name="SFC_Goettgens" dispatcher=one_hot_protocols data=one_hot_protocols vf=one_hot_protocols;
 
