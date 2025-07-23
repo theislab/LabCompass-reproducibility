@@ -10,13 +10,14 @@ import pandas as pd
 import scanpy as sc
 import scipy
 import seaborn as sns
+import fastkde
 
 
 PATH = "../../theis/HID01_fcs_concatenated.h5ad"
 KEEP_COPY = True
 SUBSAMPLE = True
 SUBSAMPLING_DONE = False
-SUBSAMPLE_SIZE = 1e-2
+SUBSAMPLE_SIZE = 5e-3
 COFACTORS = [0.1, 1, 10, 50, 100, 300, 500, 1_000, 2_500, 5_000, 10_000]
 COMPUTE_KERNEL = True
 DUMP_PATH = "../../out"
@@ -41,9 +42,9 @@ def NxNPlot(
             values = np.vstack([X, Y])
             kernel = None
             if compute_kernel:
-                kernel = scipy.stats.gaussian_kde(values)(values)
-            sns.scatterplot(x=X,y=Y,c=kernel,ax=axes[ridx, cidx])
-            # axes[ridx, cidx].set_title(data_id)
+                PDF = fastkde.pdf(X, Y, var_names = [rantibody, cantibody])
+                PDF.plot(ax=axes[ridx, cidx])
+            sns.scatterplot(x=X,y=Y,ax=axes[ridx, cidx])
             axes[ridx, cidx].set_xlabel(rantibody)
             axes[ridx, cidx].set_ylabel(cantibody)
             axes[ridx, cidx].grid(True)
@@ -61,7 +62,8 @@ def density_plot(
     fig.suptitle(data_id)
     for idx in range(data.shape[1]):
         antibody = int2antibody[idx]
-        sns.kdeplot(data[idx], ax=axes[idx])
+        PDF = fastkde.pdf(data[idx], var_names = [antibody,])
+        PDF.plot(ax=axes[idx])
         axes[idx].grid(True)
         axes[idx].set_title(antibody)
     fig.savefig(os.path.join(dump_path, f"{data_id}_DensityPlot_channels.png"))
@@ -118,6 +120,7 @@ if __name__ == "__main__":
         key_raw,
         X_channel_raw,
         int2antibody,
+        DUMP_PATH,
     )
 
     # raw scatter features
@@ -135,6 +138,7 @@ if __name__ == "__main__":
         key_raw,
         X_scatter_raw,
         int2scatter,
+        DUMP_PATH,
     )
 
     # applying transformations
@@ -155,6 +159,7 @@ if __name__ == "__main__":
             key_arcsin,
             X_channel_arcsinh,
             int2antibody,
+            DUMP_PATH,
         )
         X_channel_arcsinh_stats = compute_summary_stats(X_channel_arcsinh)
 
