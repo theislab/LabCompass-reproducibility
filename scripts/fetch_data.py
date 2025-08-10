@@ -6,7 +6,13 @@ from anndata import AnnData
 import numpy as np
 from scanpy import read_h5ad
 
-from condition_utils import get_one_hot_encoded_protocols, get_one_hot_encoded_protocol_axis, get_concatenated_scatter_features
+from data_utils import (
+    get_one_hot_encoded_protocols,
+    get_one_hot_encoded_protocol_axis,
+    get_concatenated_scatter_features,
+    get_cofactor_array_from_dict,
+    get_mixed_protocol_axis,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,22 +26,27 @@ SCATTER_COLUMNS = ['FSC - Area', 'FSC - Height', 'FSC - Width', 'SSC - Area', 'S
 
 def fetch_adata_goattgens_sfc(
     h5ad_data_path: str,
-    mode: Literal["unconditional", "protocol_one_hot", "protocol_axis_one_hot"] = "unconditional",
+    mode: Literal["unconditional", "protocol_one_hot", "protocol_axis_one_hot", "protocol_axis_mixed"] = "unconditional",
     transformation: Literal["arcsinh", "logabs"] = "arcsinh",
     cofactor: int = 100,
     protocol_columns: Sequence[str] = EXPERIMENTAL_COLUMNS,
     obsm_key_added="X_repr",
     obs_key_added="protocol",
     uns_key_added="protocol_one_hot",
+    obsm_cond_key_added="val",
     sep="_",
     concatenate_scatter_feats: bool = False,
     scatter_columns=SCATTER_COLUMNS,
     scatter_transformation=lambda x:x,
-    scatter_key_added="X_sct"
+    scatter_key_added="X_sct",
+    channel2cofactor: dict[str, float] | None = None,
 ) -> tuple[AnnData, AnnData | None]:
     """"""
     # reading h5ad file
     adata = read_h5ad(h5ad_data_path)
+
+    if channel2cofactor is not None:
+        cofactor = get_cofactor_array_from_dict(channel2cofactor, adata)
 
     if transformation == "arcsinh": 
         adata.obsm[obsm_key_added] = np.arcsinh(adata.X/cofactor)
@@ -69,6 +80,14 @@ def fetch_adata_goattgens_sfc(
             adata,
             protocol_columns=protocol_columns,
             uns_key_added=uns_key_added,
+            sep=sep,
+        )
+    elif mode == "protocol_axis_mixed":
+        return get_mixed_protocol_axis(
+            adata,
+            protocol_columns=protocol_columns,
+            uns_key_added=uns_key_added,
+            obsm_cond_key_added=obsm_cond_key_added,
             sep=sep,
         )
     else:
