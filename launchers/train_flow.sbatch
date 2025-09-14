@@ -36,3 +36,9 @@ conda run -n $ENV_NAME python ./scripts/train_flow.py --config-path $GOETTGENS_C
 # echo "Running experiment on Spectral Flow Cytometry data with one hot encoded protocol axis";
 # conda run -n $ENV_NAME python ./scripts/train_flow.py --config-path $GOETTGENS_CONFIG_PATH --config-name $CONFIG_NAME \
 #          callbacks.wandb_project_name="SFC_Goettgens" dispatcher=one_hot_protocol_axis data=one_hot_protocol_axis vf=one_hot_protocol_axis;
+
+## Spectral Flow Cytometry log tranformed concat
+# echo "Running experiment on Spectral Flow Cytometry data with one hot encoded protocols";
+# conda run -n $ENV_NAME python ./scripts/train_flow.py --config-path $GOETTGENS_CONFIG_PATH --config-name $CONFIG_NAME \
+#          callbacks.wandb_project_name="SFC_Goettgens" dispatcher=log_tranform_concat data=log_tranform_concat vf=log_tranform_concat;
+

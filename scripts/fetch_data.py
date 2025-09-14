@@ -4,6 +4,7 @@ from typing import Literal
 
 from anndata import AnnData
 import numpy as np
+import pandas as pd
 from scanpy import read_h5ad
 
 from data_utils import (
@@ -16,12 +17,46 @@ from data_utils import (
 
 logger = logging.getLogger(__name__)
 
+# EXPERIMENTAL_COLUMNS = [
+#     'mtg_[µm]', 'rhflt3l_[ng/ml]', 'gm-csf_[ng/ml]', 'tpo_[ng/ml]', 'sr1_[nm]',
+#     'um171_[nm]', 'um729_[µm]', 'scf_[ng/ml]', 'butyzamide_[nm]', 'retinoic_acid_[µm]',
+#     'ldl_[ng/ml]', 'il3_[ng/ml]', 'o2_[%]',
+# ]
 EXPERIMENTAL_COLUMNS = [
-    'mtg_[µm]', 'rhflt3l_[ng/ml]', 'gm-csf_[ng/ml]', 'tpo_[ng/ml]', 'sr1_[nm]',
-    'um171_[nm]', 'um729_[µm]', 'scf_[ng/ml]', 'butyzamide_[nm]', 'retinoic_acid_[µm]',
-    'ldl_[ng/ml]', 'il3_[ng/ml]', 'o2_[%]',
+    'mtg_[µm]', 'rhflt3l_[ng_ml]', 'gm-csf_[ng_ml]',
+    'tpo_[ng_ml]', 'sr1_[nm]', 'um171_[nm]', 'um729_[µm]', 'scf_[ng_ml]',
+    'butyzamide_[nm]', 'retinoic_acid_[µm]', 'ldl_[ng_ml]', 'il3_[ng_ml]', 'o2_[%]'
 ]
 SCATTER_COLUMNS = ['FSC - Area', 'FSC - Height', 'FSC - Width', 'SSC - Area', 'SSC - Height', 'SSC - Width']
+LOG1P_EXP_COL = ["um171_[nm]", "um729_[µm]", "scf_[ng_ml]", 
+                 "butyzamide_[nm]", "o2_[%]",
+                 "sr1_[nm]", "mtg_[µm]", "rhflt3l_[ng_ml]", "gm-csf_[ng_ml]"]
+LOG21P_EXP_COL = ["ldl_[ng_ml]", 
+    "il3_[ng_ml]", "retinoic_acid_[µm]",
+]
+
+
+def get_log_transformed_experimental_variables(
+    adata,
+    EXPERIMENTAL_COLUMNS,
+    LOG1P_EXP_COL,
+    LOG21P_EXP_COL,
+    obsm_col="cond_concat",
+):
+    for column in EXPERIMENTAL_COLUMNS:
+        if isinstance(adata.obs[column].values.dtype, pd.CategoricalDtype):
+            adata.obs[column] = adata.obs[column].astype(float)
+        
+        if column in LOG1P_EXP_COL:
+            adata.obsm[column] = np.log1p(adata.obs[column]).values[:, None]
+        elif column in LOG21P_EXP_COL:
+            adata.obsm[column] = np.log2(adata.obs[column] + 1).values[:, None]
+        else:
+            adata.obsm[column] = adata.obs[column].values[:, None]
+    adata.obsm[obsm_col] = np.concatenate(
+        [adata.obsm[col] for col in EXPERIMENTAL_COLUMNS], axis=-1
+    )
+    return adata
 
 
 def fetch_adata_goattgens_sfc(
@@ -89,6 +124,13 @@ def fetch_adata_goattgens_sfc(
             uns_key_added=uns_key_added,
             obsm_cond_key_added=obsm_cond_key_added,
             sep=sep,
+        )
+    elif mode == "log_transformed":
+        return get_log_transformed_experimental_variables(
+            adata,
+            EXPERIMENTAL_COLUMNS,
+            LOG1P_EXP_COL,
+            LOG21P_EXP_COL,
         )
     else:
         msg = f"Mode {mode} is not supported, available options are [\"unconditional\"]"
