@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 import logging
 from typing import Literal
 
@@ -58,6 +58,22 @@ def get_log_transformed_experimental_variables(
     )
     return adata
 
+def get_concatenated_transformed_obs_columns(
+    adata: AnnData,
+    column2tranform: dict[str, Callable | None],
+    obsm_col="cond_concat",
+):
+    for column, transorm_fn in column2tranform.items():
+        col_values = adata.obs[column].values[:, None]
+        if isinstance(adata.obs[column].values.dtype, pd.CategoricalDtype):
+            col_values = adata.obs[column].astype(float).values[:, None]
+        if transorm_fn is not None:
+            col_values = transorm_fn(col_values)
+        adata.obsm[column] = col_values
+    adata.obsm[obsm_col] = np.concatenate(
+        [adata.obsm[col] for col in column2tranform.keys()], axis=-1
+    )
+    return adata
 
 def fetch_adata_goattgens_sfc(
     h5ad_data_path: str,

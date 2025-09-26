@@ -18,6 +18,7 @@ from sc_exp_design.networks import ConditionEncoder, MLPGaussianNoiseModel
 from sc_exp_design.training.base import BaseTrainer
 from sc_exp_design.training.callbacks import BaseCallBack
 
+from vae_utils import log_prob_normal, Dkl_standard_normal
 
 class VAEModule(torch.nn.Module):
     linear_proj_config = {
