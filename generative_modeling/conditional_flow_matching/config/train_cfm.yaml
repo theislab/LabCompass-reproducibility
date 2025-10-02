@@ -1,0 +1,16 @@
+# @package _global_
+
+# default (unconditional)
+defaults:
+  - _self_
+  - annotation: default
+  - callbacks: default
+  - data: unconditional
+  - flow_matching: default
+  - model: default
+  - ood: default
+  - paths: local
+  - training: default
+  - transforms: default
+  - vf: default_unconditional
+  - hydra: local

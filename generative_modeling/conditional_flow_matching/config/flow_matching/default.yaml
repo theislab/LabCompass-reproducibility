@@ -1,0 +1,8 @@
+flow_type: "rectified"
+flow_kwargs: null
+coupling_type: "independent"
+coupling_kwargs: null
+time_sampler: null
+device_id: "mps"
+generate_from_noise: True
+noise_distribution: null

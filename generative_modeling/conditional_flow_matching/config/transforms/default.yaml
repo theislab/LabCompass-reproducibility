@@ -1,0 +1,5 @@
+compute_channel_pcs: True
+pca_obsm_key: "X_pca"
+standardize_scatter_features: True
+scatter_obsm_key: "X_scatter"
+scatter_params_uns_key: "scatter_params"

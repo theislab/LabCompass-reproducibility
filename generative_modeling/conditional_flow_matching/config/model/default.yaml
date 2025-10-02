@@ -1,0 +1,9 @@
+optimizer_id: null
+optimizer_kwargs:
+  lr: 0.0001
+scheduler_id: null
+lr_scheduler_kwargs: null
+lr_scheduler_step: null
+num_time_steps: 100
+solver_kwargs:
+  method: "euler"
