@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=sweep_flow
-#SBATCH --output=../../logs/sweep_flow_morphogen.out
-#SBATCH --error=../../logs/sweep_flow_morphogen.err
+#SBATCH --job-name=sweep_flow_ohe_protocols
+#SBATCH --output=../../logs/sweep_flow_morphogen_ohe_protocols.out
+#SBATCH --error=../../logs/sweep_flow_morphogen_ohe_protocols.err
 #SBATCH --partition=cpu_p
 #SBATCH --qos=cpu_normal
 #SBATCH --mem=256G
 #SBATCH --nice=0
-#SBATCH --time=03-00:00:00
+#SBATCH --time=01-00:00:00
 
 ## set environment name
 ENV_NAME="sc_exp_design";

@@ -1,8 +1,15 @@
-standardize_channel_features: True
-channel_obsm_key: "X_channel"
-channel_params_uns_key: "channel_params"
-compute_channel_pcs: True
-pca_obsm_key: "X_pca"
-standardize_scatter_features: True
+scatter_columns: ["FSC - Area", "FSC - Height", "FSC - Width", "SSC - Area", "SSC - Height", "SSC - Width"]
 scatter_obsm_key: "X_scatter"
-scatter_params_uns_key: "scatter_params"
+channel_concat_obsm_key: "X_channel_concat"
+pca_obsm_key: "X_pca"
+pca_concat_obsm_key: "X_pca_concat"
+standardize_repr: False
+sample_rep: "X_channel_concat"
+sample_rep_obsm_key: "X_repr"
+repr_params_uns_key: "repr_params"
+compute_channel_pcs: True
+standardize_channel_feats: False
+channel_feats_obsm_key: "X_channel"
+channel_params_uns_key: "channel_params"
+standardize_scatter_feats: True
+scatter_params_uns_key: "channel_params"

@@ -107,55 +107,43 @@ def annotate_perturbations(
 
 def annotate_cell_state_data(
     adata: AnnData,
-    scatter_columns: Sequence[str],
-    base_sample_rep: str | None = None,
     scatter_obsm_key: str = "X_scatter",
-    concat_obsm_key: str = "X_joint",
+    channel_feats_obsm_key: str = "X_channel",
+    channel_concat_obsm_key: str = "X_joint_channel",
+    pca_obsm_key: str = "X_pca",
+    pca_concat_obsm_key: str = "X_joint_pca",
 ):
-    # Cell State Data 0. writing scatter features to obsm
-    adata.obsm[scatter_obsm_key] = adata.obs[scatter_columns].values
-
-    # retrieving the two representations
-    X_repr = adata.X if base_sample_rep is None else adata.obsm[base_sample_rep]
+    # Cell State Data 1. concatenate with channel features
+    X_repr = adata.obsm[channel_feats_obsm_key]
     X_scatter = adata.obsm[scatter_obsm_key]
-
-    # concatenating them and updating anndata
-    adata.obsm[concat_obsm_key] = np.concatenate((X_repr, X_scatter), axis=1)
-    # Cell State Data 1. concatenating scatter features to base representation
+    adata.obsm[channel_concat_obsm_key] = np.concatenate((X_repr, X_scatter), axis=1)
+    
+    # Cell State Data 1. concatenate with pcs
+    X_repr = adata.obsm[pca_obsm_key]
+    X_scatter = adata.obsm[scatter_obsm_key]
+    adata.obsm[pca_concat_obsm_key] = np.concatenate((X_repr, X_scatter), axis=1)
     return adata
 
 
 def apply_shared_transformations(
     train_adata: AnnData,
     ood_adata_dict: dict[int, AnnData],
-    standardize_channel_features: bool = True,
-    channel_obsm_key: str = "X_channel",
-    channel_params_uns_key: str = "channel_params",
-    compute_channel_pcs: bool = True,
-    pca_obsm_key: str = "X_pca",
-    standardize_scatter_features: bool = True,
+    scatter_columns: Sequence[str],
     scatter_obsm_key: str = "X_scatter",
-    scatter_params_uns_key: str = "scatter_params",
+    channel_concat_obsm_key: str = "X_joint_channel",
+    pca_obsm_key: str = "X_pca",
+    pca_concat_obsm_key: str = "X_joint_pca",
+    standardize_repr: bool = False,
+    sample_rep: str | None = None,
+    sample_rep_obsm_key: str = "X_repr",
+    repr_params_uns_key: str = "repr_params",
+    compute_channel_pcs: bool = True,
+    standardize_channel_feats: bool = False,
+    channel_feats_obsm_key: str = "X_channel",
+    channel_params_uns_key: str = "channel_params",
+    standardize_scatter_feats: bool = False,
+    scatter_params_uns_key: str = "channel_params",
 ):
-
-    # channel standardization
-    if standardize_channel_features:
-        # retrieving channel features and computing params
-        X_channel_train = train_adata.X
-        channel_mean = X_channel_train.mean(0)
-        channel_std = X_channel_train.std(0)
-
-        # storing standardization params
-        channel_params = {"mean": channel_mean, "std": channel_std}
-        train_adata.uns[channel_params_uns_key] = channel_params # failing for some reason (seg fault)
-        train_adata.obsm[channel_obsm_key] = (X_channel_train - channel_mean)/channel_std
-
-        # iterating over ood adatas
-        for id, ood_adata in ood_adata_dict.items():
-            X_channel_ood = ood_adata.X
-            ood_adata.uns[channel_params_uns_key] = channel_params
-            ood_adata.obsm[channel_obsm_key] = (X_channel_ood - channel_mean)/channel_std
-            ood_adata_dict[id] = ood_adata
 
     # channel pca
     if compute_channel_pcs:
@@ -170,26 +158,94 @@ def apply_shared_transformations(
             ood_adata.obsm[pca_obsm_key] = np.einsum("...d,dk -> ...k", ood_adata.X, train_adata.varm["PCs"])
             ood_adata_dict[id] = ood_adata
 
-    # scatter standardization
-    if standardize_scatter_features:
-        # retrieving scatter features
-        X_scatter_train = train_adata.obsm[scatter_obsm_key]
 
-        # computing standardization params
-        scatter_mean = X_scatter_train.mean(0)
-        scatter_std = X_scatter_train.std(0)
+    # Cell State Data 0. writing scatter features to obsm
+    train_adata.obsm[scatter_obsm_key] = train_adata.obs[scatter_columns].values
+    for id, ood_adata in ood_adata_dict.items():
+        ood_adata.obsm[scatter_obsm_key] = ood_adata.obs[scatter_columns].values
+        ood_adata_dict[id] = ood_adata
 
-        # storing standardization params
+    # channel features
+    X_channel = train_adata.X
+    if standardize_channel_feats:
+        channel_mean = X_channel.mean(0)
+        channel_std = X_channel.std(0)
+        channel_params = {"mean": channel_mean, "std": channel_std}
+        train_adata.uns[channel_params_uns_key] = channel_params
+        X_channel = (X_channel - channel_mean)/channel_std
+    train_adata.obsm[channel_feats_obsm_key] = X_channel
+    for id, ood_adata in ood_adata_dict.items():
+        X_channel = ood_adata.X
+        if standardize_channel_feats:
+            channel_mean = X_channel.mean(0)
+            channel_std = X_channel.std(0)
+            channel_params = {"mean": channel_mean, "std": channel_std}
+            train_adata.uns[channel_params_uns_key] = channel_params
+            X_channel = (X_channel - channel_mean)/channel_std
+        ood_adata.obsm[channel_feats_obsm_key] = X_channel
+        ood_adata_dict[id] = ood_adata
+
+
+    # scatter features
+    X_scatter = train_adata.obsm[scatter_obsm_key]
+    if standardize_scatter_feats:
+        scatter_mean = X_scatter.mean(0)
+        scatter_std = X_scatter.std(0)
         scatter_params = {"mean": scatter_mean, "std": scatter_std}
         train_adata.uns[scatter_params_uns_key] = scatter_params
+        X_scatter = (X_scatter - scatter_mean)/scatter_std
+    train_adata.obsm[scatter_obsm_key] = X_scatter
+    for id, ood_adata in ood_adata_dict.items():
+        X_scatter = ood_adata.obsm[scatter_obsm_key]
+        if standardize_scatter_feats:
+            scatter_mean = X_scatter.mean(0)
+            scatter_std = X_scatter.std(0)
+            scatter_params = {"mean": scatter_mean, "std": scatter_std}
+            train_adata.uns[scatter_params_uns_key] = scatter_params
+            X_scatter = (X_scatter - scatter_mean)/scatter_std
+        ood_adata.obsm[scatter_obsm_key] = X_scatter
+        ood_adata_dict[id] = ood_adata
 
-        # transforming data
-        train_adata.obsm[scatter_obsm_key] = (X_scatter_train - scatter_mean)/scatter_std
+    # annotating cell state data
+    train_adata = annotate_cell_state_data(
+        train_adata,
+        scatter_obsm_key=scatter_obsm_key,
+        channel_feats_obsm_key=channel_feats_obsm_key,
+        channel_concat_obsm_key=channel_concat_obsm_key,
+        pca_obsm_key=pca_obsm_key,
+        pca_concat_obsm_key=pca_concat_obsm_key,
+    )
+    for id, ood_adata in ood_adata_dict.items():
+        ood_adata_dict[id] = annotate_cell_state_data(
+            ood_adata,
+            scatter_obsm_key=scatter_obsm_key,
+            channel_feats_obsm_key=channel_feats_obsm_key,
+            channel_concat_obsm_key=channel_concat_obsm_key,
+            pca_obsm_key=pca_obsm_key,
+            pca_concat_obsm_key=pca_concat_obsm_key,
+        )
 
-        # iterating over ood adatas
-        for id, ood_adata in ood_adata_dict.items():
-            X_scatter_ood = ood_adata.obsm[scatter_obsm_key]
-            ood_adata.uns[scatter_params_uns_key] = scatter_params
-            ood_adata.obsm[scatter_obsm_key] = (X_scatter_ood - scatter_mean)/scatter_std
-            ood_adata_dict[id] = ood_adata
+    # sample representation
+    X_repr = train_adata.X if sample_rep is None else train_adata.obsm[sample_rep]
+    if standardize_repr:
+        repr_mean = X_repr.mean(0)
+        repr_std = X_repr.std(0)
+        repr_params = {"mean": repr_mean, "std": repr_std}
+        train_adata.uns[repr_params_uns_key] = repr_params
+        X_repr = (X_repr - repr_mean)/repr_std
+    obsm_key = sample_rep_obsm_key if sample_rep is None else sample_rep
+    train_adata.obsm[obsm_key] = X_repr
+
+
+    # iterating over ood adatas
+    for id, ood_adata in ood_adata_dict.items():
+        X_repr = ood_adata.X if sample_rep is None else ood_adata.obsm[sample_rep]
+        if standardize_repr:
+            obsm_key = sample_rep_obsm_key if sample_rep is None else sample_rep
+            repr_params = {"mean": repr_mean, "std": repr_std}
+            train_adata.uns[repr_params_uns_key] = repr_params
+            X_repr = (X_repr - repr_mean)/repr_std
+        ood_adata.obsm[obsm_key] = X_repr
+        ood_adata_dict[id] = ood_adata
+
     return train_adata, ood_adata_dict

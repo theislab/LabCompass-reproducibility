@@ -53,18 +53,7 @@ def get_adata_splits(config: DictConfig):
     )
     logger.info(f"Perturbation data annotated! {adata}")
 
-    # Data 2. annotate state data
-    logger.info("Annotating state data...")
-    adata = annotate_cell_state_data(
-        adata,
-        config.annotation.scatter_columns,
-        base_sample_rep=config.annotation.base_sample_rep,
-        scatter_obsm_key=config.annotation.scatter_obsm_key,
-        concat_obsm_key=config.annotation.concat_obsm_key,
-    )
-    logger.info(f"State data annotated! {adata}")
-
-    # Data 3. split data
+    # Data 2. split data
     logger.info("Splitting data...")
     train_adata, ood_adatas_dict = split_adata(
         adata,
@@ -73,18 +62,25 @@ def get_adata_splits(config: DictConfig):
     )
     logger.info(f"Data split performed!")
 
-    # Data 4. apply shared transformations
+    # Data 3. apply shared transformations
     logger.info("Computing tranformation params on train data and applying to both train and ood data...")
     train_adata, ood_adatas_dict = apply_shared_transformations(
         train_adata,
         ood_adatas_dict,
-        standardize_channel_features=config.transforms.standardize_channel_features,
-        channel_obsm_key=config.transforms.channel_obsm_key,
-        channel_params_uns_key=config.transforms.channel_params_uns_key,
-        compute_channel_pcs=config.transforms.compute_channel_pcs,
-        pca_obsm_key=config.transforms.pca_obsm_key,
-        standardize_scatter_features=config.transforms.standardize_scatter_features,
+        config.transforms.scatter_columns,
         scatter_obsm_key=config.transforms.scatter_obsm_key,
+        channel_concat_obsm_key=config.transforms.channel_concat_obsm_key,
+        pca_obsm_key=config.transforms.pca_obsm_key,
+        pca_concat_obsm_key=config.transforms.pca_concat_obsm_key,
+        standardize_repr=config.transforms.standardize_repr,
+        sample_rep=config.transforms.sample_rep,
+        sample_rep_obsm_key=config.transforms.sample_rep_obsm_key,
+        repr_params_uns_key=config.transforms.repr_params_uns_key,
+        compute_channel_pcs=config.transforms.compute_channel_pcs,
+        standardize_channel_feats=config.transforms.standardize_channel_feats,
+        channel_feats_obsm_key=config.transforms.channel_feats_obsm_key,
+        channel_params_uns_key=config.transforms.channel_params_uns_key,
+        standardize_scatter_feats=config.transforms.standardize_scatter_feats,
         scatter_params_uns_key=config.transforms.scatter_params_uns_key,
     )
     logger.info("Shared tranformations applied!")
