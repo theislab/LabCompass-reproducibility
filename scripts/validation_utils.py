@@ -4,64 +4,73 @@ import torch
 from sc_exp_design.constants import DataFields, PredictionFields
 from sc_exp_design.data.container import DataMixin
 
+
 def predict_on_ood_data(
     N,
     flow_matching,
     ood_data,
 ):
-    control_data = ood_data.control_data
     perturbation_data = ood_data.perturbation_data
+    assert perturbation_data is not None
+    if ood_data.seen_combinations is not None:
+        perturbation_data = DataMixin(ood_data.perturbation_data)
+        comb2pred = {}
+        # iterating over unique combinations
+        for comb in ood_data.seen_combinations:
+            comb_idxs = np.all((ood_data.adata.obs[flow_matching.data_manager.perturbations] == comb).values, axis=-1)
+            comb_adata = ood_data.adata[comb_idxs]
+            comb_data = flow_matching.data_manager.get_data(comb_adata)
+            comb_perts = DataMixin(comb_data.perturbation_data)
+            comb_perts = comb_perts.apply(lambda x: np.unique(x, axis=0))
+            comb_perts = comb_perts.apply(lambda x: torch.from_numpy(x).float().to(flow_matching.device).repeat(N, 1))
+            preds = flow_matching.predict(
+                {
+                    DataFields.PERTURBATION_DATA: comb_perts,
+                },
+            ).detach().cpu().numpy()
+            comb2pred[comb] = {
+                PredictionFields.PREDICTION_DATA: preds,
+                DataFields.TARGET_STATE: comb_data.state_data
+            }
 
-    if perturbation_data is not None:
-        unique_perts = DataMixin(perturbation_data.apply(lambda x: np.unique(x, axis=0)))
-        perts_data = unique_perts.apply(lambda x: torch.from_numpy(x).float().to(flow_matching.device))
-        if not flow_matching.generate_from_noise:
-            perts_data = perts_data.apply(lambda x: x.unsqueeze(0).repeat(N, 1, 1))
-    
-    if control_data is not None:
-        if not flow_matching.generate_from_noise:
-            control_data = control_data.apply(lambda x: x.unsqueeze(0).repeat(N, 1, 1))
+    # paired setting TODO
+    else:
+        comb2pred = {}
+        perturbation_data = DataMixin(ood_data.perturbation_data)
+        unique_perts = perturbation_data.apply(lambda x: np.unique(x, axis=0))
+        print("unique_perts ", next(iter(unique_perts.values())).shape)
+        for idx in range(next(iter(unique_perts.values())).shape[0]):
+            comb_perts = unique_perts.apply(lambda x: x[idx, :])
+            print("ood_data", next(iter(perturbation_data.values())).shape)
+            print("comb_perts", next(iter(comb_perts.values())).shape)
+            comb_idxs = np.all(next(iter(perturbation_data.values())) == next(iter(comb_perts.values())), axis=-1)
+            print("comb_idxs", comb_idxs.shape)
 
-    return flow_matching.predict(
-        {
-            DataFields.SOURCE_STATE: control_data,
-            DataFields.PERTURBATION_DATA: perts_data,
-        },
-        num_samples=N,
-    ).detach().cpu().numpy()
+            comb_adata = ood_data.adata[comb_idxs]
+            comb_data = flow_matching.data_manager.get_data(comb_adata)
+            comb_perts = comb_perts.apply(lambda x: torch.from_numpy(x[None]).float().to(flow_matching.device).repeat(N, 1))
+            print(comb_perts)
+            preds = flow_matching.predict(
+                {
+                    DataFields.PERTURBATION_DATA: comb_perts,
+                },
+            ).detach().cpu().numpy()
+            comb2pred[idx] = {
+                PredictionFields.PREDICTION_DATA: preds,
+                DataFields.TARGET_STATE: comb_data.state_data
+            }
+
+    return comb2pred
 
 def validate_on_ood_data(
     N,
     flow_matching,
     ood_data,
     metrics_callback,
-    sep="+"
 ):
-    x1_hat = predict_on_ood_data(
+    metrics_input = predict_on_ood_data(
         N, flow_matching, ood_data
     )
-    if ood_data.seen_combinations is not None:
-        preds_dict = DataMixin({
-            comb_id if isinstance(comb_id, str) else sep.join([str(v) for v in comb_id]): x1_hat[:, idx, :] for idx, comb_id in enumerate(ood_data.seen_combinations)
-        })
-        preds_dict[DataFields.CONDITION_VALUES] = np.concat(list(preds_dict.values()))
-    else:
-        ...
-
-    state_data = ood_data.state_data
-    treatment_idxs_per_condition = ood_data.treatment_idxs_per_condition
-    treatment_idxs_per_condition = DataMixin({
-        k if isinstance(k, str) else sep.join([str(v) for v in k]): v for k, v in  treatment_idxs_per_condition.items()
-    })
-    target_data = treatment_idxs_per_condition.apply(lambda idx: state_data[idx])
-
-    metrics_input = {
-        k: {
-            PredictionFields.PREDICTION_DATA: preds_dict[k],
-            DataFields.TARGET_STATE: target_data[k]
-        } for k in target_data.keys()
-    }
-
     return metrics_callback.run_on_valid_step(
         metrics_input
     )
