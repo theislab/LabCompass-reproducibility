@@ -131,6 +131,7 @@ def main(config: DictConfig):
         k: flow_matching.data_manager.get_data(v) for k, v in ood_adatas_dict.items()
     }
     logger.info("OOD data ready!")
+    print(flow_matching.train_data.perturbation_data.keys())
 
     # Model 3. initialize velocity field configurations and prepare additional arguments
     logger.info("Initializing neural configurations...")

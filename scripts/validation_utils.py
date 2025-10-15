@@ -40,15 +40,18 @@ def validate_on_ood_data(
     x1_hat = predict_on_ood_data(
         N, flow_matching, ood_data
     )
-    preds_dict = DataMixin({
-        sep.join(comb_id): x1_hat[:, idx, :] for idx, comb_id in enumerate(ood_data.seen_combinations)
-    })
-    preds_dict[DataFields.CONDITION_VALUES] = np.concat(list(preds_dict.values()))
+    if ood_data.seen_combinations is not None:
+        preds_dict = DataMixin({
+            comb_id if isinstance(comb_id, str) else sep.join([str(v) for v in comb_id]): x1_hat[:, idx, :] for idx, comb_id in enumerate(ood_data.seen_combinations)
+        })
+        preds_dict[DataFields.CONDITION_VALUES] = np.concat(list(preds_dict.values()))
+    else:
+        ...
 
     state_data = ood_data.state_data
     treatment_idxs_per_condition = ood_data.treatment_idxs_per_condition
     treatment_idxs_per_condition = DataMixin({
-        k if isinstance(k, str) else sep.join(k): v for k, v in  treatment_idxs_per_condition.items()
+        k if isinstance(k, str) else sep.join([str(v) for v in k]): v for k, v in  treatment_idxs_per_condition.items()
     })
     target_data = treatment_idxs_per_condition.apply(lambda idx: state_data[idx])
 
