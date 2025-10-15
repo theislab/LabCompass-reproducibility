@@ -1,3 +1,6 @@
+standardize_channel_features: True
+channel_obsm_key: "X_channel"
+channel_params_uns_key: "channel_params"
 compute_channel_pcs: True
 pca_obsm_key: "X_pca"
 standardize_scatter_features: True

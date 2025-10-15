@@ -130,7 +130,7 @@ def apply_shared_transformations(
     ood_adata_dict: dict[int, AnnData],
     standardize_channel_features: bool = True,
     channel_obsm_key: str = "X_channel",
-    channel_params_uns_key: str = "scatter_params",
+    channel_params_uns_key: str = "channel_params",
     compute_channel_pcs: bool = True,
     pca_obsm_key: str = "X_pca",
     standardize_scatter_features: bool = True,
@@ -168,7 +168,7 @@ def apply_shared_transformations(
         # applying transformation to validation data
         for id, ood_adata in ood_adata_dict.items():
             ood_adata.obsm[pca_obsm_key] = np.einsum("...d,dk -> ...k", ood_adata.X, train_adata.varm["PCs"])
-        ood_adata_dict[id] = ood_adata
+            ood_adata_dict[id] = ood_adata
 
     # scatter standardization
     if standardize_scatter_features:
@@ -192,4 +192,4 @@ def apply_shared_transformations(
             ood_adata.uns[scatter_params_uns_key] = scatter_params
             ood_adata.obsm[scatter_obsm_key] = (X_scatter_ood - scatter_mean)/scatter_std
             ood_adata_dict[id] = ood_adata
-    return train_adata, ood_adata
+    return train_adata, ood_adata_dict

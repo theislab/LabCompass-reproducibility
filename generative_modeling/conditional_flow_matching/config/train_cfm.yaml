@@ -5,12 +5,12 @@ defaults:
   - _self_
   - annotation: default
   - callbacks: default
-  - data: unconditional
-  - flow_matching: default
+  - data: ohe_protocols
+  - flow_matching: hpc
   - model: default
   - ood: default
-  - paths: local
+  - paths: hpc_subset
   - training: default
   - transforms: default
-  - vf: default_unconditional
-  - hydra: local
+  - vf: default_ohe_protocols
+  - hydra: default

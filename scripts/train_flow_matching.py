@@ -14,9 +14,14 @@ from sc_exp_design.config import NeuralVelocityFieldConfig
 from sc_exp_design.models import FlowMatching
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
-from train_utils import parse_mlp_config_dictionary, parse_nested_mlp_config_dictionary, resolve_omegaconf_to_dictionary
 from data_utils import annotate_perturbations, annotate_cell_state_data, apply_shared_transformations
 from ood_utils import split_adata
+from train_utils import (
+    parse_mlp_config_dictionary,
+    parse_nested_mlp_config_dictionary,
+    resolve_omegaconf_to_dictionary
+)
+from validation_utils import validate_on_ood_data
 
 logger = logging.getLogger(__name__)
 
@@ -70,9 +75,12 @@ def get_adata_splits(config: DictConfig):
 
     # Data 4. apply shared transformations
     logger.info("Computing tranformation params on train data and applying to both train and ood data...")
-    train_adata, ood_adata = apply_shared_transformations(
+    train_adata, ood_adatas_dict = apply_shared_transformations(
         train_adata,
         ood_adatas_dict,
+        standardize_channel_features=config.transforms.standardize_channel_features,
+        channel_obsm_key=config.transforms.channel_obsm_key,
+        channel_params_uns_key=config.transforms.channel_params_uns_key,
         compute_channel_pcs=config.transforms.compute_channel_pcs,
         pca_obsm_key=config.transforms.pca_obsm_key,
         standardize_scatter_features=config.transforms.standardize_scatter_features,
@@ -80,17 +88,17 @@ def get_adata_splits(config: DictConfig):
         scatter_params_uns_key=config.transforms.scatter_params_uns_key,
     )
     logger.info("Shared tranformations applied!")
-    return train_adata, ood_adata
+    return train_adata, ood_adatas_dict
 
 
 @hydra.main(
-    config_path="/Users/lorenzo.consoli/Work/repos/collab-goettgens-SFC/generative_modeling/conditional_flow_matching/config/",
+    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/generative_modeling/conditional_flow_matching/config/",
     config_name="train_cfm",
 )
 def main(config: DictConfig):
 
     # 0. retrieving adata
-    train_adata, ood_adata = get_adata_splits(config)
+    train_adata, ood_adatas_dict = get_adata_splits(config)
 
     # Model 1. initialize flow matching model
     logger.info("Initializing model...")
@@ -123,7 +131,9 @@ def main(config: DictConfig):
     )
     logger.info("Train data ready!")
     logger.info("Preparing OOD data...")
-    flow_matching.prepare_validation_data(ood_adata)
+    ood_data_dict = {
+        k: flow_matching.data_manager.get_data(v) for k, v in ood_adatas_dict.items()
+    }
     logger.info("OOD data ready!")
 
     # Model 3. initialize velocity field configurations and prepare additional arguments
@@ -132,32 +142,26 @@ def main(config: DictConfig):
         flow_matching.train_data.state_data.shape[-1],
         encode_state=config.vf.encode_state,
         state_encoder_output_dim=config.vf.state_encoder_output_dim,
-        state_encoder_mlp_kwargs={} if config.vf.state_encoder_mlp_kwargs is None \
-            else parse_mlp_config_dictionary(activation_functions, config.vf.state_encoder_mlp_kwargs),
+        state_encoder_mlp_kwargs=parse_mlp_config_dictionary(activation_functions, config.vf.state_encoder_mlp_kwargs),
         encode_time=config.vf.encode_time,
         use_sinusoidal_time_features=config.vf.use_sinusoidal_time_features,
         time_features_num_freqs=config.vf.time_features_num_freqs,
         time_features_max_periods=config.vf.time_features_max_periods,
         time_encoder_output_dim=config.vf.time_encoder_output_dim,
-        time_encoder_mlp_kwargs={} if config.vf.time_encoder_mlp_kwargs is None \
-            else parse_mlp_config_dictionary(activation_functions, config.vf.time_encoder_mlp_kwargs),
+        time_encoder_mlp_kwargs=parse_mlp_config_dictionary(activation_functions, config.vf.time_encoder_mlp_kwargs),
         use_guidance=config.vf.use_guidance,
         encode_conditions=config.vf.encode_conditions,
         perturbation_encoder_output_dim=config.vf.perturbation_encoder_output_dim,
-        perturbation_layers_before_pooling={} if config.vf.perturbation_layers_before_pooling is None \
-            else parse_mlp_config_dictionary(activation_functions, config.vf.perturbation_layers_before_pooling),
+        perturbation_layers_before_pooling=parse_nested_mlp_config_dictionary(activation_functions, config.vf.perturbation_layers_before_pooling),
         perturbation_covariates_not_pooled=config.vf.perturbation_covariates_not_pooled,
         perturbation_pooling=config.vf.perturbation_pooling,
         perturbation_pooling_kwargs=config.vf.perturbation_pooling_kwargs,
-        perturbation_layers_after_pooling={} if config.vf.perturbation_layers_after_pooling is None \
-            else  parse_nested_mlp_config_dictionary(activation_functions, config.vf.perturbation_layers_after_pooling),
-        decoder_mlp_kwargs={} if config.vf.decoder_mlp_kwargs is None \
-            else parse_mlp_config_dictionary(activation_functions, config.vf.decoder_mlp_kwargs),
+        perturbation_layers_after_pooling=parse_mlp_config_dictionary(activation_functions, config.vf.perturbation_layers_after_pooling),
+        decoder_mlp_kwargs=parse_mlp_config_dictionary(activation_functions, config.vf.decoder_mlp_kwargs),
         use_source_as_condition=config.vf.use_source_as_condition,
         encode_source=config.vf.encode_source, 
         source_encoder_output_dim=config.vf.source_encoder_output_dim,
-        source_encoder_mlp_kwargs={} if config.vf.source_encoder_mlp_kwargs is None \
-            else parse_mlp_config_dictionary(activation_functions, config.vf.source_encoder_mlp_kwargs),
+        source_encoder_mlp_kwargs=parse_mlp_config_dictionary(activation_functions, config.vf.source_encoder_mlp_kwargs),
         conditioning_type=config.vf.conditioning_type,
         n_resnet_blocks=config.vf.n_resnet_blocks,
         resnet_dropout_prob=config.vf.resnet_dropout_prob,
@@ -183,19 +187,19 @@ def main(config: DictConfig):
 
     # model 5. prepare training callbacks
     logger.info("Preparing training callbacks...")
-    # wandb_callback = WandBLogger(
-    #     project_name=config.callbacks.wandb_project_name,
-    #     log_dir=config.paths.log_dir,
-    #     config=config,
-    #     **{} if config.callbacks.wandb_kwargs is None else resolve_omegaconf_to_dictionary(config.callbacks.wandb_kwargs),
-    # )
+    wandb_callback = WandBLogger(
+        project_name=config.callbacks.wandb_project_name,
+        log_dir=config.paths.log_dir,
+        config=config,
+        **resolve_omegaconf_to_dictionary(config.callbacks.wandb_kwargs),
+    )
     metrics_callback = MetricsCallBack(
         config.callbacks.metrics,
         state_transforms=state_transforms.get(config.training.state_transforms, None),
     )
     callbacks = TrainingCallBacks(
         [
-            # wandb_callback,
+            wandb_callback,
             metrics_callback
         ]
     )
@@ -216,6 +220,7 @@ def main(config: DictConfig):
         cfg_prob_unconditional=config.training.cfg_prob_unconditional,
         validation_cfg_guidance_strength=config.training.validation_cfg_guidance_strength,
         num_grad_accumulation_steps=config.training.num_grad_accumulation_steps,
+        close_wandb_connection=False,    
     )
     logger.info("Model trained!")
 
@@ -233,9 +238,21 @@ def main(config: DictConfig):
         logger.info("Saving the trained model...")
         flow_matching.save(
             config.paths.dump_dir,
-            # model_prefix=wandb_callback.run_name,       
+            model_prefix=wandb_callback.run_name,       
         )
         logger.info("Model dumped and run finished!")
+
+    logger.info("Model trained!")
+    sep = "+"
+    for split_id, split_data in ood_data_dict.items():
+        validate_on_ood_data(
+            config.training.N,
+            flow_matching,
+            split_data,
+            callbacks,
+            sep=sep
+        )
+    callbacks.run_on_train_end()
     return 0
 
 
