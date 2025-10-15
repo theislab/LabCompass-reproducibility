@@ -104,7 +104,7 @@ perturbation_layers_before_pooling:
     activation_class: "selu"
     final_activation_class: "identity"
   repr_retinoic_acid_[µm]_retinoic_acid_[µm]_one_hot:
-    input_dim: 4
+    input_dim: 3
     output_dim: 16
     hidden_dims: [16, ]
     use_batchnorm: False

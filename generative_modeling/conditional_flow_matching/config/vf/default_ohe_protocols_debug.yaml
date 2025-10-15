@@ -14,7 +14,7 @@ encode_conditions: True
 perturbation_encoder_output_dim: 4
 perturbation_layers_before_pooling:
   repr_protocol_id_one_hot:
-    input_dim: 117
+    input_dim: 116
     output_dim: 16
     hidden_dims: [16, ]
     use_batchnorm: False
