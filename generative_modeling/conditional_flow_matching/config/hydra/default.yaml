@@ -1,4 +1,4 @@
 run:
   dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/logs/${now:%Y-%m-%d}_${now:%H-%M-%S}
 sweep:
-  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/logs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/logs/multituns/${now:%Y-%m-%d}_${now:%H-%M-%S}
