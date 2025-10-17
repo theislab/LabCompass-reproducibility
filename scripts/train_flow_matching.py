@@ -217,7 +217,7 @@ def main(config: DictConfig):
         cfg_prob_unconditional=config.training.cfg_prob_unconditional,
         validation_cfg_guidance_strength=config.training.validation_cfg_guidance_strength,
         num_grad_accumulation_steps=config.training.num_grad_accumulation_steps,
-        close_wandb_connection=False,    
+        close_wandb_connection=False,
     )
     logger.info("Model trained!")
 
@@ -235,7 +235,7 @@ def main(config: DictConfig):
         logger.info("Saving the trained model...")
         flow_matching.save(
             config.paths.dump_dir,
-            model_prefix=wandb_callback.run_name,       
+            model_prefix=wandb_callback.run_name,
         )
         logger.info("Model dumped and run finished!")
 
@@ -247,7 +247,6 @@ def main(config: DictConfig):
             flow_matching,
             split_data,
             callbacks,
-            sep=sep
         )
     callbacks.run_on_train_end()
     return 0

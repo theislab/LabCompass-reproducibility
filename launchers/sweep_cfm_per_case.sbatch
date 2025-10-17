@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=train_cfm
+#SBATCH --job-name=sweep_cfm
 #SBATCH --output=../logs/sweep_flow_haematopoiesis.out
 #SBATCH --error=../logs/sweep_flow_haematopoiesis.err
 #SBATCH --partition=gpu_p
@@ -96,9 +96,14 @@ run_case() {
   if [[ "$condition_name" == "ohe_protocols_axes" ]]; then
     for protocol_axis in "${!PROTOCOL_AXES_TO_NUNIQUE[@]}"; do
       nunique=${PROTOCOL_AXES_TO_NUNIQUE[$protocol_axis]}
-      unique_ids=$(seq 0 $((nunique - 1)))
+      # unique_ids=$(seq 0 $((nunique - 1)))
+      unique_ids=$(seq -s, 0 $((nunique - 1)))
+      ood_unique_value_ids="[$unique_ids]"
 
       echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_ids"
+      echo "Overrides"
+      echo '"'"${protocol_axis}"'"'
+      echo "$ood_unique_value_ids"
 
       # Redirect output to separate logs to avoid collisions
       LOG_OUT="../logs/${wandb_name}_${protocol_axis}.out"
@@ -107,17 +112,16 @@ run_case() {
       conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
         --multirun \
         +launcher=slurm \
-        +hparams="$condition_mode" \
-        # ood="$condition_mode" \
+        +hparams=default \
         training="$training" \
         paths="$paths" \
         transforms.sample_rep="$sample_rep" \
         vf="default_${condition_mode}" \
         data="${condition_mode}" \
         callbacks.wandb_project_name="$wandb_name" \
-        obs_column="$protocol_axis" \
-        unique_value_ids="$unique_ids"\
-        > "$LOG_OUT" 2> "$LOG_ERR" &
+        ood.obs_column='"'"${protocol_axis}"'"' \
+        ood.unique_value_ids="$unique_ids" & #\
+        # > "$LOG_OUT" 2> "$LOG_ERR" #&
     done
   else
     echo "Running script in mode ${training}"
@@ -129,7 +133,6 @@ run_case() {
       --multirun \
       +launcher=slurm \
       +hparams="$condition_mode" \
-      ood="$condition_mode" \
       training="$training" \
       paths="$paths" \
       transforms.sample_rep="$sample_rep" \
