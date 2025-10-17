@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=train_cfm_ohe_protocol_axes
-#SBATCH --output=../logs/train_flow_haematopoiesis_ohe_protocol_axes.out
-#SBATCH --error=../logs/train_flow_haematopoiesis_ohe_protocol_axes.err
+#SBATCH --job-name=train_cfm
+#SBATCH --output=../logs/train_flow_haematopoiesis.out
+#SBATCH --error=../logs/train_flow_haematopoiesis.err
 #SBATCH --partition=gpu_p
 #SBATCH --qos=gpu_normal
 #SBATCH --mem=500G
@@ -26,12 +26,12 @@ echo "Current Working Directory: $WDIR"
 
 export HYDRA_FULL_ERROR=1
 
-wandb_name="haematopoiesis_forward_model_${condition_mode}_${sample_rep}"
+wandb_name="haematopoiesis_forward_model_${CONDITION_MODE}_${SAMPLE_REP}"
 
 conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
     transforms.sample_rep="$SAMPLE_REP" \
     vf="default_${CONDITION_MODE}" \
-    data="${cond_mode}" \
+    data="${CONDITION_MODE}" \
     callbacks.wandb_project_name="$wandb_name" \
     ood.obs_column='"'"${PROTOCOL_AXIS}"'"' \
     ood.unique_value_ids="$UNIQUE_VALUE"

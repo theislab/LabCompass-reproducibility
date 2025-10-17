@@ -12,6 +12,7 @@ import torch
 
 from sc_exp_design.config import NeuralVelocityFieldConfig
 from sc_exp_design.models import FlowMatching
+from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
 from data_utils import annotate_perturbations, annotate_cell_state_data, apply_shared_transformations
@@ -93,8 +94,9 @@ def get_adata_splits(config: DictConfig):
 )
 def main(config: DictConfig):
 
-    # 0. retrieving adata
+    # 0. retrieving adata and ensuring reproducibility
     train_adata, ood_adatas_dict = get_adata_splits(config)
+    set_reproducibility(config.reproducibility.seed)
 
     # Model 1. initialize flow matching model
     logger.info("Initializing model...")
