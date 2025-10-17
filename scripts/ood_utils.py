@@ -11,6 +11,10 @@ def split_adata(
 ):
     """"""
 
+
+    if isinstance(unique_value_ids, int):
+        unique_value_ids = [unique_value_ids, ]
+
     # retrieving unique values of column and performing sanity check
     unique_vals = adata.obs[obs_column].unique()
     for val_id in unique_value_ids:
@@ -20,8 +24,6 @@ def split_adata(
     odd_idxs_dict = {}
     odd_adatas_dict = {}
 
-    if isinstance(unique_value_ids, int):
-        unique_value_ids = [unique_value_ids, ]
     # iterating over each unique value index to leave out
     for val_id in unique_value_ids:
         # retrieving corresponding value and computing mask

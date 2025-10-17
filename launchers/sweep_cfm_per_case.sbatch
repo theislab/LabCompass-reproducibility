@@ -120,7 +120,7 @@ run_case() {
         data="${condition_mode}" \
         callbacks.wandb_project_name="$wandb_name" \
         ood.obs_column='"'"${protocol_axis}"'"' \
-        ood.unique_value_ids="$unique_ids" & #\
+        ood.unique_value_ids="$ood_unique_value_ids" #\
         # > "$LOG_OUT" 2> "$LOG_ERR" #&
     done
   else
