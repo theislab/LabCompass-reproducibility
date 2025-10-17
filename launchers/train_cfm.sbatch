@@ -5,6 +5,7 @@
 #SBATCH --error=../logs/train_flow_haematopoiesis.err
 #SBATCH --partition=gpu_p
 #SBATCH --qos=gpu_normal
+#SBATCH --gres=gpu:1
 #SBATCH --mem=500G
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
@@ -34,4 +35,5 @@ conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
     data="${CONDITION_MODE}" \
     callbacks.wandb_project_name="$wandb_name" \
     ood.obs_column='"'"${PROTOCOL_AXIS}"'"' \
-    ood.unique_value_ids="$UNIQUE_VALUE"
+    ood.unique_value_ids="$UNIQUE_VALUE" \
+    2>&1 | tee "../../logs/train_cfm-${CONDITION_MODE}_${SAMPLE_REP}-${PROTOCOL_AXIS}-${UNIQUE_VALUE}.out"

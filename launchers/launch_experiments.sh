@@ -30,7 +30,8 @@ declare -A PROTOCOL_AXES_TO_NUNIQUE=(
  ["protocol_id"]=116
 )
 
-CONDITIONING_MODE=("unconditional" "ohe_protocols" "ohe_protocols_axes" "protocols_concat")
+# CONDITIONING_MODE=("unconditional" "ohe_protocols" "ohe_protocols_axes" "protocol_concat")
+CONDITIONING_MODE=("ohe_protocols" "ohe_protocols_axes")
 
 for sample_rep in "${!SAMPLE_REPS[@]}"; do
   for protocol_axis in "${!PROTOCOL_AXES_TO_NUNIQUE[@]}"; do

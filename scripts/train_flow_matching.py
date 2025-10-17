@@ -55,13 +55,15 @@ def get_adata_splits(config: DictConfig):
     logger.info(f"Perturbation data annotated! {adata}")
 
     # Data 2. split data
-    logger.info("Splitting data...")
+    logger.info(f"Splitting data...\n\tPerforming validation split over column {config.ood.obs_column} with unique value {config.ood.unique_value_ids})")
     train_adata, ood_adatas_dict = split_adata(
         adata,
         config.ood.obs_column,
         config.ood.unique_value_ids,
     )
-    logger.info(f"Data split performed!")
+    logger.info(f"Data split performed!\n \tTrain data of shape {train_adata.shape}")
+    for k, v in ood_adatas_dict.items():
+        logger.info(f"\tValidation split {k} of shape {v.shape}")
 
     # Data 3. apply shared transformations
     logger.info("Computing tranformation params on train data and applying to both train and ood data...")
@@ -182,7 +184,7 @@ def main(config: DictConfig):
         num_time_steps=config.model.num_time_steps,
         solver_kwargs=resolve_omegaconf_to_dictionary(config.model.solver_kwargs),
     )
-    logger.info("Velocity field initialized!")
+    logger.info(f"Velocity field initialized!\n{flow_matching.velocity_field}")
 
     # model 5. prepare training callbacks
     logger.info("Preparing training callbacks...")
