@@ -41,9 +41,9 @@ for sample_rep in "${!SAMPLE_REPS[@]}"; do
         echo "Using sample rep ${rep} and conditioning mode ${conditioning_mode}"
         echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_val"
         if [[ $SWEEP_FLAG -eq 1 ]]; then
-          sbatch launchers/train_ohe_protocol_axes.sbatch $rep $protocol_axis $unique_val $conditioning_mode
+          sbatch launchers/sweep_cfm.sbatch $rep $protocol_axis $unique_val $conditioning_mode
         else
-          sbatch launchers/train_ohe_protocol_axes.sbatch $rep $protocol_axis $unique_val $conditioning_mode
+          sbatch launchers/train_cfm.sbatch $rep $protocol_axis $unique_val $conditioning_mode
         fi
       done
     done
