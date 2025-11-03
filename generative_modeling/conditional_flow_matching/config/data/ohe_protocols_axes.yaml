@@ -1,4 +1,4 @@
-sample_rep: ${transforms.sample_rep}
+sample_rep: "X_channel+X_scatter_standardized"
 control_key: null
 perturbations: [
     "740-yp_[µm]",

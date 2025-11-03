@@ -1,3 +1,4 @@
 dump_dir: "/Users/lorenzo.consoli/Work/projects/collab-goettgens/dumps"
 h5ad_path: "/Users/lorenzo.consoli/Work/projects/collab-goettgens/data/ds_HID01_logicle_100k_UMAP_ann.h5ad"
 log_dir: "/Users/lorenzo.consoli/Work/projects/collab-goettgens/logs"
+results_dir: "/Users/lorenzo.consoli/Work/projects/collab-goettgens/out"

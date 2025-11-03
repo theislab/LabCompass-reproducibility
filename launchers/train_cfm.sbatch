@@ -30,9 +30,9 @@ export HYDRA_FULL_ERROR=1
 wandb_name="haematopoiesis_forward_model_${CONDITION_MODE}_${SAMPLE_REP}"
 
 conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
-    transforms.sample_rep="$SAMPLE_REP" \
     vf="default_${CONDITION_MODE}" \
     data="${CONDITION_MODE}" \
+    data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
     ood.obs_column='"'"${PROTOCOL_AXIS}"'"' \
     ood.unique_value_ids="$UNIQUE_VALUE" \

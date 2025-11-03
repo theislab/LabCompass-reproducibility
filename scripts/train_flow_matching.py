@@ -15,7 +15,7 @@ from sc_exp_design.models import FlowMatching
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
-from data_utils import annotate_perturbations, annotate_cell_state_data, apply_shared_transformations
+from data_utils import annotate_perturbations, get_protocol_tranformations, apply_shared_transformations
 from ood_utils import split_adata
 from train_utils import (
     parse_mlp_config_dictionary,
@@ -26,6 +26,7 @@ from validation_utils import validate_on_ood_data
 
 logger = logging.getLogger(__name__)
 
+DO_VALIDATION = False
 time_samplers = {}
 noise_distributions = {}
 activation_functions = {}
@@ -42,7 +43,11 @@ def get_adata_splits(config: DictConfig):
 
     # Data 1. annotate perturbation data
     logger.info("Annotating perturbation data...")
-    column2tranform = {} # TODO
+    column2tranform = get_protocol_tranformations(
+        config.annotation.protocol_columns,
+        log1p_exp_cols=config.annotation.log1p_exp_cols,
+        log21p_exp_cols=config.annotation.log21p_exp_cols,
+    )
     adata = annotate_perturbations(
         adata,
         config.annotation.protocol_columns,
@@ -71,20 +76,7 @@ def get_adata_splits(config: DictConfig):
         train_adata,
         ood_adatas_dict,
         config.transforms.scatter_columns,
-        scatter_obsm_key=config.transforms.scatter_obsm_key,
-        channel_concat_obsm_key=config.transforms.channel_concat_obsm_key,
-        pca_obsm_key=config.transforms.pca_obsm_key,
-        pca_concat_obsm_key=config.transforms.pca_concat_obsm_key,
-        standardize_repr=config.transforms.standardize_repr,
-        sample_rep=config.transforms.sample_rep,
-        sample_rep_obsm_key=config.transforms.sample_rep_obsm_key,
-        repr_params_uns_key=config.transforms.repr_params_uns_key,
         compute_channel_pcs=config.transforms.compute_channel_pcs,
-        standardize_channel_feats=config.transforms.standardize_channel_feats,
-        channel_feats_obsm_key=config.transforms.channel_feats_obsm_key,
-        channel_params_uns_key=config.transforms.channel_params_uns_key,
-        standardize_scatter_feats=config.transforms.standardize_scatter_feats,
-        scatter_params_uns_key=config.transforms.scatter_params_uns_key,
     )
     logger.info("Shared tranformations applied!")
     return train_adata, ood_adatas_dict
@@ -131,9 +123,11 @@ def main(config: DictConfig):
     )
     logger.info("Train data ready!")
     logger.info("Preparing OOD data...")
-    ood_data_dict = {
-        k: flow_matching.data_manager.get_data(v) for k, v in ood_adatas_dict.items()
-    }
+    for k, v in ood_adatas_dict.items():
+        flow_matching.prepare_validation_data(k, v)
+    # ood_data_dict = {
+    #     k: flow_matching.data_manager.get_data(v) for k, v in ood_adatas_dict.items()
+    # }
     logger.info("OOD data ready!")
     print(flow_matching.train_data.perturbation_data.keys())
 
@@ -243,16 +237,17 @@ def main(config: DictConfig):
         )
         logger.info("Model dumped and run finished!")
 
-    logger.info("Model trained!")
-    sep = "+"
-    for split_id, split_data in ood_data_dict.items():
-        validate_on_ood_data(
-            config.training.N,
-            flow_matching,
-            split_data,
-            callbacks,
-        )
-    callbacks.run_on_train_end()
+    # logger.info("Model trained!")
+    # if DO_VALIDATION:
+    #     sep = "+"
+    #     for split_id, split_data in ood_data_dict.items():
+    #         validate_on_ood_data(
+    #             config.training.N,
+    #             flow_matching,
+    #             split_data,
+    #             callbacks,
+    #         )
+    #     callbacks.run_on_train_end()
     return 0
 
 

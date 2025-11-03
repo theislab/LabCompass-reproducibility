@@ -1,0 +1,10 @@
+# @package _global_
+
+# default (unconditional)
+defaults:
+  - _self_
+  - ood: default
+  - paths: hpc_full
+  - hydra: default
+  - run: default
+  - reproducibility: default

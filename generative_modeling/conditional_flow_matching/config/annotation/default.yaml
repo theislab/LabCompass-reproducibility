@@ -7,3 +7,5 @@ scatter_columns: ["FSC - Area", "FSC - Height", "FSC - Width", "SSC - Area", "SS
 base_sample_rep: null
 scatter_obsm_key: "X_scatter"
 concat_obsm_key: "X_concat"
+log1p_exp_cols: ["um171_[nm]", "um729_[µm]", "scf_[ng_ml]", "butyzamide_[nm]", "o2_[%]", "sr1_[nm]", "mtg_[µm]", "rhflt3l_[ng_ml]", "gm-csf_[ng_ml]", "days_of_culture",]
+log21p_exp_cols: ["il3_[ng_ml]", "retinoic_acid_[µm]", "tpo_[ng_ml]",]

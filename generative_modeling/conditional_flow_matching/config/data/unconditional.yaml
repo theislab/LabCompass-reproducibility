@@ -1,4 +1,4 @@
-sample_rep: ${transforms.sample_rep_obsm_key}
+sample_rep: "X_channel+X_scatter_standardized"
 control_key: null
 perturbations: null
 perturbations_in_obsm: null # ?
