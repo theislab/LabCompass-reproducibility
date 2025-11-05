@@ -190,9 +190,9 @@ def apply_shared_transformations(
     if compute_channel_pcs:
         # computing pcs on train data
         if RAPIDS_IMPORT_OKAY:
-            rsc.pp.pca(train_adata)
+            rsc.pp.pca(train_adata, zero_center=False)
         else:
-            sc.pp.pca(train_adata)
+            sc.pp.pca(train_adata, zero_center=False)
 
         # applying transformation to validation data
         for id, ood_adata in ood_adata_dict.items():

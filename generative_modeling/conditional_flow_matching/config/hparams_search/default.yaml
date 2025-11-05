@@ -15,7 +15,7 @@ hydra:
 
     n_jobs: 100
     
-    n_trials: 1000
+    n_trials: 500
 
     sampler: 
       _target_: optuna.samplers.RandomSampler

@@ -1,11 +1,11 @@
 num_training_steps: 100
-valid_freq: 100000
+valid_freq: 10
 train_batch_size: 2048
-validation_batch_size: null
+validation_batch_size: 2048
 state_transforms: null
 grad_steps_log_interval: 100
 num_treatments_to_load: null
-num_samples_per_validation_step: 100
+num_samples_per_validation_step: null
 cfg_prob_unconditional: 0.0
 validation_cfg_guidance_strength: 1.0
 num_grad_accumulation_steps: 1000

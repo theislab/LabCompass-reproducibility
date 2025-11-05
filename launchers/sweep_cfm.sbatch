@@ -26,7 +26,7 @@ echo "Current Working Directory: $WDIR"
 
 export HYDRA_FULL_ERROR=1
 
-wandb_name="haematopoiesis_forward_model_${CONDITION_MODE}_${SAMPLE_REP}"
+wandb_name="haematopoiesis_forward_model_new_${CONDITION_MODE}_${SAMPLE_REP}"
 
 conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
     --multirun \
