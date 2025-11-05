@@ -29,17 +29,18 @@ SAMPLE_REPS=(
 echo ${SAMPLE_REPS[@]}
 
 declare -A PROTOCOL_AXES_TO_NUNIQUE=(
-  # ["gm-csf_[ng_ml]"]=3
   ["tpo_[ng_ml]"]=5
-  # ["sr1_[nm]"]=4
   ["um171_[nm]"]=6
   ["um729_[µm]"]=4
+  ["scf_[ng_ml]"]=3
   ["butyzamide_[nm]"]=2
-  ["retinoic_acid_[µm]"]=3
+  ["days_of_culture"]=6
+  # ["il3_[ng_ml]"]=5
+  # ["retinoic_acid_[µm]"]=3
+  # ["gm-csf_[ng_ml]"]=3
+  # ["sr1_[nm]"]=4
   # ["ldl_[ng_ml]"]=6
-  ["il3_[ng_ml]"]=5
   # ["o2_[%]"]=2
-  # ["days_of_culture"]=6
   # ["protocol_id"]=116
 )
 
@@ -58,12 +59,14 @@ for sample_rep in ${SAMPLE_REPS[@]}; do
         echo "Using sample rep $sample_rep and conditioning mode $conditioning_mode"
         echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_val"
         if [[ $SWEEP_FLAG -eq 1 ]]; then
+          echo "Running Sweep"
           sbatch launchers/sweep_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
         fi
         if [[ $VALIDATE_FLAG -eq 1 ]]; then
+          echo "Running Validation"
           sbatch launchers/validate_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
-
         else
+          echo "Running base training"
           sbatch launchers/train_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
         fi
       done
