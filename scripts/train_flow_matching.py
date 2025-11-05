@@ -125,9 +125,6 @@ def main(config: DictConfig):
     logger.info("Preparing OOD data...")
     for k, v in ood_adatas_dict.items():
         flow_matching.prepare_validation_data(k, v)
-    # ood_data_dict = {
-    #     k: flow_matching.data_manager.get_data(v) for k, v in ood_adatas_dict.items()
-    # }
     logger.info("OOD data ready!")
     print(flow_matching.train_data.perturbation_data.keys())
 
@@ -236,18 +233,6 @@ def main(config: DictConfig):
             model_prefix=wandb_callback.run_name,
         )
         logger.info("Model dumped and run finished!")
-
-    # logger.info("Model trained!")
-    # if DO_VALIDATION:
-    #     sep = "+"
-    #     for split_id, split_data in ood_data_dict.items():
-    #         validate_on_ood_data(
-    #             config.training.N,
-    #             flow_matching,
-    #             split_data,
-    #             callbacks,
-    #         )
-    #     callbacks.run_on_train_end()
     return 0
 
 
