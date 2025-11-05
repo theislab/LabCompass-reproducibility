@@ -22,7 +22,6 @@ from train_utils import (
     parse_nested_mlp_config_dictionary,
     resolve_omegaconf_to_dictionary
 )
-from validation_utils import validate_on_ood_data
 
 logger = logging.getLogger(__name__)
 
