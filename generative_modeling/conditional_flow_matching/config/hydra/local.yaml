@@ -1,4 +1,4 @@
 run:
-  dir: /Users/lorenzo.consoli/Work/projects/collab-goettgens/logs/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  dir: /Users/lorenzo.consoli/Work/projects/collab-goettgens/logs/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
 sweep:
-  dir: /Users/lorenzo.consoli/Work/projects/collab-goettgens/logs/multiruns/${now:%Y-%m-%d}_${now:%H-%M-%S}
+  dir: /Users/lorenzo.consoli/Work/projects/collab-goettgens/logs/multiruns/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/

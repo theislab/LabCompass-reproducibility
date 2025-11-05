@@ -40,3 +40,5 @@ hydra:
       vf.decoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "16-16-16", "32", "32-32", "32-32-32", "64", "64-64", "64-64-64", "128", "128-128", "128-128-128", "256", "256-256", "256-256-256", "512", "512-512", "512-512-512", "1024", "1024-1024", "1024-1024-1024", "2048", "2048-2048", "2048-2048-2048")
       
       vf.resnet_normalization: choice("batch", "none")
+
+      vf.conditioning_type: choice("concatenation", "resnet", "film")
