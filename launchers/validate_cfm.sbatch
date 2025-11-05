@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=validate_cfm
-#SBATCH --output=../logs/validate_cfm_haematopoiesis.out
+#SBATCH --output=../logs/validate_cfm_haematopoiesis.log
 #SBATCH --error=../logs/validate_cfm_haematopoiesis.err
 #SBATCH --partition=gpu_p
 #SBATCH --qos=gpu_normal
@@ -12,8 +12,8 @@
 
 
 PROJECT_NAME=${1:-all}
-PROTOCOL_AXIS=${2:-all}
-UNIQUE_VALUE=${3:-all}
+PROTOCOL_AXIS=${2:-"protocol_id"}
+UNIQUE_VALUE=${3:-0}
 
 echo "Running experiments on $PROJECT_NAME, $PROTOCOL_AXIS, $UNIQUE_VALUE."
 

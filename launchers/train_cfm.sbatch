@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=train_cfm
-#SBATCH --output=../logs/train_flow_haematopoiesis.out
+#SBATCH --output=../logs/train_flow_haematopoiesis.log
 #SBATCH --error=../logs/train_flow_haematopoiesis.err
 #SBATCH --partition=gpu_p
 #SBATCH --qos=gpu_normal
@@ -11,12 +11,12 @@
 #SBATCH --time=1-00:00:00
 
 
-SAMPLE_REP=${1:-all}
-PROTOCOL_AXIS=${2:-all}
-UNIQUE_VALUE=${3:-all}
-CONDITION_MODE=${4:-all}
+SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
+PROTOCOL_AXIS=${2:-"protocol_id"}
+UNIQUE_VALUE=${3:-0}
+CONDITION_MODE=${4:-"protocol_concat"}
 
-echo "Running experiments on $SAMPLE_REP, $CONDITION_MODE, $PROTOCOL_AXIS, $UNIQUE_VALUE."
+echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE"
 
 ENV_NAME="sc_exp_design"
 echo "Using environment: $ENV_NAME"
