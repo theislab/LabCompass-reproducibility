@@ -59,7 +59,7 @@ def get_adata_splits(config: DictConfig):
     logger.info(f"Perturbation data annotated! {adata}")
 
     # Data 2. split data
-    logger.info(f"Splitting data...\n\tPerforming validation split over column {config.ood.obs_column} with unique value {config.ood.unique_value_ids})")
+    logger.info(f"Splitting data...\n\tPerforming validation split over column {config.ood.obs_column} with unique value {config.ood.unique_value_ids}")
     train_adata, ood_adatas_dict = split_adata(
         adata,
         config.ood.obs_column,
@@ -242,5 +242,5 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         logger.info(f"An error occurred: {e}")
-        traceback.print_exc()
+        traceback.print_exc(file=sys.stderr)
         sys.exit(1)
