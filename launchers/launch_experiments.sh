@@ -35,13 +35,13 @@ declare -A PROTOCOL_AXES_TO_NUNIQUE=(
   ["scf_[ng_ml]"]=3
   ["butyzamide_[nm]"]=2
   ["days_of_culture"]=6
-  # ["il3_[ng_ml]"]=5
-  # ["retinoic_acid_[µm]"]=3
-  # ["gm-csf_[ng_ml]"]=3
-  # ["sr1_[nm]"]=4
-  # ["ldl_[ng_ml]"]=6
-  # ["o2_[%]"]=2
-  # ["protocol_id"]=116
+  ["il3_[ng_ml]"]=5
+  ["retinoic_acid_[µm]"]=3
+  ["gm-csf_[ng_ml]"]=3
+  ["sr1_[nm]"]=4
+  ["ldl_[ng_ml]"]=6
+  ["o2_[%]"]=2
+  ["protocol_id"]=116
 )
 
 # CONDITIONING_MODE=("unconditional" "ohe_protocols" "ohe_protocols_axes" "protocol_concat")
