@@ -1,0 +1,4 @@
+groups_obs_key: ${annotation.protocol_obs_key_added}
+state_repr: "X_channel_standardized"
+distance_fn: "e_distance"
+distance_kwargs: null

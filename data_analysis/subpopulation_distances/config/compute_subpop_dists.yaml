@@ -1,0 +1,10 @@
+# @package _global_
+
+# default (unconditional)
+defaults:
+  - _self_
+  - annotation: default
+  - distance: e_distance
+  - hydra: default
+  - paths: hpc_subset
+  - transforms: default
