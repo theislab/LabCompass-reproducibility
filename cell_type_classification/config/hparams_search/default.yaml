@@ -1,0 +1,29 @@
+# @package _global_
+
+defaults:
+  - override /hydra/sweeper/sampler: random 
+  - override /hydra/sweeper: optuna 
+  
+optimized_metric: all_conditions_wasserstein_distance
+
+hydra:
+
+  sweeper:
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+
+    direction: minimize
+
+    n_jobs: 100
+    
+    n_trials: 500
+
+    sampler: 
+      _target_: optuna.samplers.RandomSampler
+
+    # define hyperparameter search space
+    params:
+      model.target_covariates_encoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "16-16-16", "32", "32-32", "32-32-32", "64", "64-64", "64-64-64", "128", "128-128", "128-128-128", "256", "256-256", "256-256-256", "512", "512-512", "512-512-512", "1024", "1024-1024", "1024-1024-1024", "2048", "2048-2048", "2048-2048-2048")
+      model.optimizer_kwargs.lr: choice(0.01, 0.001, 0.0001)
+      splits.kwargs.random_state: choice(42, 20913, 2481024, 191874, 12834)
+      splits.kwargs.split_to_retieve: choice(0, 1, 2)
+      training.use_class_weights: choice(True, False)

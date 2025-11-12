@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 from anndata import AnnData
 import numpy as np
+from sklearn.model_selection import ShuffleSplit
 
 
 def split_adata(
@@ -40,3 +41,14 @@ def split_adata(
     )
     train_adata = adata[~is_ood].copy()
     return train_adata, odd_adatas_dict
+
+
+def shuffle_split(adata, obs_col, K=3, test_size=0.3, random_state=42, split_to_retieve=0):
+    skf = ShuffleSplit(n_splits=K, test_size=test_size, random_state=random_state)
+    splits = skf.split(np.zeros(len(adata)), adata.obs[obs_col].values)
+    for idx, (train_index, test_index) in enumerate(splits):
+        if idx == split_to_retieve:
+            break
+    train_adata = adata[train_index]
+    val_adata = adata[test_index]
+    return train_adata, val_adata
