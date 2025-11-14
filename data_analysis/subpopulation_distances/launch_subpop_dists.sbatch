@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#SBATCH --job-name=sweep_cfm
+#SBATCH --job-name=compute_subpops_distances
 #SBATCH --output=../../../logs/compute_dists_heamatopoiesis.out
 #SBATCH --error=../../../logs/compute_dists_heamatopoiesis.err
 #SBATCH --partition=cpu_p
-#SBATCH --qos=cpu_normal
-#SBATCH --mem=256G
+#SBATCH --qos=cpu_priority
+#SBATCH --mem=50G
 #SBATCH --nice=0
-#SBATCH --time=1-00:00:00
+#SBATCH --time=0-02:00:00
 
 
 SAMPLE_REP=${1:-"X_channel_standardized"}

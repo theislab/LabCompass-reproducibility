@@ -195,15 +195,16 @@ def apply_shared_transformations(
             sc.pp.pca(train_adata, zero_center=False)
 
         # applying transformation to validation data
-        for id, ood_adata in ood_adata_dict.items():
-            ood_adata.obsm["X_pca"] = np.einsum("...d,dk -> ...k", ood_adata.X, train_adata.varm["PCs"])
-            ood_adata_dict[id] = ood_adata
+        if ood_adata_dict is not None:
+            for id, ood_adata in ood_adata_dict.items():
+                ood_adata.obsm["X_pca"] = np.einsum("...d,dk -> ...k", ood_adata.X, train_adata.varm["PCs"])
+                ood_adata_dict[id] = ood_adata
 
 
     # Cell State Data 0. writing and standardizing scatter features to obsm
     X_scatter = train_adata.obs[scatter_columns].values
     train_adata = standardize_array_and_write_to_adata(train_adata, X_scatter, "X_scatter")
-    if ood_adata is not None:
+    if ood_adata_dict is not None:
         for id, ood_adata in ood_adata_dict.items():
             X_scatter = ood_adata.obs[scatter_columns].values
             ood_adata = standardize_array_and_write_to_adata(ood_adata, X_scatter, "X_scatter", params=train_adata.uns["X_scatter_params"])
@@ -212,7 +213,7 @@ def apply_shared_transformations(
     # Cell state Data 1. writing and standardizing channel features
     X_channel = train_adata.X
     train_adata = standardize_array_and_write_to_adata(train_adata, X_channel, "X_channel")
-    if ood_adata is not None:
+    if ood_adata_dict is not None:
         for id, ood_adata in ood_adata_dict.items():
             X_scatter = ood_adata.X
             ood_adata = standardize_array_and_write_to_adata(ood_adata, X_scatter, "X_channel", params=train_adata.uns["X_channel_params"])
@@ -226,7 +227,7 @@ def apply_shared_transformations(
             train_adata.obsm[f"{mark_key}+{morph_key}"] = np.concatenate(
                 (train_adata.obsm[mark_key], train_adata.obsm[morph_key]), axis=-1
             )
-            if ood_adata is not None:
+            if ood_adata_dict is not None:
                 for id, ood_adata in ood_adata_dict.items():
                     ood_adata.obsm[f"{mark_key}+{morph_key}"] = np.concatenate(
                         (ood_adata.obsm[mark_key], ood_adata.obsm[morph_key]), axis=-1

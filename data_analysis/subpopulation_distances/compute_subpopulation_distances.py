@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import traceback
 import yaml
 
 import hydra
@@ -93,3 +94,14 @@ def main(
     with open(results_path, "w") as fb:
         yaml.dump(results_dict, fb, default_flow_style=False)
     logger.info("Results dumped, exiting successfully!")
+
+
+if __name__ == "__main__":
+
+    # running the experiment
+    try:
+        main()
+    except Exception as e:
+        logger.info(f"An error occurred: {e}")
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)
