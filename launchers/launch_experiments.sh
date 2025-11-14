@@ -45,7 +45,7 @@ declare -A PROTOCOL_AXES_TO_NUNIQUE=(
   # ["sr1_[nm]"]=4
   # ["ldl_[ng_ml]"]=6
   # ["o2_[%]"]=2
-  ["protocol_id"]=116
+  # ["protocol_id"]=116
 )
 
 # CONDITIONING_MODE=("unconditional" "ohe_protocols" "ohe_protocols_axes" "protocol_concat")
@@ -56,34 +56,35 @@ declare -A PROTOCOL_AXES_TO_NUNIQUE=(
 CONDITIONING_MODE=("protocol_concat")
 
 for sample_rep in ${SAMPLE_REPS[@]}; do
-  for protocol_axis in "${!PROTOCOL_AXES_TO_NUNIQUE[@]}"; do
-    nunique=${PROTOCOL_AXES_TO_NUNIQUE[$protocol_axis]}
-    if [ [$CLASSIFIER_FLAG -eq 1] ]; then
-      echo "Using sample rep $sample_rep."
-      if [[ $SWEEP_FLAG -eq 1 ]]; then
-        echo "Running Sweep (Target Prediction Model)"
-        sbatch launchers/sweep_target_prediction_model.sbatch $sample_rep
-      else
-        echo "Running base training (Target Prediction Model)"
-        sbatch launchers/train_target_prediction_model.sbatch $sample_rep
-      fi
+  echo "Using sample rep $sample_rep."
+  if [ [$CLASSIFIER_FLAG==1] ]; then
+    if [ [$SWEEP_FLAG==1] ]; then
+      echo "Running Sweep (Target Prediction Model)"
+      sbatch launchers/sweep_target_prediction_model.sbatch $sample_rep
     else
-      for unique_val in $(seq 0 $((nunique - 1))); do
-        for conditioning_mode in "${CONDITIONING_MODE[@]}"; do
-          echo "Using sample rep $sample_rep and conditioning mode $conditioning_mode"
-          echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_val"
-          if [[ $SWEEP_FLAG -eq 1 ]]; then
-            echo "Running Sweep"
-            sbatch launchers/sweep_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
-          elif [[$VALIDATE_FLAG -eq 1]]; then
-            echo "Running Validation"
-            sbatch launchers/validate_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
-          else
-            echo "Running base training"
-            sbatch launchers/train_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
-          fi
-        done
-      done
+      echo "Running base training (Target Prediction Model)"
+      sbatch launchers/train_target_prediction_model.sbatch $sample_rep
     fi
-  done
+  else
+    for protocol_axis in "${!PROTOCOL_AXES_TO_NUNIQUE[@]}"; do
+      nunique=${PROTOCOL_AXES_TO_NUNIQUE[$protocol_axis]}
+        for unique_val in $(seq 0 $((nunique - 1))); do
+          for conditioning_mode in "${CONDITIONING_MODE[@]}"; do
+            echo "Using sample rep $sample_rep and conditioning mode $conditioning_mode"
+            echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_val"
+            if [[ $SWEEP_FLAG -eq 1 ]]; then
+              echo "Running Sweep"
+              sbatch launchers/sweep_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
+            elif [[$VALIDATE_FLAG -eq 1]]; then
+              echo "Running Validation"
+              sbatch launchers/validate_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
+            else
+              echo "Running base training"
+              sbatch launchers/train_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
+            fi
+          done
+        done
+    done
+    echo "pass"
+  fi
 done
