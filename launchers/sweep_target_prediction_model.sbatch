@@ -28,7 +28,7 @@ echo "Wandb project ${wandb_name}"
 
 conda run --no-capture-output -n "$ENV_NAME" python train_target_prediction_model.py \
     --multirun \
-    +launcher=slurm \
+    +launcher=slurm_preentible \
     +hparams_search=default \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
