@@ -48,14 +48,14 @@ def get_adata(config: DictConfig):
 
     # Data 3. apply transformations
     logger.info("Computing tranformation params on train data and applying to both train and ood data...")
-    adata = apply_shared_transformations(
+    adata, _ = apply_shared_transformations(
         adata,
         None,
         config.transforms.scatter_columns,
         compute_channel_pcs=config.transforms.compute_channel_pcs,
     )
     logger.info("Shared tranformations applied!")
-    return adata, None
+    return adata
 
 
 
@@ -79,10 +79,10 @@ def main(
     # 2. Compute distance function
     results_dict = compute_distance_fn(
         adata,
-        config.distance.state_repr,
         groups,
-        distances_dict.get(config.distance.distance_fn, compute_e_distance),
-        sep = "|",
+        state_repr=config.distance.state_repr,
+        distance_fn=distances_dict.get(config.distance.distance_fn, compute_e_distance),
+        sep="|",
         **resolve_omegaconf_to_dictionary(config.distance.distance_kwargs)
     )
 

@@ -6,5 +6,5 @@ defaults:
   - annotation: default
   - distance: e_distance
   - hydra: default
-  - paths: hpc_subset
+  - paths: hpc_full
   - transforms: default
