@@ -30,7 +30,6 @@ def split_adata(
         # retrieving corresponding value and computing mask
         ood_val = unique_vals[val_id]
         ood_idxs = adata.obs[obs_column].map(lambda e: e == ood_val).values
-
         # storing indices and sliced adata
         odd_idxs_dict[val_id] = ood_idxs
         odd_adatas_dict[val_id] = adata[ood_idxs].copy()

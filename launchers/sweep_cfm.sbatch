@@ -5,7 +5,7 @@
 #SBATCH --error=../logs/sweep_flow_haematopoiesis.err
 #SBATCH --partition=cpu_p
 #SBATCH --qos=cpu_normal
-#SBATCH --mem=256G
+#SBATCH --mem=20G
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
 
@@ -26,7 +26,7 @@ echo "Current Working Directory: $WDIR"
 
 export HYDRA_FULL_ERROR=1
 
-wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}"
+wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_fixed_tranformation_bug"
 
 conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
     --multirun \

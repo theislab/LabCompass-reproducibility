@@ -13,9 +13,9 @@ hydra:
 
     direction: minimize
 
-    n_jobs: 100
+    n_jobs: 1000
     
-    n_trials: 500
+    n_trials: 1000
 
     sampler: 
       _target_: optuna.samplers.RandomSampler
@@ -42,3 +42,7 @@ hydra:
       vf.resnet_normalization: choice("batch", "none")
 
       vf.conditioning_type: choice("concatenation", "resnet", "film")
+
+      training.train_batch_size: choice(1024, 2048, 4096, 8192)
+
+      training.num_grad_accumulation_steps: choice(10, 20, 50, 100, 500, 1000)

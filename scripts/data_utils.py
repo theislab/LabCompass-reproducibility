@@ -34,6 +34,7 @@ LOG21P_EXP_COL = [
     "tpo_[ng_ml]",
 ]
 
+
 def get_onehot_dict(
         categories: list[str] | np.ndarray
     ) -> dict[str, np.ndarray]:
@@ -58,24 +59,6 @@ def get_onehot_dict(
         onehot_dict[cat] = dataset_onehot
     
     return onehot_dict
-
-
-def get_concatenated_transformed_obs_columns(
-    adata: AnnData,
-    column2tranform: dict[str, Callable | None],
-    obsm_col="cond_concat",
-):
-    for column, transorm_fn in column2tranform.items():
-        col_values = adata.obs[column].values[:, None]
-        if isinstance(adata.obs[column].values.dtype, pd.CategoricalDtype):
-            col_values = adata.obs[column].astype(float).values[:, None]
-        if transorm_fn is not None:
-            col_values = transorm_fn(col_values)
-        adata.obsm[column] = col_values
-    adata.obsm[obsm_col] = np.concatenate(
-        [adata.obsm[col] for col in column2tranform.keys()], axis=-1
-    )
-    return adata
 
 
 def get_protocol_tranformations(
@@ -137,8 +120,10 @@ def annotate_perturbations(
         # 3.3 store transformed medium condition data back in obsm
         adata.obsm[column] = col_values
 
-    # Perturbation data 4. adding concatenating protocol features
-    adata = get_concatenated_transformed_obs_columns(adata, column2tranform=column2tranform, obsm_col=protocol_obsm_key)
+    # Perturbation data 4. adding concatenated protocol features
+    adata.obsm[protocol_obsm_key] = np.concatenate(
+        [adata.obsm[col] for col in protocol_columns], axis=-1
+    )
     return adata
 
 
