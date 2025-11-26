@@ -33,18 +33,18 @@ SAMPLE_REPS=(
 echo ${SAMPLE_REPS[@]}
 
 declare -A PROTOCOL_AXES_TO_NUNIQUE=(
-  # ["tpo_[ng_ml]"]=5
-  # ["um171_[nm]"]=6
-  # ["um729_[µm]"]=4
-  # ["scf_[ng_ml]"]=3
-  # ["butyzamide_[nm]"]=2
-  # ["days_of_culture"]=6
-  # ["il3_[ng_ml]"]=5
-  # ["retinoic_acid_[µm]"]=3
-  # ["gm-csf_[ng_ml]"]=3
-  # ["sr1_[nm]"]=4
-  # ["ldl_[ng_ml]"]=6
-  # ["o2_[%]"]=2
+  ["tpo_[ng_ml]"]=5
+  ["um171_[nm]"]=6
+  ["um729_[µm]"]=4
+  ["scf_[ng_ml]"]=3
+  ["butyzamide_[nm]"]=2
+  ["days_of_culture"]=6
+  ["il3_[ng_ml]"]=5
+  ["retinoic_acid_[µm]"]=3
+  ["gm-csf_[ng_ml]"]=3
+  ["sr1_[nm]"]=4
+  ["ldl_[ng_ml]"]=6
+  ["o2_[%]"]=2
   # ["protocol_id"]=116
 )
 
@@ -57,15 +57,15 @@ CONDITIONING_MODE=("protocol_concat")
 
 for sample_rep in ${SAMPLE_REPS[@]}; do
   echo "Using sample rep $sample_rep."
-  if [ [$CLASSIFIER_FLAG==1] ]; then
-    if [ [$SWEEP_FLAG==1] ]; then
-      echo "Running Sweep (Target Prediction Model)"
-      sbatch launchers/sweep_target_prediction_model.sbatch $sample_rep
-    else
-      echo "Running base training (Target Prediction Model)"
-      sbatch launchers/train_target_prediction_model.sbatch $sample_rep
-    fi
-  else
+  # if [ [$CLASSIFIER_FLAG==1] ]; then
+  #   if [ [$SWEEP_FLAG==1] ]; then
+  #     echo "Running Sweep (Target Prediction Model)"
+  #     sbatch launchers/sweep_target_prediction_model.sbatch $sample_rep
+  #   else
+  #     echo "Running base training (Target Prediction Model)"
+  #     sbatch launchers/train_target_prediction_model.sbatch $sample_rep
+  #   fi
+  # else
     for protocol_axis in "${!PROTOCOL_AXES_TO_NUNIQUE[@]}"; do
       nunique=${PROTOCOL_AXES_TO_NUNIQUE[$protocol_axis]}
         for unique_val in $(seq 0 $((nunique - 1))); do
@@ -86,5 +86,5 @@ for sample_rep in ${SAMPLE_REPS[@]}; do
         done
     done
     echo "pass"
-  fi
+  # fi
 done
