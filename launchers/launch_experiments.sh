@@ -33,18 +33,18 @@ SAMPLE_REPS=(
 echo ${SAMPLE_REPS[@]}
 
 declare -A PROTOCOL_AXES_TO_NUNIQUE=(
-  ["tpo_[ng_ml]"]=5
-  ["um171_[nm]"]=6
-  ["um729_[µm]"]=4
-  ["scf_[ng_ml]"]=3
-  ["butyzamide_[nm]"]=2
-  ["days_of_culture"]=6
-  ["il3_[ng_ml]"]=5
+  # ["tpo_[ng_ml]"]=5
+  # ["um171_[nm]"]=6
+  # ["um729_[µm]"]=4
+  # ["scf_[ng_ml]"]=3
+  # ["butyzamide_[nm]"]=2
+  # ["days_of_culture"]=6
+  # ["il3_[ng_ml]"]=5
   ["retinoic_acid_[µm]"]=3
-  ["gm-csf_[ng_ml]"]=3
-  ["sr1_[nm]"]=4
-  ["ldl_[ng_ml]"]=6
-  ["o2_[%]"]=2
+  # ["gm-csf_[ng_ml]"]=3
+  # ["sr1_[nm]"]=4
+  # ["ldl_[ng_ml]"]=6
+  # ["o2_[%]"]=2
   # ["protocol_id"]=116
 )
 

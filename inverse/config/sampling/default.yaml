@@ -1,0 +1,7 @@
+target_cell_type: "HSCs"
+N: 125
+num_time_steps: 500
+solver_kwargs:
+  method: "euler"
+sde_sampling: False
+mask_gradients: True

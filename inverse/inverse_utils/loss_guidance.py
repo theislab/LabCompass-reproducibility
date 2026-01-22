@@ -194,6 +194,10 @@ class LossGuidedFlow:
         else:
             noise = None
 
+        # set evaluation mode (determinism)
+        self.forward_model.target_prediction_model.resc_model["model"].eval()
+        self.forward_model.forward_model.velocity_field.eval()
+
         # handling velocity field function
         vf_fn = partial(
             self.guided_vf_fn,

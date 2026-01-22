@@ -8,8 +8,8 @@ defaults:
   - data: ohe_protocols
   - flow_matching: hpc
   - model: default
-  - ood: default
   - paths: hpc_full
+  - split: default
   - training: default
   - transforms: default
   - vf: default_ohe_protocols

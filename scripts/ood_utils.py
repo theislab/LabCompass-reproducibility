@@ -42,12 +42,14 @@ def split_adata(
     return train_adata, odd_adatas_dict
 
 
-def shuffle_split(adata, obs_col, K=3, test_size=0.3, random_state=42, split_to_retieve=0):
+def shuffle_split(adata, K=3, test_size=0.3, random_state=42, split_to_retrieve=0):
     skf = ShuffleSplit(n_splits=K, test_size=test_size, random_state=random_state)
-    splits = skf.split(np.zeros(len(adata)), adata.obs[obs_col].values)
+    splits = skf.split(np.zeros(len(adata)))
     for idx, (train_index, test_index) in enumerate(splits):
-        if idx == split_to_retieve:
+        if idx == split_to_retrieve:
             break
     train_adata = adata[train_index]
-    val_adata = adata[test_index]
-    return train_adata, val_adata
+    ood_adata = adata[test_index]
+    key = f"{random_state=}-{split_to_retrieve=}-{test_size=}-{K=}"
+    ood_adatas_dict = {key: ood_adata}
+    return train_adata, ood_adatas_dict

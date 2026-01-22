@@ -1,4 +1,4 @@
-num_training_steps: 100
+num_training_steps: 20
 valid_freq: 10
 train_batch_size: 2048
 validation_batch_size: 2048

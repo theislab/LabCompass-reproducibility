@@ -16,7 +16,7 @@ from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
 from data_utils import annotate_perturbations, get_protocol_tranformations, apply_shared_transformations
-from ood_utils import split_adata
+from ood_utils import split_adata, shuffle_split
 from train_utils import (
     parse_mlp_config_dictionary,
     parse_nested_mlp_config_dictionary,
@@ -59,15 +59,24 @@ def get_adata_splits(config: DictConfig):
     logger.info(f"Perturbation data annotated! {adata}")
 
     # Data 2. split data
-    logger.info(f"Splitting data...\n\tPerforming validation split over column {config.ood.obs_column} with unique value {config.ood.unique_value_ids}")
-    train_adata, ood_adatas_dict = split_adata(
-        adata,
-        config.ood.obs_column,
-        config.ood.unique_value_ids,
-    )
-    logger.info(f"Data split performed!\n \tTrain data of shape {train_adata.shape}")
-    for k, v in ood_adatas_dict.items():
-        logger.info(f"\tValidation split {k} of shape {v.shape}")
+    if config.split.mode == "ood":
+        logger.info(f"Splitting data...\n\tPerforming validation split over column {config.split.obs_column} with unique value {config.split.unique_value_ids}")
+        train_adata, ood_adatas_dict = split_adata(
+            adata,
+            config.split.obs_column,
+            config.split.unique_value_ids,
+        )
+        logger.info(f"Data split performed!\n \tTrain data of shape {train_adata.shape}")
+        for k, v in ood_adatas_dict.items():
+            logger.info(f"\tValidation split {k} of shape {v.shape}")
+    elif config.split.mode == "in-distribution":
+        train_adata, ood_adatas_dict = shuffle_split(
+            adata,
+            K=config.split.K,
+            test_size=config.split.test_size,
+            random_state=config.split.random_state,
+            split_to_retrieve=config.split.split_to_retrieve,
+        )
 
     # Data 3. apply shared transformations
     logger.info("Computing tranformation params on train data and applying to both train and ood data...")

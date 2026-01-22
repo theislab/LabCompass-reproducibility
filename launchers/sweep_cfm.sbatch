@@ -14,6 +14,7 @@ SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
 PROTOCOL_AXIS=${2:-"protocol_id"}
 UNIQUE_VALUE=${3:-0}
 CONDITION_MODE=${4:-"protocol_concat"}
+HPARAMSEACH=${5:-"in-distribution"}
 
 echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE"
 
@@ -26,7 +27,7 @@ echo "Current Working Directory: $WDIR"
 
 export HYDRA_FULL_ERROR=1
 
-wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_fixed_tranformation_bug"
+wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
 
 conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
     --multirun \
@@ -36,6 +37,6 @@ conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
     data="${CONDITION_MODE}" \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
-    ood.obs_column='"'"${PROTOCOL_AXIS}"'"' \
-    ood.unique_value_ids="$UNIQUE_VALUE" \
+    split.obs_column='"'"${PROTOCOL_AXIS}"'"' \
+    split.unique_value_ids="$UNIQUE_VALUE" \
     2>&1 | tee "../../logs/sweep_cfm-${CONDITION_MODE}_${SAMPLE_REP}-${PROTOCOL_AXIS}-${UNIQUE_VALUE}.out"

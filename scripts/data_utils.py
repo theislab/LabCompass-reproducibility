@@ -65,6 +65,7 @@ def get_protocol_tranformations(
     experimental_covariates,
     log1p_exp_cols=None,
     log21p_exp_cols=None,
+    inverse=False
 ):
     if log1p_exp_cols is None:
         log1p_exp_cols = LOG1P_EXP_COL
@@ -73,9 +74,16 @@ def get_protocol_tranformations(
     col2transf = {}
     for col in experimental_covariates:
         if col in log1p_exp_cols:
-            col2transf[col] = np.log1p
+            if inverse:
+                col2transf[col] = np.expm1
+            else:
+                col2transf[col] = np.log1p
         elif col in log21p_exp_cols:
-            col2transf[col] = lambda x: np.log2(x + 1)
+            if inverse:
+                col2transf[col] = lambda x: np.exp2(x) - 1
+            else:
+                col2transf[col] = lambda x: np.log2(x + 1)
+
         else:
             col2transf[col] = None
     return col2transf

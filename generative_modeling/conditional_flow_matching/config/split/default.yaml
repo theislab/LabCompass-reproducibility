@@ -1,0 +1,7 @@
+mode: "ood"
+obs_column: ${annotation.protocol_obs_key_added}
+unique_value_ids: [0, ]
+K: 3
+test_size: 0.3
+random_state: 42
+split_to_retrieve: 0
