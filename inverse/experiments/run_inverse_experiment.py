@@ -3,41 +3,40 @@ import logging
 import os
 import sys
 import traceback
-from typing import Any
 import uuid
 
 import hydra
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
-from scipy.special import softmax
+import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_exp_design.constants import DataFields, ParamsFields, PredictionFields
-from sc_exp_design.models import FlowMatching, TargetPredictionModel
+from sc_exp_design.models import FlowMatching
 from sc_exp_design.utils import set_reproducibility
 
 
 logger = logging.getLogger(__name__)
 
 
-non_linearities_dict = {
+ROOT_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
+NON_LINEARITIES_REGISTRY = {
     "identity": torch.nn.Identity,
     "relu": torch.nn.ReLU
 }
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/config",
+    config_path=os.path.join(ROOT_DIR, "inverse/config"),
     config_name="run_inverse"
 )
 def main(config: DictConfig) -> float:
 
     # Import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/model_utils")
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/scripts")
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/inverse_utils")
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/experiments")
+    sys.path.insert(0, os.path.join(ROOT_DIR, "model_utils"))
+    sys.path.insert(0, os.path.join(ROOT_DIR, "scripts"))
+    sys.path.insert(0, os.path.join(ROOT_DIR, "inverse/inverse_utils"))
+    sys.path.insert(0, os.path.join(ROOT_DIR, "inverse/experiments"))
     from lambda_schedulers import schedulers_dict
     from loss_guidance import LossGuidedFlow
     from train_utils import resolve_omegaconf_to_dictionary
@@ -45,7 +44,10 @@ def main(config: DictConfig) -> float:
         create_dir,
         get_forward_model,
         query_forward_model,
+        flatten_conf,
+        get_transformed_data,
     )
+    from data_utils import get_protocol_tranformations
 
     # Create run id 
     run_id = uuid.uuid4().hex[:8]
@@ -118,7 +120,7 @@ def main(config: DictConfig) -> float:
 
     # Initialize non linearity
     logger.info(f"Initializing non linearity {config.non_linearity.non_linearity_id}...")
-    non_linearity_class = non_linearities_dict.get(config.non_linearity.non_linearity_id, None)
+    non_linearity_class = NON_LINEARITIES_REGISTRY.get(config.non_linearity.non_linearity_id, None)
     if non_linearity_class is None:
         msg = f"Non linearity {config.non_linearity.non_linearity_id} not valid"
         raise ValueError(msg)
@@ -159,33 +161,55 @@ def main(config: DictConfig) -> float:
     logger.info(f"Inverse model queried! {trajectory.shape=}, {loss_history.shape=}, {lambda_history.shape=}, {noise.shape=}")
 
     # Query forward model
+    solver_kwargs = resolve_omegaconf_to_dictionary(config.forward_model.solver_kwargs)
+    logger.info(f"Querying forward model with samples from the inverse model...")
+    logger.info(f"\tforward_model.num_time_steps={config.forward_model.num_time_steps}")
+    logger.info(f"\tforward_model.solver_kwargs={solver_kwargs}")
     fwd_query_res_dict = query_forward_model(
         trajectory,
         noise,
         forward_model,
         config.forward_model.num_time_steps,
-        resolve_omegaconf_to_dictionary(config.forward_model.solver_kwargs),
+        solver_kwargs,
         ct_le,
         logger=logger
     )
     torch.cuda.empty_cache()
 
-    # Prepare directories
-    create_dir(config.paths.dump_dir, logger=logger) # base dir
-    ct = config.sampling.target_cell_type.replace("/", "_") # cell type dir
-    ct_dir = os.path.join(config.paths.dump_dir, ct) # cell type dir
-    create_dir(ct_dir, logger=logger) # cell type dir
+    # Define paths directories
+    ct_string = config.sampling.target_cell_type
+    ct_safe_string = ct_string.replace("/", ":") # cell type dir
+    ct_dir = os.path.join(config.paths.dump_dir, ct_safe_string) # cell type dir
     run_dir = os.path.join(ct_dir, run_id) # run dir
+    config_path = os.path.join(run_dir, "config.yaml")
+    inverse_results_path = os.path.join(run_dir, "inverse_results.npz")
+    fwd_results_path = os.path.join(run_dir, "fwd_results.npz")
+    candidates_path = os.path.join(run_dir, "candidates.csv")
+    logger.info(
+        f"Creating dump directories for: \n"
+        f"\t Note: Cell type indentifier changed from \"{ct_string}\" to {ct_safe_string}.\n"
+        f"\t Dump directory for cell type will be created at {ct_dir}.\n"
+        f"\t Dump directory for run will be created at {run_dir}.\n"
+        f"\t Configuration will be dumped at {config_path}.\n"
+        f"\t Raw optimization data will be dumped at {inverse_results_path}.\n"
+        f"\t Raw forward data will be dumped at {fwd_results_path}.\n"
+        f"\t Post Processed run data will be dumped at {candidates_path}.\n"
+    )
+
+    # Create directories
+    create_dir(config.paths.dump_dir, logger=logger) # base dir
+    create_dir(ct_dir, logger=logger) # cell type dir
     create_dir(run_dir, logger=logger) # run dir
+    logger.info("All the directories have been successfully created!")
 
     # Save corresponding configuration
-    config_path = os.path.join(run_dir, "config.yaml")
-    OmegaConf.save(config=OmegaConf.to_container(config, resolve=True), f=config_path)
-    logger.info(f"Configuration saved to {config_path}")
+    logger.info()
+    config_container = OmegaConf.to_container(config, resolve=True)
+    fconfig_dict = flatten_conf(config_container)
+    OmegaConf.save(config=config_container, f=config_path)
+    logger.info(f"Configuration saved!")
 
     # Save inverse results
-    inverse_results_path = os.path.join(run_dir, "inverse_results.npz")
-    logger.info(f"Saving inverse model results at {inverse_results_path}...")
     inverse_results_data = {
         "trajectory": trajectory,
         "loss_history": loss_history,
@@ -196,10 +220,87 @@ def main(config: DictConfig) -> float:
     logger.info(f"Inverse model results saved!")
 
     # Save forward model results
-    fwd_results_path = os.path.join(run_dir, "fwd_results.npz")
-    logger.info(f"Saving forward model results at {fwd_results_path}...")
     np.savez(fwd_results_path, **fwd_query_res_dict)
-    logger.info(f"Forward results saved!")
+    logger.info(
+        f"Forward results saved! \n"
+        "All raw optimization data and associated configurations saved. \n"
+        "Post-processing the results."
+    )
+
+    # Retrieve samples and induced phenotype
+    logger.info("Retrieving final results...")
+    per_cell_ct_props = fwd_query_res_dict["ct_probs"]
+    samples = trajectory[:, -1, :]
+    logger.info(
+        f"* Found phenotype data of shape {per_cell_ct_props.shape}, " 
+        "aggregating over dimension 1.\n"
+        f"* Found samples of shape {samples.shape}. "
+        "Setting negative values to 0.\n"
+        f"* Found loss history of shape {loss_history.shape=}, "
+        "retrievig terminal value at index -1 over dimension 1."
+    )
+    ct_props = fwd_query_res_dict["ct_probs"].mean(1)
+    samples = np.maximum(samples, 0)
+    terminal_loss = loss_history[:, -1]
+    logger.info(
+        "* Post-Processed data of shape:\n"
+        f"\t -> {ct_props.shape=}\n"
+        f"\t -> {samples.shape=}\n"
+        f"\t -> {terminal_loss.shape=}\n"
+    )
+
+    # Get inverse transformations to rescale the samples
+    logger.info(
+        "\t*Retrieving transformation for medium covariates...\n"
+        fr"\t -> protocol_columns={config.annotation.protocol_columns}\n"
+        fr"\t -> $\log(1 + x)$ exp_cols={config.annotation.log1p_exp_cols}\n"
+        fr"\t -> $\log_2(1 + x)$ exp_cols={config.annotation.log21p_exp_cols}\n"
+        fr"\t -> inverse={True}"
+    )
+    column2tranform = get_protocol_tranformations(
+        config.annotation.protocol_columns,
+        log1p_exp_cols=config.annotation.log1p_exp_cols,
+        log21p_exp_cols=config.annotation.log21p_exp_cols,
+        inverse=True,
+    )
+
+    # Prepare data dictionary
+    logger.info(
+        f"Tranformations for medium data dictionaries ready, applying them!\n\t{column2tranform}"
+    )
+    data_dict_transformed, data_dict_original = get_transformed_data(
+        samples,
+        config.annotation.protocol_columns,
+        column2tranform,
+    )
+    logger.info("Medium data dictionaries ready!")
+
+    # Create data frame to dump post-processed data
+    logger.info(f"Creating pd.DataFrame to store the post-processed results.")
+    samples_df = pd.DataFrame(
+        {
+            **data_dict_transformed,
+            **{f"{k}:rescaled":v for k, v in data_dict_original.items()},
+            "loss": terminal_loss,
+            **{
+                f"{ct}_prop": ct_props[:, idx] for idx, ct in enumerate(classes)
+            },
+            **{f"cfg:{k}": v for k, v in fconfig_dict.items()},
+        },
+    )
+    samples_df["configuration path"] = config_path
+    samples_df["inverse_results_path"] = inverse_results_path
+    samples_df["fwd_results_path"] = fwd_results_path
+    samples_df.index = samples_df.index.map(lambda e: f"{ct_string}:{run_id}:{e}")
+    samples_df.index.name = "sample_id"
+    logger.info(
+        f"Post-processed data frame ready:\n"
+        f"shape={samples_df.shape}\n"
+        f"columns={samples_df.columns}\n"
+    )
+    samples_df.to_csv(
+        os.path.join(run_dir, "candidates.csv")
+    )
     return 0.0
 
 if __name__ == "__main__":
@@ -208,6 +309,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        logger.info(f"An error occurred: {e}")
+        logger.exception(f"An error occurred: {e}")
         traceback.print_exc(file=sys.stderr)
         sys.exit(1)

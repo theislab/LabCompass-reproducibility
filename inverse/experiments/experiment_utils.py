@@ -5,6 +5,7 @@ from typing import Any
 
 import numpy as np
 from omegaconf import DictConfig
+import pandas as pd
 from scipy.special import softmax
 from sklearn.preprocessing import LabelEncoder
 import torch
@@ -177,3 +178,30 @@ def query_forward_model(
         "ct_probs": gen_ct_probs,
     }
 
+
+def flatten_conf(conf_dict):
+    return_dict = {}
+    for key, value in conf_dict.items():
+        if isinstance(value, dict):
+            update_dict = {f"{key}:{k}": v for k, v in flatten_conf(value).items()}
+        else:
+            update_dict = {key: value}
+        return_dict.update(update_dict)
+    return return_dict
+
+
+def get_transformed_data(
+    samples,
+    protocol_columns,
+    column2tranform,
+):
+    data_dict_original = {
+        mol: samples[:, idx] for idx, mol in enumerate(protocol_columns) 
+    }
+    data_dict_transformed = {}
+    for mol, val in data_dict_original.items():
+        trnsf = column2tranform[mol]
+        if trnsf is not None:
+            val = trnsf(val)
+        data_dict_transformed[mol] = val
+    return data_dict_transformed, data_dict_original
