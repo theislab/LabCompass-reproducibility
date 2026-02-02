@@ -1,6 +1,6 @@
-target_cell_type: "HSCs"
-N: 5
-num_time_steps: 3
+target_cell_type: "EryPro"
+N: 125
+num_time_steps: 500
 solver_kwargs:
   method: "euler"
 sde_sampling: False

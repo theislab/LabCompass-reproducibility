@@ -9,5 +9,5 @@ defaults:
   - non_linearity: default
   - paths: default
   - run: default
-  - sampling: default
+  - sampling: default_pure_pop
   - scheduler: exp_decay

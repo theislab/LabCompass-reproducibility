@@ -205,3 +205,33 @@ def get_transformed_data(
             val = trnsf(val)
         data_dict_transformed[mol] = val
     return data_dict_transformed, data_dict_original
+
+
+def get_target_dict(config, classes, device):
+    if config.sampling.query_pure_cell_types:
+        nclasses = len(classes)
+        idx = classes.index(config.sampling.target_cell_type)
+        target = torch.zeros((nclasses,)).float().to(device)
+        target[idx] = 1.0
+        target = {
+            "cell_type": target.unsqueeze(0)
+        }
+    else:
+        prop = torch.tensor(
+            config.sampling.target_probs
+        ).float().to(device)
+        target = {
+            "cell_type": prop.unsqueeze(0)
+        }
+    return target
+
+
+def get_loss_fn(config):
+    if config.sampling.query_pure_cell_types and config.sampling.mask_gradients:
+        mask = config.sampling.mask
+        return  {
+            "cell_type": lambda pred, target: -torch.sum(target[..., mask]*torch.nn.functional.log_softmax(pred[..., mask], dim=-1), dim=-1)
+        }
+    return {
+        "cell_type": lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
+    }

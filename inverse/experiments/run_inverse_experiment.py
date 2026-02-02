@@ -46,6 +46,8 @@ def main(config: DictConfig) -> float:
         query_forward_model,
         flatten_conf,
         get_transformed_data,
+        get_target_dict,
+        get_loss_fn,
     )
     from data_utils import get_protocol_tranformations
 
@@ -72,7 +74,6 @@ def main(config: DictConfig) -> float:
     ct_values = target_prediction_model.train_data.adata.obs["cell_type"].values
     ct_le.fit(ct_values)
     classes = ct_le.classes_.tolist()
-    nclasses = len(classes)
 
     # Get prior flow
     logger.info(f"Loading Prior Flow Model from {config.paths.prior_flow_path}...")
@@ -81,19 +82,16 @@ def main(config: DictConfig) -> float:
 
     # Define loss function
     logger.info(f"Preparing loss function (Cross-Entropy)...")
-    loss_fns = {
-        "cell_type": lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
-    }
+    loss_fns = get_loss_fn(config)
     logger.info(f"Loss function ready!\n{loss_fns}")
 
     # Define target for current cell type
     logger.info(f"Preparing target value for cell type {config.sampling.target_cell_type}...")
-    idx = classes.index(config.sampling.target_cell_type)
-    target = torch.zeros((nclasses,)).float().to(forward_model.forward_model.device)
-    target[idx] = 1.0
-    target = {
-        "cell_type": target.unsqueeze(0)
-    }
+    target = get_target_dict(
+        config,
+        classes,
+        forward_model.forward_model.device
+    )
     logger.info(f"Target ready!\n{target}")
 
     # Initialize guided flow
@@ -203,13 +201,14 @@ def main(config: DictConfig) -> float:
     logger.info("All the directories have been successfully created!")
 
     # Save corresponding configuration
-    logger.info()
+    logger.info("Saving configurations...")
     config_container = OmegaConf.to_container(config, resolve=True)
     fconfig_dict = flatten_conf(config_container)
     OmegaConf.save(config=config_container, f=config_path)
     logger.info(f"Configuration saved!")
 
     # Save inverse results
+    logger.info("Saving raw inverse run data...")
     inverse_results_data = {
         "trajectory": trajectory,
         "loss_history": loss_history,
@@ -220,6 +219,7 @@ def main(config: DictConfig) -> float:
     logger.info(f"Inverse model results saved!")
 
     # Save forward model results
+    logger.info("Saving raw forward query data...")
     np.savez(fwd_results_path, **fwd_query_res_dict)
     logger.info(
         f"Forward results saved! \n"
@@ -246,7 +246,7 @@ def main(config: DictConfig) -> float:
         "* Post-Processed data of shape:\n"
         f"\t -> {ct_props.shape=}\n"
         f"\t -> {samples.shape=}\n"
-        f"\t -> {terminal_loss.shape=}\n"
+        f"\t -> {terminal_loss.shape=}"
     )
 
     # Get inverse transformations to rescale the samples
@@ -298,9 +298,8 @@ def main(config: DictConfig) -> float:
         f"shape={samples_df.shape}\n"
         f"columns={samples_df.columns}\n"
     )
-    samples_df.to_csv(
-        os.path.join(run_dir, "candidates.csv")
-    )
+    samples_df.to_csv(candidates_path)
+    logger.info("Post-processed data framed dumped!")
     return 0.0
 
 if __name__ == "__main__":
