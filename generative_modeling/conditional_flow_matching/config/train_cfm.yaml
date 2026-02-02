@@ -1,0 +1,17 @@
+# @package _global_
+
+# default (unconditional)
+defaults:
+  - _self_
+  - annotation: default
+  - callbacks: default
+  - data: ohe_protocols
+  - flow_matching: hpc
+  - model: default
+  - paths: hpc_full
+  - split: default
+  - training: default
+  - transforms: default
+  - vf: default_ohe_protocols
+  - hydra: default
+  - reproducibility: default

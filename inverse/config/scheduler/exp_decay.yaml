@@ -1,0 +1,6 @@
+scheduler_id: "exp-decay"
+scheduler_kwargs:
+  lambda_val: null
+  lmin: 0.0
+  lmax: 10.0
+  gamma: 1.0

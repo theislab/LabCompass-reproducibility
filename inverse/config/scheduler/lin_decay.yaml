@@ -1,0 +1,6 @@
+scheduler_id: "constant"
+scheduler_kwargs:
+  lambda_val: null
+  lmin: 10.0
+  lmax: 0.0
+  gamma: null

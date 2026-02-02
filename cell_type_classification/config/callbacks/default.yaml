@@ -1,0 +1,5 @@
+wandb_project_name: "CFM_FlowCytometry"
+wandb_kwargs:
+  entity: "haematopoiesis-cambridge"
+metrics: ["accuracy", "micro_precision", "micro_f1_score", "micro_recall", "macro_precision", "macro_f1_score", "macro_recall", "weighted_precision", "weighted_f1_score", "weighted_recall", "micro_roc_auc", "macro_roc_auc"]
+save_model: True

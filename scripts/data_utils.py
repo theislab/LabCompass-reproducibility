@@ -1,8 +1,43 @@
+from collections.abc import Callable, Sequence
+
+from anndata import AnnData
 import numpy as np
+import pandas as pd
+import scanpy as sc
 from sklearn.preprocessing import OneHotEncoder
 
 
-def get_onehot_dict(categories: list[str] | np.ndarray) -> dict[str, np.ndarray]:
+# try import to rapids for faster pcas
+RAPIDS_IMPORT_OKAY = True
+try:
+    import rapids_singlecell as rsc
+except ImportError as e:
+    RAPIDS_IMPORT_OKAY = False
+
+
+LOG1P_EXP_COL = [
+    "um171_[nm]",
+    "um729_[µm]",
+    "scf_[ng_ml]",
+    "butyzamide_[nm]",
+    "o2_[%]",
+    "sr1_[nm]",
+    "mtg_[µm]",
+    "rhflt3l_[ng_ml]",
+    "gm-csf_[ng_ml]",
+    "days_of_culture",
+]
+LOG21P_EXP_COL = [
+    "ldl_[ng_ml]", 
+    "il3_[ng_ml]",
+    "retinoic_acid_[µm]",
+    "tpo_[ng_ml]",
+]
+
+
+def get_onehot_dict(
+        categories: list[str] | np.ndarray
+    ) -> dict[str, np.ndarray]:
     """
     Creates a dictionary mapping each category to its corresponding one-hot encoded vector.
 
@@ -26,64 +61,169 @@ def get_onehot_dict(categories: list[str] | np.ndarray) -> dict[str, np.ndarray]
     return onehot_dict
 
 
-def get_one_hot_encoded_protocols(
-    adata,
-    protocol_columns,
-    obs_key_added="protocol",
-    uns_key_added="protocol_one_hot",
-    sep="_"
+def get_protocol_tranformations(
+    experimental_covariates,
+    log1p_exp_cols=None,
+    log21p_exp_cols=None,
+    inverse=False
 ):
-    # adding column in adata.obs
-    adata.obs[obs_key_added] = adata.obs[protocol_columns].astype(str).apply(lambda x: sep.join(x), axis=1)
+    if log1p_exp_cols is None:
+        log1p_exp_cols = LOG1P_EXP_COL
+    if log21p_exp_cols is None:
+        log21p_exp_cols = LOG21P_EXP_COL
+    col2transf = {}
+    for col in experimental_covariates:
+        if col in log1p_exp_cols:
+            if inverse:
+                col2transf[col] = np.expm1
+            else:
+                col2transf[col] = np.log1p
+        elif col in log21p_exp_cols:
+            if inverse:
+                col2transf[col] = lambda x: np.exp2(x) - 1
+            else:
+                col2transf[col] = lambda x: np.log2(x + 1)
 
-    # getting one hot conditions
-    adata.uns[uns_key_added] = get_onehot_dict(adata.obs[obs_key_added].unique())
-    return adata
+        else:
+            col2transf[col] = None
+    return col2transf
 
 
-def get_one_hot_encoded_protocol_axis(
-    adata,
-    protocol_columns,
-    uns_key_added="one_hot",
-    sep="_"
+def annotate_perturbations(
+    adata: AnnData,
+    protocol_columns: Sequence[str],
+    protocol_obs_key_added: str = "protocol_id",
+    protocol_sep: str = "_",
+    one_hot_uns_key_added: str = "one_hot",
+    column2tranform: dict[str, Callable | None] = {},
+    protocol_obsm_key="protocol_concat",
 ):
-    # iterating over the columns to one hot encode
+
+    # Perturbation data 0. write unique protocol conditions to obs
+    if isinstance(protocol_columns, str):
+        protocol_columns = [protocol_columns,]
+    adata.obs[protocol_obs_key_added] = adata.obs[protocol_columns].astype(str).apply(lambda x: protocol_sep.join(x), axis=1)
+
+    # Perturbation data 1. adding one hot encoded lookup dictionary for protocol id column
+    adata.uns[one_hot_uns_key_added] = get_onehot_dict(adata.obs[protocol_obs_key_added].unique())
+
+    # Perturbation data 2. adding one hot encoded lookup dictionary for protocol column
     for column in protocol_columns:
-        key = f"{column}{sep}{uns_key_added}"
+        key = f"{column}{protocol_sep}{one_hot_uns_key_added}"
         adata.uns[key] = get_onehot_dict(adata.obs[column].unique())
+    
+    # Perturbation data 3. adding protocol features to obsm
+    for column in protocol_columns:
+        # 3.1 retrieving column values and handling type
+        col_values = adata.obs[column]
+        if pd.api.types.is_categorical_dtype(col_values):
+            col_values = adata.obs[column].astype(float).values[:, None]
+        else:
+            col_values = col_values.values[:, None]
+
+        # 3.2 optionally applying transformations
+        tranform_fn = column2tranform.get(column, None)
+        col_values = col_values if tranform_fn is None else tranform_fn(col_values)
+
+        # 3.3 store transformed medium condition data back in obsm
+        adata.obsm[column] = col_values
+
+    # Perturbation data 4. adding concatenated protocol features
+    adata.obsm[protocol_obsm_key] = np.concatenate(
+        [adata.obsm[col] for col in protocol_columns], axis=-1
+    )
     return adata
 
 
-def get_concatenated_scatter_features(
-    adata,
-    scatter_columns,
-    scatter_transformation,
-    obsm_key_to_concatenate_with,
-    key_added,
+def annotate_cell_state_data(
+    adata: AnnData,
+    scatter_obsm_key: str = "X_scatter",
+    channel_feats_obsm_key: str = "X_channel",
+    channel_concat_obsm_key: str = "X_joint_channel",
+    pca_obsm_key: str = "X_pca",
+    pca_concat_obsm_key: str = "X_joint_pca",
 ):
-    scatter_df = adata.obs[scatter_columns]
-    X_scatter = scatter_transformation(scatter_df.values)
-    X_rep = adata.obsm[obsm_key_to_concatenate_with]
-    adata.obsm[key_added] = np.concatenate((X_rep, X_scatter), axis=-1)
+    # Cell State Data 1. concatenate with channel features
+    X_repr = adata.obsm[channel_feats_obsm_key]
+    X_scatter = adata.obsm[scatter_obsm_key]
+    adata.obsm[channel_concat_obsm_key] = np.concatenate((X_repr, X_scatter), axis=1)
+    
+    # Cell State Data 1. concatenate with pcs
+    X_repr = adata.obsm[pca_obsm_key]
+    X_scatter = adata.obsm[scatter_obsm_key]
+    adata.obsm[pca_concat_obsm_key] = np.concatenate((X_repr, X_scatter), axis=1)
     return adata
 
 
-def get_cofactor_array_from_dict(
-    channel2cofactor,
+def standardize_array_and_write_to_adata(
     adata,
-):
-    cofactors = np.zeros((1, adata.X.shape[1]))
-    for channel, cofactor in channel2cofactor.items():
-        idx = adata.var_names.tolist().index(channel)
-        cofactors[0, idx] = cofactor
-    return cofactor
+    X,
+    name: str,
+    params: dict[str, np.ndarray] | None = None,
+) -> AnnData:
+    """"""
+    if params is None:
+        mean = X.mean(0)
+        std = X.std(0)
+        params = {"mean": mean, "std": std}
+        adata.uns[f"{name}_params"] = params
+    adata.obsm[name] = X
+    adata.obsm[f"{name}_standardized"] = (X - params["mean"])/params["std"]
+    return adata
 
 
-def get_mixed_protocol_axis(
-    adata,
-    protocol_columns,
-    uns_key_added="one_hot",
-    obsm_cond_key_added="val",
-    sep="_"
+def apply_shared_transformations(
+    train_adata: AnnData,
+    ood_adata_dict: dict[int, AnnData] | None,
+    scatter_columns: Sequence[str],
+    compute_channel_pcs: bool = True,
 ):
-    raise NotImplementedError
+
+    # channel pca
+    if compute_channel_pcs:
+        # computing pcs on train data
+        if RAPIDS_IMPORT_OKAY:
+            rsc.pp.pca(train_adata, zero_center=False)
+        else:
+            sc.pp.pca(train_adata, zero_center=False)
+
+        # applying transformation to validation data
+        if ood_adata_dict is not None:
+            for id, ood_adata in ood_adata_dict.items():
+                ood_adata.obsm["X_pca"] = np.einsum("...d,dk -> ...k", ood_adata.X, train_adata.varm["PCs"])
+                ood_adata_dict[id] = ood_adata
+
+
+    # Cell State Data 0. writing and standardizing scatter features to obsm
+    X_scatter = train_adata.obs[scatter_columns].values
+    train_adata = standardize_array_and_write_to_adata(train_adata, X_scatter, "X_scatter")
+    if ood_adata_dict is not None:
+        for id, ood_adata in ood_adata_dict.items():
+            X_scatter = ood_adata.obs[scatter_columns].values
+            ood_adata = standardize_array_and_write_to_adata(ood_adata, X_scatter, "X_scatter", params=train_adata.uns["X_scatter_params"])
+            ood_adata_dict[id] = ood_adata
+    
+    # Cell state Data 1. writing and standardizing channel features
+    X_channel = train_adata.X
+    train_adata = standardize_array_and_write_to_adata(train_adata, X_channel, "X_channel")
+    if ood_adata_dict is not None:
+        for id, ood_adata in ood_adata_dict.items():
+            X_scatter = ood_adata.X
+            ood_adata = standardize_array_and_write_to_adata(ood_adata, X_scatter, "X_channel", params=train_adata.uns["X_channel_params"])
+            ood_adata_dict[id] = ood_adata
+
+    # Cell state Data 2. concatenate pairs
+    morphology_obsm_keys = ["X_scatter", "X_scatter_standardized"]
+    marker_expression_obsm_keys = ["X_channel", "X_channel_standardized", "X_pca"]
+    for morph_key in morphology_obsm_keys:
+        for mark_key in marker_expression_obsm_keys:
+            train_adata.obsm[f"{mark_key}+{morph_key}"] = np.concatenate(
+                (train_adata.obsm[mark_key], train_adata.obsm[morph_key]), axis=-1
+            )
+            if ood_adata_dict is not None:
+                for id, ood_adata in ood_adata_dict.items():
+                    ood_adata.obsm[f"{mark_key}+{morph_key}"] = np.concatenate(
+                        (ood_adata.obsm[mark_key], ood_adata.obsm[morph_key]), axis=-1
+                    )
+
+    return train_adata, ood_adata_dict

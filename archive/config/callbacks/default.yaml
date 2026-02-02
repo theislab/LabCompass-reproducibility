@@ -1,0 +1,5 @@
+wandb_project_name: "CFM_morphogens_debug"
+wandb_kwargs: null
+metrics: ["r_squared", "energy_distance", "maximum_mean_discrepancy", "wasserstein_distance", "sinkhorn_divergence"]
+save_model: True
+verbose: True

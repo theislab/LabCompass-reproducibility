@@ -1,0 +1,15 @@
+# @package _global_
+
+# default (unconditional)
+defaults:
+  - _self_
+  - callbacks: default
+  - data: unconditional
+  - dispatcher: unconditional
+  - flow_matching: default
+  - model: default
+  - paths: default
+  - reproducibility: default
+  - training: default
+  - vf: unconditional
+  - hydra: default

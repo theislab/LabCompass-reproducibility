@@ -1,0 +1,48 @@
+# @package _global_
+
+defaults:
+  - override /hydra/sweeper/sampler: random 
+  - override /hydra/sweeper: optuna 
+  
+optimized_metric: all_conditions_wasserstein_distance
+
+hydra:
+
+  sweeper:
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+
+    direction: minimize
+
+    n_jobs: 1000
+    
+    n_trials: 1000
+
+    sampler: 
+      _target_: optuna.samplers.RandomSampler
+
+    # define hyperparameter search space
+    params:
+
+      vf.state_encoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "16-16-16", "32", "32-32", "32-32-32", "64", "64-64", "64-64-64", "128", "128-128", "128-128-128", "256", "256-256", "256-256-256", "512", "512-512", "512-512-512", "1024", "1024-1024", "1024-1024-1024", "2048", "2048-2048", "2048-2048-2048")
+
+      vf.state_encoder_output_dim: choice(2, 4, 8, 16, 32, 54, 128, 256, 512, 1024, 2048)
+
+      vf.time_features_num_freqs: choice(256, 512, 1024, 2048)
+
+      vf.time_features_max_periods: choice(10, 100, 1000, 10000)
+
+      vf.time_encoder_output_dim: choice(2, 4, 8, 16, 32, 54, 128, 256, 512, 1024, 2048)
+
+      vf.time_encoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "16-16-16", "32", "32-32", "32-32-32", "64", "64-64", "64-64-64", "128", "128-128", "128-128-128", "256", "256-256", "256-256-256", "512", "512-512", "512-512-512", "1024", "1024-1024", "1024-1024-1024", "2048", "2048-2048", "2048-2048-2048")
+
+      vf.perturbation_encoder_output_dim: choice(2, 4, 8, 16, 32, 54, 128, 256, 512, 1024, 2048)
+
+      vf.decoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "16-16-16", "32", "32-32", "32-32-32", "64", "64-64", "64-64-64", "128", "128-128", "128-128-128", "256", "256-256", "256-256-256", "512", "512-512", "512-512-512", "1024", "1024-1024", "1024-1024-1024", "2048", "2048-2048", "2048-2048-2048")
+      
+      vf.resnet_normalization: choice("batch", "none")
+
+      vf.conditioning_type: choice("concatenation", "resnet", "film")
+
+      training.train_batch_size: choice(1024, 2048, 4096, 8192)
+
+      training.num_grad_accumulation_steps: choice(10, 20, 50, 100, 500, 1000)

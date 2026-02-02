@@ -1,33 +1,24 @@
-from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from collections.abc import Sequence
 from typing import Any
 
 from omegaconf import DictConfig, OmegaConf
-
 import torch
-
-__all__ = [
-    "parse_mlp_config_dictionary",
-    "resolve_omegaconf_to_dictionary",
-    "TimeSamplers",
-    "Optimizers",
-    "LRSchedulers",
-    "STateTransforms",
-    "ActivationFunctions"
-]
 
 
 def parse_mlp_config_dictionary(
-    mlp_config_dictionary: dict[str, Any],
+    activation_functions: dict[str, torch.optim.Optimizer], 
+    mlp_config_dictionary: dict[str, Any] | None,
     separator: str = "-"
 ) -> dict[str, Any]:
     """"""
     output_dict = {}
+    if mlp_config_dictionary is None:
+        return output_dict
     for key, value in mlp_config_dictionary.items():
         if key == "activation_class":
-            value = vars(ActivationFunctions())[value]
+            value = activation_functions.get(value, torch.nn.ReLU)
         elif key == "final_activation_class":
-            value = vars(ActivationFunctions())[value]
+            value = activation_functions.get(value, torch.nn.Identity)
         if key == "hidden_dims":
             # single integer
             if isinstance(value, int):
@@ -46,6 +37,18 @@ def parse_mlp_config_dictionary(
     return output_dict
 
 
+def parse_nested_mlp_config_dictionary(
+    activation_functions: dict[str, torch.optim.Optimizer], 
+    mlp_config_dictionary: dict[str, Any] | None,
+    separator: str = "-",
+):
+    mlp_config_dictionary_copy = {}
+    for perturbation, perturbation_kwargs in mlp_config_dictionary.items():
+        perturbation_kwargs = parse_mlp_config_dictionary(activation_functions, perturbation_kwargs, separator=separator)
+        mlp_config_dictionary_copy[perturbation] = perturbation_kwargs
+    return mlp_config_dictionary_copy
+
+
 def resolve_omegaconf_to_dictionary(
     conf_dict: dict[str, Any] | None | DictConfig 
 ) -> dict[str, Any]:
@@ -57,35 +60,3 @@ def resolve_omegaconf_to_dictionary(
             out_dict = OmegaConf.create(out_dict)
         out_dict = OmegaConf.to_container(out_dict, resolve=True)
     return out_dict
-
-
-@dataclass(frozen=True)
-class TimeSamplers:
-    uniform: Callable[[Sequence[int]], torch.Tensor] = torch.rand
-
-
-@dataclass(frozen=True)
-class NoiseDistributions:
-    gaussian: Callable[[Sequence[int]], torch.Tensor] = torch.randn
-
-
-@dataclass(frozen=True)
-class Optimizers:
-    adam: torch.optim.Optimizer = torch.optim.Adam
-    adam_w: torch.optim.Optimizer = torch.optim.AdamW
-
-
-@dataclass(frozen=True)
-class LRSchedulers:
-    none: None = None
-
-
-@dataclass(frozen=True)
-class StateTransforms:
-    none: None = None
-
-
-@dataclass(frozen=True)
-class ActivationFunctions:
-    selu: torch.nn.Module = torch.nn.SELU
-    identity: torch.nn.Module = torch.nn.Identity

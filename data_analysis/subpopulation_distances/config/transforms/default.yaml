@@ -1,0 +1,2 @@
+scatter_columns: ["FSC - Area", "FSC - Height", "FSC - Width", "SSC - Area", "SSC - Height", "SSC - Width"]
+compute_channel_pcs: True
