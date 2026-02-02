@@ -16,7 +16,7 @@ UNIQUE_VALUE=${3:-0}
 CONDITION_MODE=${4:-"protocol_concat"}
 HPARAMSEACH=${5:-"in-distribution"}
 
-echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE"
+echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE, hparams: ${HPARAMSEACH}"
 
 ENV_NAME="sc_exp_design"
 echo "Using environment: $ENV_NAME"
@@ -32,7 +32,7 @@ wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMS
 conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
     --multirun \
     +launcher=slurm \
-    +hparams_search=default \
+    +hparams_search="${HPARAMSEACH}" \
     vf="default_${CONDITION_MODE}" \
     data="${CONDITION_MODE}" \
     data.sample_rep="$SAMPLE_REP" \
