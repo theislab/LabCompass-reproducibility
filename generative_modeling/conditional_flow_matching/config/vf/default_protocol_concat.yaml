@@ -14,7 +14,7 @@ encode_conditions: True
 perturbation_encoder_output_dim: 4
 perturbation_layers_before_pooling:
   feats_condition_concat_condition_concat:
-    input_dim: 15
+    input_dim: 12
     output_dim: 16
     hidden_dims: [16, ]
     use_batchnorm: False
