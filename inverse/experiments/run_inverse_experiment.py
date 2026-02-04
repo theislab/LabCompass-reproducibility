@@ -6,6 +6,7 @@ import traceback
 import uuid
 
 import hydra
+import matplotlib.pyplot as plt
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
 import pandas as pd
@@ -50,6 +51,7 @@ def main(config: DictConfig) -> float:
         get_loss_fn,
     )
     from data_utils import get_protocol_tranformations
+    from plot_utils import plot_loss_history, plot_heatmap
 
     # Create run id 
     run_id = uuid.uuid4().hex[:8]
@@ -179,15 +181,18 @@ def main(config: DictConfig) -> float:
     ct_safe_string = ct_string.replace("/", ":") # cell type dir
     ct_dir = os.path.join(config.paths.dump_dir, ct_safe_string) # cell type dir
     run_dir = os.path.join(ct_dir, run_id) # run dir
+    plots_dir = os.path.join(run_dir, "plots") # plots dir
     config_path = os.path.join(run_dir, "config.yaml")
     inverse_results_path = os.path.join(run_dir, "inverse_results.npz")
     fwd_results_path = os.path.join(run_dir, "fwd_results.npz")
     candidates_path = os.path.join(run_dir, "candidates.csv")
+    loss_history_plot_path = os.path.join(plots_dir, "loss_history.svg")
     logger.info(
         f"Creating dump directories for: \n"
         f"\t Note: Cell type indentifier changed from \"{ct_string}\" to {ct_safe_string}.\n"
         f"\t Dump directory for cell type will be created at {ct_dir}.\n"
         f"\t Dump directory for run will be created at {run_dir}.\n"
+        f"\t Dump directory for run plots will be created at {plots_dir}.\n"
         f"\t Configuration will be dumped at {config_path}.\n"
         f"\t Raw optimization data will be dumped at {inverse_results_path}.\n"
         f"\t Raw forward data will be dumped at {fwd_results_path}.\n"
@@ -198,6 +203,7 @@ def main(config: DictConfig) -> float:
     create_dir(config.paths.dump_dir, logger=logger) # base dir
     create_dir(ct_dir, logger=logger) # cell type dir
     create_dir(run_dir, logger=logger) # run dir
+    create_dir(plots_dir, logger=logger) # plots dir
     logger.info("All the directories have been successfully created!")
 
     # Save corresponding configuration
@@ -209,13 +215,13 @@ def main(config: DictConfig) -> float:
 
     # Save inverse results
     logger.info("Saving raw inverse run data...")
-    inverse_results_data = {
+    inverse_res_dict = {
         "trajectory": trajectory,
         "loss_history": loss_history,
         "lambda_history": lambda_history,
         "noise": noise.detach().cpu().numpy()
     }
-    np.savez(inverse_results_path, **inverse_results_data)
+    np.savez(inverse_results_path, **inverse_res_dict)
     logger.info(f"Inverse model results saved!")
 
     # Save forward model results
@@ -251,7 +257,7 @@ def main(config: DictConfig) -> float:
 
     # Get inverse transformations to rescale the samples
     logger.info(
-        "\t*Retrieving transformation for medium covariates...\n"
+        "Retrieving transformation for medium covariates...\n"
         fr"\t -> protocol_columns={config.annotation.protocol_columns}\n"
         fr"\t -> $\log(1 + x)$ exp_cols={config.annotation.log1p_exp_cols}\n"
         fr"\t -> $\log_2(1 + x)$ exp_cols={config.annotation.log21p_exp_cols}\n"
@@ -309,6 +315,51 @@ def main(config: DictConfig) -> float:
     # dump csv
     samples_df.to_csv(candidates_path)
     logger.info("Post-processed data framed dumped!")
+
+    # plot loss history
+    logger.info("Plotting loss history...")
+    loss_history_fig = plot_loss_history(ct_string, loss_history)
+    loss_history_fig.savefig(
+        loss_history_plot_path,
+        dpi=300,
+    )
+    plt.close(loss_history_fig)
+    logger.info(f"Plot written to disk!")
+
+    # heatmap samples
+    logger.info("Plotting heatmap of sampled solution...")
+    plot_heatmap(
+        plots_dir,
+        classes,
+        ct_string,
+        fwd_query_res_dict,
+        inverse_res_dict,
+        config_container["annotation"],
+        samples_vmin=0.0,
+        samples_vmax=10.0,
+        loss_vmin=0.0,
+        loss_vmax=10.0,
+        plot_pheno=False
+    )
+    logger.info("Plot written to disk!")
+
+    # heatmap phenotype
+    logger.info("Plotting heatmap of induced phenotype...")
+    plot_heatmap(
+        plots_dir,
+        classes,
+        ct_string,
+        fwd_query_res_dict,
+        inverse_res_dict,
+        config_container["annotation"],
+        samples_vmin=0.0,
+        samples_vmax=10.0,
+        loss_vmin=0.0,
+        loss_vmax=10.0,
+        plot_pheno=True
+    )
+    logger.info("Plot written to disk!")
+    logger.info("Exit code 0, goodbye!")
     return 0.0
 
 if __name__ == "__main__":
