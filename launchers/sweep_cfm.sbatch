@@ -14,7 +14,7 @@ SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
 PROTOCOL_AXIS=${2:-"protocol_id"}
 UNIQUE_VALUE=${3:-0}
 CONDITION_MODE=${4:-"protocol_concat"}
-HPARAMSEACH=${5:-"in-distribution"}
+HPARAMSEACH=${5:-"in_distribution"}
 
 echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE, hparams: ${HPARAMSEACH}"
 

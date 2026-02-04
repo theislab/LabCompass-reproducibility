@@ -26,7 +26,7 @@ else
     exit 1
 fi
 
-USE_NEW_QUERY=1
+USE_NEW_QUERY=0
 paths="default"
 script_name="run_inverse_experiment"
 if [[ USE_NEW_QUERY -eq 1 ]]; then

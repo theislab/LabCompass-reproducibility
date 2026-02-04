@@ -78,7 +78,7 @@ def main(config: DictConfig) -> float:
     # Get prior flow
     logger.info(f"Loading Prior Flow Model from {config.paths.prior_flow_path}...")
     prior_flow = FlowMatching.load(config.paths.prior_flow_path)
-    logger.info(f"Prior Flow ready!\n{prior_flow}")
+    logger.info(f"Prior Flow ready!\n{prior_flow.velocity_field}")
 
     # Define loss function
     logger.info(f"Preparing loss function (Cross-Entropy)...")
@@ -275,22 +275,29 @@ def main(config: DictConfig) -> float:
     )
     logger.info("Medium data dictionaries ready!")
 
-    # Create data frame to dump post-processed data
+    # Create data frame
     logger.info(f"Creating pd.DataFrame to store the post-processed results.")
-    samples_df = pd.DataFrame(
-        {
-            **data_dict_transformed,
-            **{f"{k}:rescaled":v for k, v in data_dict_original.items()},
-            "loss": terminal_loss,
-            **{
-                f"{ct}_prop": ct_props[:, idx] for idx, ct in enumerate(classes)
-            },
-            **{f"cfg:{k}": v for k, v in fconfig_dict.items()},
+    samples_data_dict = {
+        **data_dict_transformed,
+        **{f"{k}:rescaled":v for k, v in data_dict_original.items()},
+        "loss": terminal_loss,
+        **{
+            f"{ct}_prop": ct_props[:, idx] for idx, ct in enumerate(classes)
         },
-    )
+    }
+    samples_df = pd.DataFrame(samples_data_dict)
+
+    # append configurations to dataframe
+    for key, val in fconfig_dict.items():
+        col_name = f"cfg:{key}"
+        samples_df[col_name] = [val]*len(samples_df)
+
+    # append paths
     samples_df["configuration path"] = config_path
     samples_df["inverse_results_path"] = inverse_results_path
     samples_df["fwd_results_path"] = fwd_results_path
+    
+    # handle index
     samples_df.index = samples_df.index.map(lambda e: f"{ct_string}:{run_id}:{e}")
     samples_df.index.name = "sample_id"
     logger.info(
@@ -298,6 +305,8 @@ def main(config: DictConfig) -> float:
         f"shape={samples_df.shape}\n"
         f"columns={samples_df.columns}\n"
     )
+
+    # dump csv
     samples_df.to_csv(candidates_path)
     logger.info("Post-processed data framed dumped!")
     return 0.0
