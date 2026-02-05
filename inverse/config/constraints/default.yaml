@@ -1,0 +1,6 @@
+eps: 1e-33
+use_lstsq: True
+g_tol: 1e-5
+constraint_mask: [True, True, True, True, True, True, True, True, True, True, True, True]
+lbound: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+ubound: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

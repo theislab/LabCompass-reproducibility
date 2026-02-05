@@ -1,0 +1,15 @@
+# @package _global_
+
+# default (unconditional)
+defaults:
+  - _self_
+  - annotation: default
+  - constraints: defaults
+  - forward_model: default
+  - hydra: default
+  - loss_guidance: default
+  - non_linearity: default
+  - paths: default
+  - run: default
+  - sampling: default_pure_pop
+  - scheduler: exp_decay
