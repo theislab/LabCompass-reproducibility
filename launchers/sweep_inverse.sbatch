@@ -26,18 +26,20 @@ else
     exit 1
 fi
 
-USE_NEW_QUERY=0
+USE_NEW_QUERY=1
 paths="default"
 script_name="run_inverse_experiment"
+query_pure_cell_types="True"
 if [[ USE_NEW_QUERY -eq 1 ]]; then
     paths="new_queries"
-    script_name="run_inverse_experiment_new_targets"
+    query_pure_cell_types="False"
 fi
 echo "cell type: ${TARGET_CELL_TYPE}"
 echo "scheduler: ${SCHEDULER}"
 echo "hparam_search: ${hparam_search}"
 echo "paths: ${paths}"
 echo "script_name: ${script_name}"
+echo "query_pure_cell_types: ${query_pure_cell_types}"
 
 export HYDRA_FULL_ERROR=1
 
@@ -48,4 +50,5 @@ conda run -n sc_exp_design --no-capture-output \
     +hparam_search="${hparam_search}" \
     paths=${paths} \
     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
+    sampling.query_pure_cell_types="${query_pure_cell_types}" \
     2>&1 | tee "../logs/sweep_inverse-${TARGET_CELL_TYPE}_${SCHEDULER}.out"
