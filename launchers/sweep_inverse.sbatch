@@ -26,14 +26,20 @@ else
     exit 1
 fi
 
-USE_NEW_QUERY=1
+USE_NEW_QUERY=0
 paths="default"
-script_name="run_inverse_experiment"
 query_pure_cell_types="True"
 if [[ USE_NEW_QUERY -eq 1 ]]; then
     paths="new_queries"
     query_pure_cell_types="False"
 fi
+
+script_name="run_inverse_experiment"
+PENALIZED=1
+if [[ PENALIZED -eq 1 ]]; then
+    script_name="run_inverse_experiment_penalized"
+fi
+
 echo "cell type: ${TARGET_CELL_TYPE}"
 echo "scheduler: ${SCHEDULER}"
 echo "hparam_search: ${hparam_search}"

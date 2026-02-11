@@ -5,3 +5,5 @@ reg_strength: 0.0
 n_time_steps_forward_model: 50
 solver_kwargs_forward_model:
   method: "euler"
+  atol: 1e-5
+  rtol: 1e-5

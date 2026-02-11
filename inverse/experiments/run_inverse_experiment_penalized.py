@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import partial
 import logging
 import os
 import sys
@@ -13,10 +14,10 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_flow.constants import DataFields, PredictionFields
+from sc_exp_design.constants import DataFields, PredictionFields
 from sc_exp_design.models import FlowMatching
 from sc_exp_design.utils import set_reproducibility
-from sc_exp_design.inverse import ImpliciDualGuidedFlow
+from sc_exp_design.inverse import LossGuidedFlow
 
 logger = logging.getLogger(__name__)
 
@@ -28,24 +29,78 @@ NON_LINEARITIES_REGISTRY = {
 }
 
 
-def constrain_fn_factory(config, device):
-    def _linear_bound(x1, bound, mask, upper=True):
+# define upper bound
+def map_df(df, transforms_dict):
+    transformed_data_df = {}
+    for mol in df.columns:
+        trnsf = transforms_dict[mol]
+        val = df.loc[:, mol].values
+        if trnsf is not None:
+            val = trnsf(val)
+        transformed_data_df[mol] = val
+    return pd.DataFrame(transformed_data_df, index=df.index)
+
+
+def constrain_fn_factory(config, device, protocol_trasnf_factory):
+    def get_constraints_and_mask(
+        config,
+    ):
+        # parse annotation values
+        protocol_cols = config.annotation.protocol_columns
+        log1p_exp_cols = config.annotation.log1p_exp_cols
+        log21p_exp_cols = config.annotation.log21p_exp_cols
+
+        # parse constraints values
+        constraints_in_original_space = config.constraints.constraints_in_original_space
+        lbound_dict = config.constraints.lbound_dict
+        ubound_dict = config.constraints.ubound_dict
+
+        # compute gradient mask
+        mask = [col in lbound_dict and col in ubound_dict for col in protocol_cols]
+
+        # construct bound df
+        lbound_df = pd.DataFrame({key: np.array([val]) for key, val in lbound_dict.items()})
+        ubound_df = pd.DataFrame({key: np.array([val]) for key, val in ubound_dict.items()})
+
+        # optionaly get protocol transformations
+        if constraints_in_original_space:
+            ptransf = protocol_trasnf_factory(
+                protocol_cols,
+                log1p_exp_cols=log1p_exp_cols,
+                log21p_exp_cols=log21p_exp_cols,
+                inverse=False
+            )
+            lbound_df = map_df(lbound_df, ptransf)
+            ubound_df = map_df(ubound_df, ptransf)
+
+        # initialize tensors
+        lbound = torch.zeros(len(protocol_cols)).float().to(device)
+        ubound = torch.zeros(len(protocol_cols)).float().to(device)
+
+        # write bounds values
+        for k in lbound_df.columns:
+            idx = protocol_cols.index(k)
+            lbound[idx] = lbound_df[k].item()
+        for k in ubound_df.columns:
+            idx = protocol_cols.index(k)
+            ubound[idx] = ubound_df[k].item()
+        return lbound, ubound, mask
+
+    def _quad_bound(x1, bound, mask, upper=True):
         x1 = x1[..., mask]
         bound = bound[..., mask]
-        return x1 - bound if upper else bound - x1
-    ubound = torch.tensor(config.constraints.ubound).float().to(device)
-    lbound = torch.tensor(config.constraints.lbound).float().to(device)
-    mask = config.constraints.constraint_mask
+        deviation = x1 - bound if upper else bound - x1
+        return torch.sum(torch.nn.functional.relu(deviation)**2, dim=-1)
+    lbound, ubound, mask = get_constraints_and_mask(config)
     return [
-        lambda x1: _linear_bound(x1, ubound, mask, upper=True),
-        lambda x1: _linear_bound(x1, lbound, mask, upper=False),
+        lambda x1: _quad_bound(x1, ubound, mask, upper=True),
+        lambda x1: _quad_bound(x1, lbound, mask, upper=False),
     ]
 
 
 def loss_fn_factory(
     loss_fn,
     config,
-    noise,
     optimal_condition,
     non_linearity,
     forward_model,
@@ -55,14 +110,18 @@ def loss_fn_factory(
     # sampling fixed noise for the forward model
     if config.loss_guidance.fix_noise:
         noise = forward_model.forward_model.noise_distribution(
-            (N, config.loss_guidance.num_forward_pass_per_sample, config.loss_guidance.forward_model.forward_model.velocity_field.config.flow_dim)
-        ).squeeze(dim=0).to(config.loss_guidance.forward_model.forward_model.device)
+            (
+                config.sampling.N,
+                config.loss_guidance.num_forward_pass_per_sample,
+                forward_model.forward_model.velocity_field.config.flow_dim
+            )
+        ).squeeze(dim=0).to(forward_model.forward_model.device)
     else:
         noise = None
 
     def compute_target_loss(target_pred_dict, optimal_condition):
         """"""
-        if config.fix_noise:
+        if config.loss_guidance.fix_noise:
             return torch.sum(
                 torch.stack(
                     [(loss_fn(target_pred_dict[covariate], optimal_condition[covariate].to(target_pred_dict[covariate].device)).mean(1)) 
@@ -105,6 +164,19 @@ def loss_fn_factory(
     return _compute_loss, noise
 
 
+def linear_scheduler_with_warmup(
+    t,
+    t_warmup=0.0,
+    vmin=1.0,
+    vmax=1.0,
+):
+    slope = (vmax - vmin)/(1 - t_warmup)
+    t_shifted = torch.nn.functional.relu(t - t_warmup)
+    c = t_shifted*slope + vmin
+    return c[..., 0]
+
+
+
 @hydra.main(
     config_path=os.path.join(ROOT_DIR, "inverse/config"),
     config_name="run_inverse_constrained"
@@ -117,7 +189,6 @@ def main(config: DictConfig) -> float:
     sys.path.insert(0, os.path.join(ROOT_DIR, "inverse/inverse_utils"))
     sys.path.insert(0, os.path.join(ROOT_DIR, "inverse/experiments"))
     from lambda_schedulers import schedulers_dict
-    from loss_guidance import LossGuidedFlow
     from train_utils import resolve_omegaconf_to_dictionary
     from experiment_utils import (
         create_dir,
@@ -196,44 +267,49 @@ def main(config: DictConfig) -> float:
 
     # compile constraints
     logger.info(f"Compiling constraints for current experiment...")
-    compute_constraints = constrain_fn_factory(config, forward_model.forward_model.device)
+    compute_constraints = constrain_fn_factory(config, forward_model.forward_model.device, get_protocol_tranformations)
     logger.info(f"Constraints compiled!")
 
     # inizialize dual flow
     logger.info(f"Initializing implicit guided flow...")
-    guided_flow = ImpliciDualGuidedFlow(prior_flow)
+    guided_flow = LossGuidedFlow(prior_flow)
     torch.cuda.empty_cache()
     logger.info(f"Implicit dual guided flow initialized {guided_flow}")
 
     # Prepare lambda_scheduler
-    logger.info(f"Initializing guidance strength lambda_scheduler {config.lambda_scheduler.scheduler_id} with {config.lambda_scheduler.scheduler_kwargs}")
+    logger.info(f"Initializing guidance strength lambda_scheduler {config.scheduler.scheduler_id} with {config.scheduler.scheduler_kwargs}")
     scheduler_cls = schedulers_dict.get(
-        config.lambda_scheduler.scheduler_id,
+        config.scheduler.scheduler_id,
         None,
     )
     if scheduler_cls is None:
-        msg = f"lambda_scheduler {config.lambda_scheduler.scheduler_id} not valid"
+        msg = f"lambda_scheduler {config.scheduler.scheduler_id} not valid"
         raise ValueError(msg)
-    lambda_scheduler = scheduler_cls(**resolve_omegaconf_to_dictionary(config.lambda_scheduler.scheduler_kwargs))
+    lambda_scheduler_class = scheduler_cls(**resolve_omegaconf_to_dictionary(config.scheduler.scheduler_kwargs))
+    lambda_scheduler = lambda t: lambda_scheduler_class.compute_lambda_t(t)
     logger.info(f"lambda_scheduler Ready!\n{lambda_scheduler}")
 
     # prepare c scheduler
-    c_scheduler = ...
+    c_scheduler = partial(
+        linear_scheduler_with_warmup,
+        t_warmup=config.constraints.c_scheduler_kwargs.t_warmup,
+        vmin=config.constraints.c_scheduler_kwargs.vmin,
+        vmax=config.constraints.c_scheduler_kwargs.vmax,
+    )
 
     # sampling from guided flow
     torch.cuda.empty_cache()
-    trajectory, loss_history, lambda_history, noise = guided_flow.sample_posterior(
+    trajectory, loss_history, lambda_history = guided_flow.sample_posterior(
         config.sampling.N,
         compute_loss,
-        compute_constraints,
+        reg_fn_lists=compute_constraints,
         lambda_scheduler=lambda_scheduler,
         c_scheduler=c_scheduler,
         num_time_steps=config.sampling.num_time_steps,
         solver_kwargs=resolve_omegaconf_to_dictionary(config.sampling.solver_kwargs),
-        eps=config.constraints.eps,
-        use_lstsq=config.constraints.use_lstsq,
-        g_tol=config.constraints.g_tol,
     )
+    # moving results to numpy
+    trajectory = np.permute_dims(trajectory, (1, 0, 2))
     torch.cuda.empty_cache()
     logger.info(f"Inverse model queried! {trajectory.shape=}, {loss_history.shape=}, {lambda_history.shape=}, {noise.shape=}")
 
@@ -293,10 +369,10 @@ def main(config: DictConfig) -> float:
     # Save inverse results
     logger.info("Saving raw inverse run data...")
     inverse_res_dict = {
-        "trajectory": trajectory,
-        "loss_history": loss_history,
-        "lambda_history": lambda_history,
-        "noise": noise.detach().cpu().numpy()
+        "trajectory": trajectory if isinstance(trajectory, np.ndarray) else trajectory.detach().cpu().numpy(),
+        "loss_history": loss_history if isinstance(loss_history, np.ndarray) else loss_history.detach().cpu().numpy(),
+        "lambda_history": lambda_history if isinstance(lambda_history, np.ndarray) else lambda_history.detach().cpu().numpy(),
+        "noise": noise if isinstance(noise, np.ndarray) else noise.detach().cpu().numpy()
     }
     np.savez(inverse_results_path, **inverse_res_dict)
     logger.info(f"Inverse model results saved!")
@@ -324,7 +400,7 @@ def main(config: DictConfig) -> float:
     )
     ct_props = fwd_query_res_dict["ct_probs"].mean(1)
     samples = np.maximum(samples, 0)
-    terminal_loss = loss_history[:, -1]
+    terminal_loss = loss_history[-1]
     logger.info(
         "* Post-Processed data of shape:\n"
         f"\t -> {ct_props.shape=}\n"
@@ -368,7 +444,9 @@ def main(config: DictConfig) -> float:
             f"{ct}_prop": ct_props[:, idx] for idx, ct in enumerate(classes)
         },
     }
-    samples_df = pd.DataFrame(samples_data_dict)
+    samples_df = pd.DataFrame({
+        k: v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else v for k, v in samples_data_dict.items()
+    })
 
     # append configurations to dataframe
     for key, val in fconfig_dict.items():
@@ -395,7 +473,7 @@ def main(config: DictConfig) -> float:
 
     # plot loss history
     logger.info("Plotting loss history...")
-    loss_history_fig = plot_loss_history(ct_string, loss_history)
+    loss_history_fig = plot_loss_history(ct_string, loss_history.detach().cpu().numpy().T)
     loss_history_fig.savefig(
         loss_history_plot_path,
         dpi=300,
@@ -409,8 +487,8 @@ def main(config: DictConfig) -> float:
         plots_dir,
         classes,
         ct_string,
-        fwd_query_res_dict,
-        inverse_res_dict,
+        {k: v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else v for k, v in fwd_query_res_dict.items()},
+        {k: v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else v for k, v in inverse_res_dict.items()},
         config_container["annotation"],
         samples_vmin=0.0,
         samples_vmax=10.0,
@@ -426,8 +504,8 @@ def main(config: DictConfig) -> float:
         plots_dir,
         classes,
         ct_string,
-        fwd_query_res_dict,
-        inverse_res_dict,
+        {k: v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else v for k, v in fwd_query_res_dict.items()},
+        {k: v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else v for k, v in inverse_res_dict.items()},
         config_container["annotation"],
         samples_vmin=0.0,
         samples_vmax=10.0,
