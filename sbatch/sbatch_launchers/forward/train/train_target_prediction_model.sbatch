@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=train_classifier
-#SBATCH --output=../logs/train_classifier.log
-#SBATCH --error=../logs/train_classifier.err
+#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/cell_type_classifier/job_submissions/train_classifier-%j.log
+#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/cell_type_classifier/job_submissions/train_classifier-%j.err
 #SBATCH --partition=gpu_p
 #SBATCH --qos=gpu_normal
 #SBATCH --gres=gpu:1

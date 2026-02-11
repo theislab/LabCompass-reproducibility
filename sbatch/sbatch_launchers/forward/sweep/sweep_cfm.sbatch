@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=sweep_cfm
-#SBATCH --output=../logs/sweep_flow_haematopoiesis.log
-#SBATCH --error=../logs/sweep_flow_haematopoiesis.err
+#SBATCH --job-name=sweep_flow_matching
+#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/sweep_flow_matching-%j.log
+#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/sweep_flow_matching-%j.err
 #SBATCH --partition=cpu_p
 #SBATCH --qos=cpu_normal
 #SBATCH --mem=20G

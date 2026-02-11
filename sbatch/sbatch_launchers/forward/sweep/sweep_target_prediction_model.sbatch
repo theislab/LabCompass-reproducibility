@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=sweep_classifier
-#SBATCH --output=../logs/sweep_classifier.log
-#SBATCH --error=../logs/sweep_classifier.err
+#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/cell_type_classifier/job_submissions/sweep_classifier-%j.log
+#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/cell_type_classifier/job_submissions/sweep_classifier-%j.err
 #SBATCH --partition=cpu_p
 #SBATCH --qos=cpu_priority
 #SBATCH --mem=50G

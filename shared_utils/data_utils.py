@@ -239,10 +239,12 @@ def get_adata_splits(config: DictConfig, logger_orig: logging.Logger | None = No
 
     # wrap for optional logger
     class logger:
-        logger = logger_orig
-        def info(cls, msg):
-            if cls.logger is not None:
-                cls.logger.info(msg)
+        def __init__(self):
+            self.logger = logger_orig
+        def info(self, msg):
+            if self.logger is not None:
+                self.logger.info(msg)
+    logger = logger()
 
     # Data 0. read data
     logger.info("Reading data...")

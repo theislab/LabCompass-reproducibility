@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=inverse_plot
-#SBATCH --output=logs/%x_%j.out
-#SBATCH --error=logs/%x_%j.err
+#SBATCH --job-name=inverse_plot_per_index
+#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/%x_%j.out
+#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/%x_%j.err
 #SBATCH --time=02:00:00
 #SBATCH --mem=500G
 #SBATCH --gres=gpu:1

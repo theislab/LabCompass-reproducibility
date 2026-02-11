@@ -13,9 +13,9 @@ hydra:
 
     direction: minimize
 
-    n_jobs: 50
+    n_jobs: 20
     
-    n_trials: 50
+    n_trials: 20
 
     sampler: 
       _target_: optuna.samplers.RandomSampler
@@ -23,28 +23,26 @@ hydra:
     # define hyperparameter search space
     params:
 
-      vf.state_encoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "32", "32-32", "64", "64-64", "128", "128-128")
+      vf.state_encoder_mlp_kwargs.hidden_dims: choice("32", "32-32", "64", "64-64", "128", "128-128")
 
-      vf.state_encoder_output_dim: choice(2, 4, 8, 16, 32, 64)
+      vf.state_encoder_output_dim: choice(16, 32, 64)
 
-      vf.time_features_num_freqs: choice(256, 512, 1024, 2048)
+      vf.time_features_num_freqs: choice(128, 256, 512)
 
-      vf.time_features_max_periods: choice(10, 100, 1000, 10000)
+      vf.time_features_max_periods: choice(1000, 10000)
 
-      vf.time_encoder_output_dim: choice(2, 4, 8, 16, 32, 64)
+      vf.time_encoder_output_dim: choice(16, 32, 64)
 
       vf.time_encoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "32", "32-32")
 
-      vf.perturbation_encoder_output_dim: choice(2, 4, 8, 16, 32, 64)
+      vf.perturbation_encoder_output_dim: choice(16, 32, 64)
 
-      vf.decoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "16-16-16", "32", "32-32", "32-32-32", "64", "64-64", "64-64-64", "128", "128-128", "128-128-128")
+      vf.decoder_mlp_kwargs.hidden_dims: choice("32-32", "32-32-32", "64-64", "64-64-64", "128-128", "128-128-128")
       
       vf.resnet_normalization: choice("batch", "none")
 
       vf.conditioning_type: choice("concatenation", "resnet", "film")
 
-      training.train_batch_size: choice(1024, 2048, 4096, 8192)
+      training.train_batch_size: choice(2048, 4096, 8192)
 
-      training.num_grad_accumulation_steps: choice(10, 20, 50, 100, 500, 1000)
-
-      split.random_state: choice(42, 982, 19803, 1039, 108372)
+      training.num_grad_accumulation_steps: choice(100, 500, 1000)

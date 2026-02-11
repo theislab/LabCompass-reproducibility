@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH --job-name=train_cfm
-#SBATCH --output=../logs/train_flow_haematopoiesis.log
-#SBATCH --error=../logs/train_flow_haematopoiesis.err
+#SBATCH --job-name=train_flow_matching
+#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/train_flow_matching-%j.log
+#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/train_flow_matching-%j.err
 #SBATCH --partition=gpu_p
 #SBATCH --qos=gpu_normal
 #SBATCH --gres=gpu:1
