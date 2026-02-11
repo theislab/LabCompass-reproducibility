@@ -1,4 +1,4 @@
 run:
-  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
+  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/flow_matching/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
 sweep:
-  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/multiruns/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
+  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/multiruns/flow_matching/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
