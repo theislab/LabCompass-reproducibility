@@ -1,6 +1,6 @@
-scheduler_id: "constant"
+scheduler_id: "reciprocal"
 scheduler_kwargs:
   lambda_val: null
-  lmin: 0.0
+  lmin: null
   lmax: 10.0
   gamma: null

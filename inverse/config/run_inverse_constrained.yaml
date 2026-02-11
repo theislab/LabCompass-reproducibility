@@ -3,7 +3,7 @@
 # default (unconditional)
 defaults:
   - _self_
-  - annotation: default
+  - annotation: default_new
   - constraints: default
   - forward_model: default
   - hydra: default
@@ -12,4 +12,4 @@ defaults:
   - paths: default
   - run: default
   - sampling: default_pure_pop
-  - scheduler: exp_decay
+  - scheduler: reciprocal
