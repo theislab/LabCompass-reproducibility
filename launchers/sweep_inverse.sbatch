@@ -1,60 +1,89 @@
 #!/bin/bash
 
 #SBATCH --job-name=sweep_inverse
-#SBATCH --output=../logs/sweep_inverse_haematopoiesis.log
-#SBATCH --error=../logs/sweep_inverse_haematopoiesis.err
+#SBATCH --output=../logs/slurm-logs/inverse/sweep_inverse_haematopoiesis_%j.log
+#SBATCH --error=../logs/slurm-logs/inverse/sweep_inverse_haematopoiesis_%j.err
 #SBATCH --partition=cpu_p
 #SBATCH --qos=cpu_normal
 #SBATCH --mem=20G
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
 
-TARGET_CELL_TYPE=${1:-"HSCs"}
-SCHEDULER=${2:-"constant"}
+# define defaults
+TARGET_CELL_TYPE="HSCs"
+SCHEDULER="reciprocal"
+OPT="unconstrained"
+QUERY_TYPE="pure_populations"
 
+# Parse Flags
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -t|--target-ct)
+      TARGET_CELL_TYPE="$2"
+      shift 2
+      ;;
+    -s|--scheduler)
+      SCHEDULER="$2"
+      shift 2
+      ;;
+    -o|--optimization-type)
+      OPT="$2"
+      shift 2
+      ;;
+    -q|--query-type)
+      QUERY_TYPE="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown parameter passed: $1"
+      exit 1
+      ;;
+  esac
+done
 
-if [[ "$SCHEDULER" == "constant" ]]; then
-    hparam_search="sweep_constant"
-elif [[ "$SCHEDULER" == "exp-decay" ]]; then
-    hparam_search="sweep_exp_decay"
-elif [[ "$SCHEDULER" == "reciprocal" ]]; then
-    hparam_search="sweep_reciprocal"
-elif [[ "$SCHEDULER" == "lin-decay" ]]; then
-    hparam_search="sweep_lin_decay"
-else
-    echo "❌ Unknown scheduler: $SCHEDULER"
-    exit 1
-fi
+# Map scheduler to configurations
+case $SCHEDULER in
+    "constant")    hparam_search="sweep_constant" ;;
+    "exp-decay")   hparam_search="sweep_exp_decay" ;;
+    "reciprocal")  hparam_search="sweep_reciprocal" ;;
+    "lin-decay")   hparam_search="sweep_lin_decay" ;;
+    *) echo "❌ Unknown scheduler: $SCHEDULER"; exit 1 ;;
+esac
 
-USE_NEW_QUERY=0
-paths="default"
-query_pure_cell_types="True"
-if [[ USE_NEW_QUERY -eq 1 ]]; then
-    paths="new_queries"
-    query_pure_cell_types="False"
-fi
+# select script
+[[ "$OPT" == "unconstrained" ]] && script_name="run_inverse_experiment" || script_name="run_inverse_experiment_penalized"
 
-script_name="run_inverse_experiment"
-PENALIZED=1
-if [[ PENALIZED -eq 1 ]]; then
-    script_name="run_inverse_experiment_penalized"
-fi
+# Map scheduler to configurations
+case $QUERY_TYPE in
+    "pure_populations") query_pure="True" mask_gradients="False";;
+    "custom_populations") query_pure="False" mask_gradients="False";;
+    "custom_populations_masked") query_pure="False" mask_gradients="True" ;;
+    *) echo "❌ Unknown query type: $Q_TYPE"; exit 1 ;;
+esac
 
-echo "cell type: ${TARGET_CELL_TYPE}"
-echo "scheduler: ${SCHEDULER}"
-echo "hparam_search: ${hparam_search}"
-echo "paths: ${paths}"
-echo "script_name: ${script_name}"
-echo "query_pure_cell_types: ${query_pure_cell_types}"
+# define path based on configuration
+dump_dir="../results/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 
+# Pring logging messages
+echo "------------------------------------------------"
+echo "Target Cell Type : ${TARGET_CELL_TYPE}"
+echo "Scheduler        : ${SCHEDULER} -> ${hparam_search}"
+echo "Optimization     : ${OPT} -> ${script_name}"
+echo "Query Mode       : ${QUERY_TYPE} (pure=${query_pure}, mask=${mask_gradients})"
+echo "Dump Directory   : ${dump_dir}"
+echo "------------------------------------------------"
+
+# handle hydra errors
 export HYDRA_FULL_ERROR=1
 
+# run python script
 conda run -n sc_exp_design --no-capture-output \
     python ./inverse/experiments/${script_name}.py \
     --multirun \
     +launcher=slurm \
     +hparam_search="${hparam_search}" \
-    paths=${paths} \
+    paths.dump_dir=${dump_dir} \
     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
-    sampling.query_pure_cell_types="${query_pure_cell_types}" \
+    sampling.query_pure_cell_types="${query_pure}" \
+    sampling.mask_gradients="${mask_gradients}" \
     2>&1 | tee "../logs/sweep_inverse-${TARGET_CELL_TYPE}_${SCHEDULER}.out"
