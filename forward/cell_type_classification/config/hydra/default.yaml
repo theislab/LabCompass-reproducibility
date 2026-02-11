@@ -1,4 +1,4 @@
 run:
-  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/logs/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
+  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/cell_type_classifier/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
 sweep:
-  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/logs/multiruns/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
+  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/cell_type_classifier/multiruns/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
