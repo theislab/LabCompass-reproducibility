@@ -21,7 +21,7 @@ echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, oo
 ENV_NAME="sc_exp_design"
 echo "Using environment: $ENV_NAME"
 
-WDIR=./scripts
+WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
 cd "$WDIR" || exit 1
 echo "Current Working Directory: $WDIR"
 
@@ -29,7 +29,7 @@ export HYDRA_FULL_ERROR=1
 
 wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
 
-conda run --no-capture-output -n "$ENV_NAME" python train_flow_matching.py \
+conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
     --multirun \
     +launcher=slurm \
     +hparams_search="${HPARAMSEACH}" \

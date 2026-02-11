@@ -1,5 +1,7 @@
 #!/bin/bash
 
+BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch/sbatch_launchers"
+
 # define experimental grid
 TARGET_CELL_TYPES=(
     "EryPro"
@@ -38,7 +40,7 @@ for target_cell_type in ${TARGET_CELL_TYPES[@]}; do
                 echo "query_type=${query_type}"
 
                 # submit job
-                sbatch launchers/sweep_inverse.sbatch \
+                sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/inverse/sweep/sweep_inverse.sbatch \
                   --target-ct=${target_cell_type} \
                   --scheduler=${scheduler} \
                   --optimization-type=${optimization_type} \
