@@ -1,5 +1,6 @@
 from typing import Literal, Type
 
+import scanpy as sc
 import torch
 
 from sc_exp_design.constants import DataFields, ParamsFields
@@ -74,3 +75,35 @@ class RescaledTargetPredictionModel(torch.nn.Module):
         x = self.resc_model["inv_params"](x)
         x = self.resc_model["fwd_params"](x)
         return self.resc_model["model"](x)
+
+
+def get_rescaling(
+    adata: sc.AnnData,
+    channel_params_key: str = "X_channel_params", 
+    scatter_params_key: str = "X_scatter_params",
+    inverse: bool = False,
+) -> ZNorm | IZNorm:
+
+    X_channel_params_fwd = adata.uns[channel_params_key]
+    X_scatter_params_fwd = adata.uns[scatter_params_key]
+    params = {
+        ParamsFields.MEAN: torch.from_numpy(
+            np.concatenate(
+                (
+                    X_channel_params_fwd[ParamsFields.MEAN],
+                    X_scatter_params_fwd[ParamsFields.MEAN]
+                ), axis=0
+            )
+        ),
+        ParamsFields.COVARIANCE: torch.from_numpy(
+            np.concatenate(
+                (
+                    X_channel_params_fwd["std"],
+                    X_scatter_params_fwd["std"]
+                ), axis=0
+            )
+        ),
+    }
+    if inverse:
+        return IZNorm(params)
+    return ZNorm(params)

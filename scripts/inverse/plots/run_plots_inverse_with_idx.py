@@ -64,7 +64,7 @@ def get_rescaling(
 def main(config: DictConfig):
     # lazily import modules 
     import sys
-    sys.path.insert(0, f"{BASE_DIR}/inverse/experiments")
+    sys.path.insert(0, os.path.join(BASE_DIR, "shared_utils"))
     from experiment_utils import get_forward_model, create_dir
     from plot_utils import (
         get_adata_from_idx,

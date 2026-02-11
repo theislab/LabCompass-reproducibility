@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import yaml
 
 from hydra import initialize, compose
@@ -26,46 +27,9 @@ n_val_cells = 30_000
 logger = logging.getLogger(__name__)
 
 
-
-def get_rescaling(
-    adata: sc.AnnData,
-    channel_params_key: str = "X_channel_params", 
-    scatter_params_key: str = "X_scatter_params",
-    inverse: bool = False,
-) -> "ZNorm | IZNorm":
-    import sys
-    sys.path.insert(0, f"{BASE_DIR}/model_utils")    
-    from z_norm_modules import ZNorm, IZNorm
-
-    X_channel_params_fwd = adata.uns[channel_params_key]
-    X_scatter_params_fwd = adata.uns[scatter_params_key]
-    params = {
-        ParamsFields.MEAN: torch.from_numpy(
-            np.concatenate(
-                (
-                    X_channel_params_fwd[ParamsFields.MEAN],
-                    X_scatter_params_fwd[ParamsFields.MEAN]
-                ), axis=0
-            )
-        ),
-        ParamsFields.COVARIANCE: torch.from_numpy(
-            np.concatenate(
-                (
-                    X_channel_params_fwd["std"],
-                    X_scatter_params_fwd["std"]
-                ), axis=0
-            )
-        ),
-    }
-    if inverse:
-        return IZNorm(params)
-    return ZNorm(params)
-
-
 def main(config: DictConfig):
     # lazily import modules 
-    import sys
-    sys.path.insert(0, f"{BASE_DIR}/inverse/experiments")
+    sys.path.insert(0, os.path.join(BASE_DIR, "shared_utils"))
     from experiment_utils import get_forward_model, create_dir
     from plot_utils import (
         get_adata_from_idx,
@@ -73,6 +37,7 @@ def main(config: DictConfig):
         plot_loss_history,
         plot_adata,
     )
+    from z_norm_modules import get_rescaling
 
     # initialize base config
     logger.info("Starting script for generating plots of inverse results")

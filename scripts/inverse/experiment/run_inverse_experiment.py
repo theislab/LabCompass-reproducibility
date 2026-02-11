@@ -34,10 +34,7 @@ NON_LINEARITIES_REGISTRY = {
 def main(config: DictConfig) -> float:
 
     # Import modules
-    sys.path.insert(0, os.path.join(ROOT_DIR, "model_utils"))
-    sys.path.insert(0, os.path.join(ROOT_DIR, "scripts"))
-    sys.path.insert(0, os.path.join(ROOT_DIR, "inverse/inverse_utils"))
-    sys.path.insert(0, os.path.join(ROOT_DIR, "inverse/experiments"))
+    sys.path.insert(0, os.path.join(ROOT_DIR, "shared_utils"))
     from lambda_schedulers import schedulers_dict
     from loss_guidance import LossGuidedFlow
     from train_utils import resolve_omegaconf_to_dictionary

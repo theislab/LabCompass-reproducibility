@@ -13,8 +13,8 @@ import torch
 from sc_exp_design.constants import DataFields, ParamsFields, PredictionFields
 from sc_exp_design.models import FlowMatching, TargetPredictionModel
 
-sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/model_utils")
-sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/inverse_utils")
+sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
+sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
 from forward_model import ForwardModel
 from z_norm_modules import ZNorm, IZNorm, RescaledTargetPredictionModel
 

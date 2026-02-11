@@ -34,7 +34,7 @@ state_transforms = {}
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/cell_type_classification/config/",
+    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/forward/cell_type_classification/config/",
     config_name="train_classifier",
 )
 def main(config: DictConfig):

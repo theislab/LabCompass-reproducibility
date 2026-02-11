@@ -1,7 +1,10 @@
 from collections.abc import Callable, Sequence
+import logging
+import sys
 
 from anndata import AnnData
 import numpy as np
+from omegaconf import DictConfig
 import pandas as pd
 import scanpy as sc
 from sklearn.preprocessing import OneHotEncoder
@@ -13,6 +16,9 @@ try:
     import rapids_singlecell as rsc
 except ImportError as e:
     RAPIDS_IMPORT_OKAY = False
+
+sys.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+from ood_utils import shuffle_split, split_adata
 
 
 LOG1P_EXP_COL = [
@@ -227,3 +233,67 @@ def apply_shared_transformations(
                     )
 
     return train_adata, ood_adata_dict
+
+
+def get_adata_splits(config: DictConfig, logger_orig: logging.Logger | None = None):
+
+    # wrap for optional logger
+    class logger:
+        logger = logger_orig
+        def info(cls, msg):
+            if cls.logger is not None:
+                cls.logger.info(msg)
+
+    # Data 0. read data
+    logger.info("Reading data...")
+    adata = sc.read_h5ad(config.paths.h5ad_path)
+    logger.info(f"Data read! {adata}")
+
+    # Data 1. annotate perturbation data
+    logger.info("Annotating perturbation data...")
+    column2tranform = get_protocol_tranformations(
+        config.annotation.protocol_columns,
+        log1p_exp_cols=config.annotation.log1p_exp_cols,
+        log21p_exp_cols=config.annotation.log21p_exp_cols,
+    )
+    adata = annotate_perturbations(
+        adata,
+        config.annotation.protocol_columns,
+        protocol_obs_key_added=config.annotation.protocol_obs_key_added,
+        protocol_sep=config.annotation.protocol_sep,
+        one_hot_uns_key_added=config.annotation.one_hot_uns_key_added,
+        column2tranform=column2tranform,
+        protocol_obsm_key=config.annotation.protocol_obsm_key,
+    )
+    logger.info(f"Perturbation data annotated! {adata}")
+
+    # Data 2. split data
+    if config.split.mode == "ood":
+        logger.info(f"Splitting data...\n\tPerforming validation split over column {config.split.obs_column} with unique value {config.split.unique_value_ids}")
+        train_adata, ood_adatas_dict = split_adata(
+            adata,
+            config.split.obs_column,
+            config.split.unique_value_ids,
+        )
+        logger.info(f"Data split performed!\n \tTrain data of shape {train_adata.shape}")
+        for k, v in ood_adatas_dict.items():
+            logger.info(f"\tValidation split {k} of shape {v.shape}")
+    elif config.split.mode == "in-distribution":
+        train_adata, ood_adatas_dict = shuffle_split(
+            adata,
+            K=config.split.K,
+            test_size=config.split.test_size,
+            random_state=config.split.random_state,
+            split_to_retrieve=config.split.split_to_retrieve,
+        )
+
+    # Data 3. apply shared transformations
+    logger.info("Computing tranformation params on train data and applying to both train and ood data...")
+    train_adata, ood_adatas_dict = apply_shared_transformations(
+        train_adata,
+        ood_adatas_dict,
+        config.transforms.scatter_columns,
+        compute_channel_pcs=config.transforms.compute_channel_pcs,
+    )
+    logger.info("Shared tranformations applied!")
+    return train_adata, ood_adatas_dict
