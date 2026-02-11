@@ -12,3 +12,4 @@ c_scheduler_kwargs:
   t_warmup: 0.0
   vmin: 0.0
   vmax: 1.0
+use_exponential_penalty: False

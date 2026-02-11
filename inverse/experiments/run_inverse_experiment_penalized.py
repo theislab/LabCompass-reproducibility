@@ -90,7 +90,11 @@ def constrain_fn_factory(config, device, protocol_trasnf_factory):
         x1 = x1[..., mask]
         bound = bound[..., mask]
         deviation = x1 - bound if upper else bound - x1
-        return torch.sum(torch.nn.functional.relu(deviation)**2, dim=-1)
+        if config.constraints.use_exponential_penalty:
+            val = torch.expm1(deviation)
+        else:
+            val = torch.nn.functional.relu(deviation)**2
+        return torch.sum(val, dim=-1)
     lbound, ubound, mask = get_constraints_and_mask(config)
     return [
         lambda x1: _quad_bound(x1, ubound, mask, upper=True),

@@ -15,7 +15,7 @@ hydra:
 
     n_jobs: 50
     
-    n_trials: 100
+    n_trials: 50
 
     sampler: 
       _target_: optuna.samplers.RandomSampler
@@ -23,7 +23,7 @@ hydra:
     # define hyperparameter search space
     params:
 
-      vf.state_encoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "32", "32-32", "64", "64-64", "64-64-64", "128", "128-128",)
+      vf.state_encoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "32", "32-32", "64", "64-64", "128", "128-128")
 
       vf.state_encoder_output_dim: choice(2, 4, 8, 16, 32, 64)
 

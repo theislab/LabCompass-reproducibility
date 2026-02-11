@@ -75,7 +75,7 @@ for sample_rep in ${SAMPLE_REPS[@]}; do
             if [[ $SWEEP_FLAG -eq 1 ]]; then
               echo "Running Sweep"
               sbatch launchers/sweep_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
-            elif [[$VALIDATE_FLAG -eq 1]]; then
+            elif [[ $VALIDATE_FLAG -eq 1]]; then
               echo "Running Validation"
               sbatch launchers/validate_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
             else
