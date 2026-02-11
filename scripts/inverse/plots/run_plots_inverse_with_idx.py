@@ -4,13 +4,11 @@ import yaml
 
 from hydra import initialize, compose
 from omegaconf import DictConfig
-import matplotlib.pyplot as plt
 import numpy as np
 import scanpy as sc
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_exp_design.constants import ParamsFields
 
 ANNOTATION_CONFIG_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/generative_modeling/conditional_flow_matching/config/annotation/default.yaml"
 BASE_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"

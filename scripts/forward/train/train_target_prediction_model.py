@@ -8,21 +8,12 @@ import hydra
 import numpy as np
 from omegaconf import DictConfig
 import scanpy as sc
-from sklearn.model_selection import ShuffleSplit
 from sklearn.utils.class_weight import compute_class_weight
 import torch
 
 from sc_exp_design.models import TargetPredictionModel
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import MetricsCallBack, TrainingCallBacks, WandBLogger
-
-from data_utils import apply_shared_transformations
-from ood_utils import shuffle_split
-from train_utils import (
-    parse_mlp_config_dictionary,
-    parse_nested_mlp_config_dictionary,
-    resolve_omegaconf_to_dictionary
-)
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +29,16 @@ state_transforms = {}
     config_name="train_classifier",
 )
 def main(config: DictConfig):
+    # import modules
+    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    from data_utils import apply_shared_transformations
+    from ood_utils import shuffle_split
+    from train_utils import (
+        parse_mlp_config_dictionary,
+        parse_nested_mlp_config_dictionary,
+        resolve_omegaconf_to_dictionary
+    )
+
     # Data 0. reading adata
     logger.info("Reading data...")
     adata = sc.read_h5ad(config.paths.h5ad_path)

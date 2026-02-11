@@ -1,13 +1,10 @@
-from collections.abc import Sequence
 import os
 import logging
 import sys
 import traceback
-from typing import Any
 
 import hydra
 from omegaconf import DictConfig
-import scanpy as sc
 import torch
 
 from sc_exp_design.config import NeuralVelocityFieldConfig
@@ -15,13 +12,6 @@ from sc_exp_design.models import FlowMatching
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
-from data_utils import annotate_perturbations, get_protocol_tranformations, apply_shared_transformations
-from ood_utils import split_adata, shuffle_split
-from train_utils import (
-    parse_mlp_config_dictionary,
-    parse_nested_mlp_config_dictionary,
-    resolve_omegaconf_to_dictionary
-)
 
 logger = logging.getLogger(__name__)
 
@@ -35,14 +25,19 @@ state_transforms = {}
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/forward/conditional_model/flow_matching/config/",
+    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/conditional_model/flow_matching/config",
     config_name="train_cfm",
 )
 def main(config: DictConfig):
 
     # import modules
-    sys.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
     from data_utils import get_adata_splits
+    from train_utils import (
+        parse_mlp_config_dictionary,
+        parse_nested_mlp_config_dictionary,
+        resolve_omegaconf_to_dictionary
+    )
 
     # 0. retrieving adata and ensuring reproducibility
     train_adata, ood_adatas_dict = get_adata_splits(config)

@@ -17,7 +17,7 @@ try:
 except ImportError as e:
     RAPIDS_IMPORT_OKAY = False
 
-sys.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
 from ood_utils import shuffle_split, split_adata
 
 
