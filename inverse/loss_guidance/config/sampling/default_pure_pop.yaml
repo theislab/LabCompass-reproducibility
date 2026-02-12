@@ -1,5 +1,5 @@
 target_cell_type: "HSCs"
-N: 125
+N: 100
 num_time_steps: 500
 solver_kwargs:
   method: "euler"
