@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch/sbatch_launchers"
+BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch"
 
 # define experimental grid
 TARGET_CELL_TYPES=(
@@ -41,10 +41,10 @@ for target_cell_type in ${TARGET_CELL_TYPES[@]}; do
 
                 # submit job
                 sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/inverse/sweep/sweep_inverse.sbatch \
-                  --target-ct=${target_cell_type} \
-                  --scheduler=${scheduler} \
-                  --optimization-type=${optimization_type} \
-                  --query-type=${query_type};
+                  --target-ct ${target_cell_type} \
+                  --scheduler ${scheduler} \
+                  --optimization-type ${optimization_type} \
+                  --query-type ${query_type};
             done
         done
     done

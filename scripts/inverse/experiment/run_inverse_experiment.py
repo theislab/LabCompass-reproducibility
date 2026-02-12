@@ -28,7 +28,7 @@ NON_LINEARITIES_REGISTRY = {
 
 
 @hydra.main(
-    config_path=os.path.join(ROOT_DIR, "inverse/config"),
+    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config",
     config_name="run_inverse"
 )
 def main(config: DictConfig) -> float:

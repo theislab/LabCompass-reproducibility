@@ -40,5 +40,4 @@ conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/trai
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
     split.obs_column='"'"${PROTOCOL_AXIS}"'"' \
-    split.unique_value_ids="$UNIQUE_VALUE" \
-    2>&1 | tee "../../logs/sweep_cfm-${CONDITION_MODE}_${SAMPLE_REP}-${PROTOCOL_AXIS}-${UNIQUE_VALUE}.out"
+    split.unique_value_ids="$UNIQUE_VALUE"

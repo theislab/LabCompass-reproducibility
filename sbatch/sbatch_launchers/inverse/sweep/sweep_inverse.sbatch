@@ -78,12 +78,11 @@ export HYDRA_FULL_ERROR=1
 
 # run python script
 conda run -n sc_exp_design --no-capture-output \
-    python ./inverse/experiments/${script_name}.py \
+    python scripts/inverse/experiment/${script_name}.py \
     --multirun \
     +launcher=slurm \
     +hparam_search="${hparam_search}" \
     paths.dump_dir=${dump_dir} \
     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
     sampling.query_pure_cell_types="${query_pure}" \
-    sampling.mask_gradients="${mask_gradients}" \
-    2>&1 | tee "../logs/sweep_inverse-${TARGET_CELL_TYPE}_${SCHEDULER}.out"
+    sampling.mask_gradients="${mask_gradients}"
