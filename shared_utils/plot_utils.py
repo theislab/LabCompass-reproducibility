@@ -1,4 +1,5 @@
 from collections import defaultdict
+import math
 import os
 
 import matplotlib.pyplot as plt
@@ -8,7 +9,9 @@ import pandas as pd
 import scanpy as sc
 import seaborn as sns
 from sklearn.neighbors import NearestNeighbors
+from sklearn.decomposition import PCA
 from tqdm import tqdm
+import torch
 
 from sc_exp_design.metrics import compute_e_distance
 
@@ -60,7 +63,7 @@ def get_adata_from_idx(X_true, adata_g, ct_le, fwd_results, min_loss_idx, comput
     return ct_adata_gen
 
 
-def scatterplot(ct_adata, target_ct, base="X_umap"):
+def plot_embedding(ct_adata, target_ct, base="X_umap"):
     X_umap = ct_adata.obsm[base]
     ct_mask = (ct_adata.obs["cell_type"] == target_ct) & (ct_adata.obs["data_type"] != "gen")
     gen_mask = ct_adata.obs["data_type"] == "gen"
@@ -296,7 +299,7 @@ def plot_loss_history(target_ct, loss_history):
 
 def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
     # pca
-    fig_first_quartile0 = scatterplot(adata_pred, target_ct, base="X_pca")
+    fig_first_quartile0 = plot_embedding(adata_pred, target_ct, base="X_pca")
     if save:
         fig_first_quartile0.savefig(
             os.path.join(plots_dir, f"pca_cell_type_{suffix}.png"),
@@ -304,7 +307,7 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
         )
         plt.close(fig_first_quartile0)
     # umap
-    fig_first_quartile1 = scatterplot(adata_pred, target_ct)
+    fig_first_quartile1 = plot_embedding(adata_pred, target_ct)
     if save:
         fig_first_quartile1.savefig(
             os.path.join(plots_dir, f"umap_cell_type_{suffix}.png"),
@@ -330,3 +333,131 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
         )
         plt.close(fig_first_quartile3)
     return fig_first_quartile0, fig_first_quartile1, fig_first_quartile2, fig_first_quartile3
+
+
+def get_dimensionality_reduced_condition_space(
+    original_data,
+    perturbation_prediction_model,
+    n_noise_samples
+):
+    # extract latent representation from model
+    perturbation_reps = next(
+        iter(
+            perturbation_prediction_model.forward_model.train_data.data.perturbation_covariates
+        )
+    )
+    latent_rep = perturbation_prediction_model.velocity_field.get_condition_embedding(
+        {
+            perturbation_reps: torch.from_numpy(
+                original_data).float().to(perturbation_prediction_model.forward_model.device
+            ),
+        }
+    ).detach().cpu().numpy()
+
+    # sample noise for projection
+    noise_orig = np.random.randn(n_noise_samples, original_data.shape[1], 2)
+    noise_latent = np.random.randn(n_noise_samples, latent_rep.shape[1], 2)
+
+    # project latent representation and data
+    orig_rep_rand_proj = np.einsum("nd,mdk->nmk", original_data, noise_orig) / math.sqrt(2)
+    latent_rep_rand_proj = np.einsum("nd,mdk->nmk", latent_rep, noise_latent) / math.sqrt(2)
+
+    # compute pcs
+    orig_rep_pcs = PCA(2).fit_transform(original_data)
+    latent_rep_pcs = PCA(2).fit_transform(latent_rep)
+
+    return (
+        orig_rep_rand_proj, latent_rep_rand_proj, orig_rep_pcs, latent_rep_pcs
+    )
+
+
+def plot_dimensionality_reduced_condition_space(
+    data_samples,
+    gen_samples,
+    data_color_val,
+    gen_color_val,
+    perturbation_prediction_model,
+    n_noise_samples,
+):
+    # concatenate conditions
+    data = np.concat((data_samples, gen_samples), axis=0)
+
+    # get projections
+    orig_rep_rand_proj, latent_rep_rand_proj, orig_rep_pcs, latent_rep_pcs = get_dimensionality_reduced_condition_space(
+        data,
+        perturbation_prediction_model,
+        n_noise_samples
+    )
+
+    # plot projections
+    ...
+
+
+def run_level_plot(
+    perturbation_prediction_model,
+    cond_adata,
+    target_ct,
+    run_level_plots_dir,
+    fwd_results,
+    inverse_results,
+    annotation_dict,
+    classes,
+    n_noise_samples,
+    data_color_val,
+    gen_color_val,
+):
+
+    # parse inverse results archive
+    loss_history = inverse_results["loss_history"]
+    loss = loss_history[:, -1]
+
+    # loss history
+    loss_history_fig = plot_loss_history(target_ct, loss_history)
+    loss_history_fig.savefig(
+        os.path.join(run_level_plots_dir, "loss_history.png"),
+        dpi=300,
+    )
+    plt.close(loss_history_fig)
+
+    # heatmap samples
+    plot_heatmap(
+        run_level_plots_dir,
+        classes,
+        target_ct,
+        fwd_results,
+        inverse_results,
+        annotation_dict,
+        samples_vmin=0.0,
+        samples_vmax=10.0,
+        loss_vmin=0.0,
+        loss_vmax=10.0,
+        plot_pheno=False
+    )
+
+    # heatmap pheno
+    plot_heatmap(
+        run_level_plots_dir,
+        classes,
+        target_ct,
+        fwd_results,
+        inverse_results,
+        annotation_dict,
+        samples_vmin=0.0,
+        samples_vmax=10.0,
+        loss_vmin=0.0,
+        loss_vmax=10.0,
+        plot_pheno=True
+    )
+
+    # plot dimensionality reduced conditions
+    gen_samples = ...
+    data_samples = ...
+    plot_dimensionality_reduced_condition_space(
+        data_samples,
+        gen_samples,
+        data_color_val,
+        gen_color_val,
+        perturbation_prediction_model,
+        n_noise_samples,
+    )
+

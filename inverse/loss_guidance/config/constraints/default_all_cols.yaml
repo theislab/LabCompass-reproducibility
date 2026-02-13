@@ -24,7 +24,7 @@ ubound_dict:
   scf_[ng_ml]: 50.0
   butyzamide_[nm]: 100.0
   retinoic_acid_[µm]: 25.0
-  ldl_[ng_ml]: 00.0
+  ldl_[ng_ml]: 50.0
   il3_[ng_ml]: 20.0
   o2_[%]: 20.0
   days_of_culture: 18.0
