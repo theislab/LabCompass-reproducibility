@@ -40,6 +40,9 @@ def main(config: DictConfig):
         base_cfg = compose(config_name=config.paths.base_config_name)
     annotation_dict = base_cfg.annotation
 
+    ct_string = config.sampling.target_cell_type
+    ct_safe_string = ct_string.replace("/", ":") # cell type dir
+
     ################################################################
     ############# LOAD MODELS AND PREPARE DATA
     ################################################################
@@ -99,8 +102,8 @@ def main(config: DictConfig):
     ############# LOAD RESULTS AND PREPARE FOLDERS
     ################################################################
     # construct current cell type directory
-    logger.info(f"Generating plots for target cell type {config.target_ct}.")
-    target_ct_dir = os.path.join(config.paths.target_ct_dir, config.target_ct)
+    logger.info(f"Generating plots for target cell type {ct_string}.")
+    target_ct_dir = os.path.join(config.paths.target_ct_dir, ct_safe_string)
     logger.info(f"Reading cell type results results from directory {target_ct_dir}")
 
     # read run files
@@ -127,10 +130,16 @@ def main(config: DictConfig):
     ################################################################
     ############# RUN LEVEL VISUALIZATIONS
     ################################################################
+    # get condition data and hue values
+    data_samples = train_adata_phi.obsm[annotation_dict["protocol_obsm_key"]]
+    data_color_val = ...
+    gen_color_val = ...
+
+    # run plots
     run_level_plots(
         perturbation_response_prediction_model,
-        cond_adata,
-        config.target_ct,
+        data_samples,
+        ct_string,
         run_level_plots_dir,
         fwd_results,
         inverse_results,
@@ -151,7 +160,7 @@ def main(config: DictConfig):
     ################################################################
 
     # iterate over each sample
-    for idx in loss.shape[0]:
+    for idx in range(base_cfg.sampling.N):
         # create sample plot dir
         sample_dir = os.path.join(samples_level_plots_dir, str(idx))
         create_dir(sample_dir)

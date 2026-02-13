@@ -519,12 +519,24 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, annotation_dic
         adata_pred.var_names,
         title="Channel Features"
     )
+    if save:
+        fig_xy_channel.savefig(
+            os.path.join(plots_dir, f"xy_plt_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_xy_channel)
     fig_xy_scatter = xy_plot_summary_stats(
         X_scatter_gen,
         X_scatter_tgt,
         annotation_dict["scatter_columns"],
         title="Scatter Features"
     )
+    if save:
+        fig_xy_scatter.savefig(
+            os.path.join(plots_dir, f"xy_plt_scatter_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_xy_scatter)
 
     # marginals plot
     fig_marginals_channel = plot_marginals(
@@ -533,16 +545,28 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, annotation_dic
         col_names=adata_pred.var_names,
         title=""
     )
+    if save:
+        fig_marginals_channel.savefig(
+            os.path.join(plots_dir, f"marginals_scatter_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_marginals_channel)
     fig_marginals_scatter = plot_marginals(
         X_scatter_tgt,
         X_gen=X_scatter_gen,
         col_names=annotation_dict["scatter_columns"],
         title=""
     )
+    if save:
+        fig_marginals_scatter.savefig(
+            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_marginals_scatter)
 
-    # scatter plot
-    pairwise_scatter_plot(
-        X,
+    # scatter plot channel
+    fig_channel_vs_channel, _ = pairwise_scatter_plot(
+        X_channel_gen,
         Y=None,
         title="",
         X_names=None,
@@ -555,7 +579,64 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, annotation_dic
         show=True,
         use_seaborn=False
     )
-    return fig_first_quartile0, fig_first_quartile1, fig_first_quartile2, fig_first_quartile3
+    if save:
+        fig_channel_vs_channel.savefig(
+            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_channel_vs_channel)
+
+    # scatter plot scatter
+    fig_scatter_vs_scatter, _ = pairwise_scatter_plot(
+        X_scatter_gen,
+        Y=None,
+        title="",
+        X_names=None,
+        Y_names=None,
+        base_size=5,
+        dpi=500,
+        compute_kde=True,
+        figkwargs=None,
+        scatterkwargs=None,
+        show=True,
+        use_seaborn=False
+    )
+    if save:
+        fig_scatter_vs_scatter.savefig(
+            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_scatter_vs_scatter)
+
+
+    # scatter plot scatter-channel
+    fig_channel_vs_scatter, _ = pairwise_scatter_plot(
+        X_scatter_gen,
+        Y=X_channel_gen,
+        title="",
+        X_names=None,
+        Y_names=None,
+        base_size=5,
+        dpi=500,
+        compute_kde=True,
+        figkwargs=None,
+        scatterkwargs=None,
+        show=True,
+        use_seaborn=False
+    )
+    if save:
+        fig_channel_vs_scatter.savefig(
+            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_channel_vs_scatter)
+
+    return (
+        fig_first_quartile0, fig_first_quartile1, fig_first_quartile2, fig_first_quartile3,
+        fig_xy_channel, fig_xy_scatter, fig_marginals_channel, fig_marginals_scatter,
+        fig_channel_vs_channel, fig_scatter_vs_scatter, fig_channel_vs_scatter
+
+    )
 
 
 def get_dimensionality_reduced_condition_space(
