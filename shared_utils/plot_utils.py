@@ -2,6 +2,7 @@ from collections import defaultdict
 import math
 import os
 
+from matplotlib import cm, colors
 import matplotlib.pyplot as plt
 from matplotlib.patches import PathPatch, Rectangle
 import numpy as np
@@ -142,6 +143,101 @@ def get_distance_df(adata, obsm_key, classes, distance_fn=compute_e_distance):
         edist_dict["ct"].append(ct)
         edist_dict["edist"].append(edist)
     return pd.DataFrame(edist_dict).sort_values("edist", axis=0, ascending=False)
+
+
+
+def get_distance_matrix(X, Y, metric="jensen-shannon"):
+    """
+    Compute KL divergence from each row in X to each row in Y.
+    X: shape (N, D)
+    Y: shape (K, D)
+    Returns: shape (N, K)
+    """
+    eps = 1e-12
+    X = np.clip(X, eps, 1)[:, None, :]
+    Y = np.clip(Y, eps, 1)[None, :, :]
+    if metric == "jensen-shannon":
+        return np.sqrt(0.5*np.sum(X*np.log(2*X / (Y + X)), axis=-1) + 0.5*np.sum(Y*np.log(2*Y / (Y + X)), axis=-1))
+    elif metric == "jeffrey":
+        return 0.5*np.sum(X* np.log(X / Y), axis=-1) + 0.5*np.sum(Y* np.log(Y/ X), axis=-1)
+    elif metric == "kl-div":
+        return np.sum(X * np.log(X / Y), axis=-1) # WARNING: not a metric
+    else:
+        raise ValueError
+
+
+def binplot_with_colors(
+    protocol_columns,
+    X,
+    ct_string,
+    bins=100,
+    agg = "mean",
+    cmap_name="viridis",
+):
+    agg_funcs = {
+        "mean": np.mean,
+        "median": np.median,
+        "sum": np.sum,
+        "min": np.min,
+        "max": np.max,
+    },
+    agg_func = agg_funcs[agg],
+
+    fig, ax = plt.subplots(nrows=1, ncols=len(protocol_columns), figsize=(50, 12))
+
+    for cidx, col in enumerate(protocol_columns):
+        x = X[:, cidx]
+        # Histogram
+        counts, bin_edges = np.histogram(x, bins=bins)
+        bin_ids = np.digitize(x, bin_edges) - 1
+        # Aggregate color column per bin
+        bin_color = np.array([
+            agg_func(c[bin_ids == i]) if np.any(bin_ids == i) else np.nan
+            for i in range(len(bin_edges) - 1)
+        ])
+        cmap = cm.get_cmap(cmap_name)
+        norm = colors.Normalize(
+            vmin=np.nanmin(bin_color),
+            vmax=np.nanmax(bin_color)
+        )
+
+        # Plot
+        ax[cidx].bar(
+            bin_edges[:-1],
+            counts,
+            width=np.diff(bin_edges),
+            align="edge",
+            color=cmap(norm(bin_color)),
+            edgecolor="none"
+        )
+        ax[cidx].set_xlabel(col)
+        ax[cidx].set_title(ct_string)
+    return fig
+
+
+def scatter_protocol_covariate_against_prop(
+        protocol_columns,
+        X,
+        ubounds,
+        margin=10
+    ):
+    fig, ax = plt.subplots(nrows=1, ncols=len(protocol_columns), figsize=(50, 12))
+    for cidx, col in enumerate(protocol_columns):
+        x = X[:, cidx]
+        # Plot
+        ax[cidx].scatter(
+            x,
+            y,
+        )
+        ax[cidx].set_title(col)
+        ax[cidx].set_ylabel("prop")
+        ax[cidx].set_xlabel(col)
+
+        max_val = ubounds[:, cidx]
+        ax[cidx].set_xlim(0, max_val + margin)  # dynamic x-axis cap
+        ax[cidx].axvline(x=max_val, color="red", linestyle="--", alpha=0.7)
+    return fig
+
 
 
 def barplot_clusters_distances(target_cell_type, adata, obsm_key, classes, distance_fn=compute_e_distance):
@@ -674,7 +770,6 @@ def get_dimensionality_reduced_condition_space(
         orig_rep_rand_proj, latent_rep_rand_proj, orig_rep_pcs, latent_rep_pcs
     )
 
-
 def plot_dimensionality_reduced_condition_space(
     data_samples,
     gen_samples,
@@ -683,18 +778,43 @@ def plot_dimensionality_reduced_condition_space(
     perturbation_prediction_model,
     n_noise_samples,
 ):
-    # concatenate conditions
-    data = np.concat((data_samples, gen_samples), axis=0)
-
-    # get projections
-    orig_rep_rand_proj, latent_rep_rand_proj, orig_rep_pcs, latent_rep_pcs = get_dimensionality_reduced_condition_space(
-        data,
-        perturbation_prediction_model,
-        n_noise_samples
+    data = np.concatenate((data_samples, gen_samples), axis=0)
+    n_real = len(data_samples)
+    
+    # Get projections from your previously defined function
+    orig_rand, latent_rand, orig_pcs, latent_pcs = get_dimensionality_reduced_condition_space(
+        data, perturbation_prediction_model, n_noise_samples
     )
 
-    # plot projections
-    ...
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    titles = ["Orig (Rand Proj)", "Latent (Rand Proj)", "Orig (PCA)", "Latent (PCA)"]
+    projs = [orig_rand.mean(1), latent_rand.mean(1), orig_pcs, latent_pcs]
+
+    for i, ax in enumerate(axes.flat):
+        # Plot real data
+        ax.scatter(projs[i][:n_real, 0], projs[i][:n_real, 1], 
+                   c=data_color_val, cmap='viridis', s=10, label='Real', alpha=0.6)
+        # Plot generated data
+        ax.scatter(projs[i][n_real:, 0], projs[i][n_real:, 1], 
+                   c=gen_color_val, cmap='magma', s=30, marker='x', label='Gen')
+        ax.set_title(titles[i])
+        ax.legend()
+
+    plt.tight_layout()
+    return fig
+
+
+def plot_manifold_distances(X_real, X_gen, title):
+    """Helper to plot distribution of distances to nearest real neighbors."""
+    fig, ax = plt.subplots(figsize=(12, 10))
+    nbrs = NearestNeighbors(n_neighbors=1).fit(X_real)
+    distances, _ = nbrs.kneighbors(X_gen)
+    
+    sns.kdeplot(distances.flatten(), ax=ax, fill=True, color="crimson")
+    ax.set_title(f"Distance to Real Manifold ({title})")
+    ax.set_xlabel("L2 Distance")
+    ax.grid(True)
+    return fig
 
 
 def run_level_plots(
@@ -713,7 +833,6 @@ def run_level_plots(
 
     # parse inverse results archive
     loss_history = inverse_results["loss_history"]
-    loss = loss_history[:, -1]
 
     # loss history
     loss_history_fig = plot_loss_history(target_ct, loss_history)
@@ -765,14 +884,41 @@ def run_level_plots(
     )
 
     # plot distance to nn in real data (condition space)
-    ...
+    plot_manifold_distances(data_samples, gen_samples, "Condition Space")
 
-    # plot distance to target (phenotype space)
-    ...
 
-def covariate_level_plots():
-    # histogram over each covariate axes colore by target prop
-    ...
+def covariate_level_plots(
+    target_ct,
+    gen_samples,
+    target_probs,
+    protocol_columns,
+    upper_bounds,
+    plots_dir,
+    suffix=""
+):
+    """
+    Orchestrates protocol-level visualizations to see how experimental 
+    variables drive the target phenotype.
+    """
+    
+    # 1. Binned Histogram: Frequency of conditions colored by Target Prop
+    fig_bins = binplot_with_colors(
+        protocol_columns=protocol_columns,
+        X=gen_samples,
+        ct_string=f"Mean {target_ct} Prob per Bin",
+        # We pass the probabilities as the values to aggregate (color)
+        target_values=target_probs, 
+        bins=50
+    )
+    fig_bins.savefig(os.path.join(plots_dir, f"covariate_bins_{suffix}.png"), dpi=300)
+    plt.close(fig_bins)
 
-    # scatter plot vs target proportions
-    ...
+    # 2. Scatter vs Proportions: Direct sensitivity check
+    fig_scatter = scatter_protocol_covariate_against_prop(
+        protocol_columns=protocol_columns,
+        X=gen_samples,
+        y=target_probs,
+        ubounds=upper_bounds
+    )
+    fig_scatter.savefig(os.path.join(plots_dir, f"covariate_scatters_{suffix}.png"), dpi=300)
+    plt.close(fig_scatter)

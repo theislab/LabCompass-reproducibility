@@ -1,28 +1,45 @@
 #!/bin/bash
 
+ENV_NAME="sc_exp_design"
+
+# Parse Flags
+case $1 in
+-e|--env-name)
+    ENV_NAME="$2"
+    shift 2
+    ;;
+*)
+    echo "Unknown parameter passed: $1"
+    exit 1
+    ;;
+esac
+
+echo "Conda environment set to ${ENV_NAME}"
+
+
 BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch"
 
 # define experimental grid
 TARGET_CELL_TYPES=(
-    # "CD14-Mono"
-    # "CD49c-Myeloid"
-    # "CyclingProgenitor*"
-    # "DCs-CD14"
-    # "EarlyGMP"
-    # "Early_Pro-B"
-    # "EosBasoMastPre"
-    # "EosBasoMastPre_2"
+    "CD14-Mono"
+    "CD49c-Myeloid"
+    "CyclingProgenitor*"
+    "DCs-CD14"
+    "EarlyGMP"
+    "Early_Pro-B"
+    "EosBasoMastPre"
+    "EosBasoMastPre_2"
     "EryPro"
-    # "GMP-Cycle"
-    # "GMP-Neutro"
-    # "GMP-Neutro/CD16-Mono"
+    "GMP-Cycle"
+    "GMP-Neutro"
+    "GMP-Neutro/CD16-Mono"
     "HSCs"
-    # "MEP"
-    # "MLP"
-    # "MPP"
+    "MEP"
+    "MLP"
+    "MPP"
     "MgkPro"
-    # "Pro-B"
-    # "pDCs/cDCs"
+    "Pro-B"
+    "pDCs/cDCs"
 )
 SCHEDULERS=(
     "constant"
@@ -60,7 +77,8 @@ for target_cell_type in ${TARGET_CELL_TYPES[@]}; do
                   --target-ct ${target_cell_type} \
                   --scheduler ${scheduler} \
                   --optimization-type ${optimization_type} \
-                  --query-type ${query_type};
+                  --query-type ${query_type} \
+                  --env-name ${ENV_NAME};
             done
         done
     done

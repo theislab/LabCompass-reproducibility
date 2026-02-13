@@ -14,6 +14,7 @@ TARGET_CELL_TYPE="HSCs"
 SCHEDULER="reciprocal"
 OPT="unconstrained"
 QUERY_TYPE="pure_populations"
+ENV_NAME="sc_exp_design"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -32,6 +33,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -q|--query-type)
       QUERY_TYPE="$2"
+      shift 2
+      ;;
+    -e|--env-name)
+      ENV_NAME="$2"
       shift 2
       ;;
     *)
@@ -73,13 +78,14 @@ echo "Scheduler        : ${SCHEDULER} -> ${hparam_search}"
 echo "Optimization     : ${OPT} -> ${script_name}"
 echo "Query Mode       : ${QUERY_TYPE} (pure=${query_pure}, mask=${mask_gradients})"
 echo "Dump Directory   : ${dump_dir}"
+echo "Environment      : ${ENV_NAME}"
 echo "------------------------------------------------"
 
 # handle hydra errors
 export HYDRA_FULL_ERROR=1
 
 # run python script
-conda run -n sc_exp_design --no-capture-output \
+conda run -n ${ENV_NAME} --no-capture-output \
     python scripts/inverse/experiment/${script_name}.py \
     --multirun \
     +launcher=slurm \
