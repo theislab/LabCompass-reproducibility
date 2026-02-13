@@ -156,7 +156,15 @@ def main(config: DictConfig):
     ################################################################
     ############# COVARIATE LEVEL VISUALIZATIONS
     ################################################################
-    covariate_level_plots()
+    covariate_level_plots(
+        target_ct,
+        gen_samples,
+        target_probs,
+        protocol_columns,
+        upper_bounds,
+        plots_dir,
+        suffix=""
+    )
 
     ################################################################
     ############# SAMPLE LEVEL VISUALIZATIONS

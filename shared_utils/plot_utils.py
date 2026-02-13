@@ -89,6 +89,7 @@ def dotplot(adata, target_ct, vmin=0.0, vmax=30.0):
 def binplot_with_colors(
     protocol_columns,
     X,
+    c,
     ct_string,
     bins=100,
     agg = "mean",
@@ -100,8 +101,8 @@ def binplot_with_colors(
         "sum": np.sum,
         "min": np.min,
         "max": np.max,
-    },
-    agg_func = agg_funcs[agg],
+    }
+    agg_func = agg_funcs[agg]
 
     fig, ax = plt.subplots(nrows=1, ncols=len(protocol_columns), figsize=(50, 12))
 
@@ -138,24 +139,40 @@ def binplot_with_colors(
 def scatter_protocol_covariate_against_prop(
     protocol_columns,
     X,
+    y,
     ubounds,
-    margin=10
+    margin=10,
+    use_density=True
 ):
     fig, ax = plt.subplots(nrows=1, ncols=len(protocol_columns), figsize=(50, 12))
+    
     for cidx, col in enumerate(protocol_columns):
-        x = X[:, cidx]
-        # Plot
-        ax[cidx].scatter(
-            x,
-            y,
-        )
-        ax[cidx].set_title(col)
-        ax[cidx].set_ylabel("prop")
+        x_data = X[:, cidx]
+        
+        if use_density:
+            # Calculate point density for coloring
+            xy = np.vstack([x_data, y])
+            z = gaussian_kde(xy)(xy)
+            # Sort the points by density so that the densest points are on top
+            idx = z.argsort()
+            x_plot, y_plot, z_plot = x_data[idx], y[idx], z[idx]
+            
+            scatter = ax[cidx].scatter(x_plot, y_plot, c=z_plot, s=50, cmap='viridis')
+            plt.colorbar(scatter, ax=ax[cidx], label='Density')
+        else:
+            ax[cidx].scatter(x_data, y, alpha=0.5)
+
+        ax[cidx].set_title(f"{col}", fontsize=16)
+        ax[cidx].set_ylabel(f"Target Prob")
         ax[cidx].set_xlabel(col)
 
-        max_val = ubounds[:, cidx]
-        ax[cidx].set_xlim(0, max_val + margin)  # dynamic x-axis cap
-        ax[cidx].axvline(x=max_val, color="red", linestyle="--", alpha=0.7)
+        # Draw the experimental boundary
+        max_val = ubounds[cidx] # Fixed indexing (assumes ubounds is a vector)
+        ax[cidx].axvline(x=max_val, color="red", linestyle="--", linewidth=2, label="Constraint")
+        ax[cidx].set_xlim(0, max_val + margin)
+        ax[cidx].legend()
+        ax[cidx].grid(True, alpha=0.3)
+        
     return fig
 
 
@@ -287,8 +304,6 @@ def plot_heatmap(
     )
     ax.add_patch(hrect)
 
-    # ct_dir = os.path.join(base_dir, target_ct.replace("/", "_"))
-    # create_dir(ct_dir, logger=logger)
     heatmap_path = os.path.join(base_dir,  "induced_pheno.png" if plot_pheno else "posterior_samples.png")
 
     bbox = cg.figure.get_tightbbox(cg.figure.canvas.get_renderer())
@@ -359,7 +374,7 @@ def xy_plot_summary_stats(
         ax[1].annotate(txt, (prior_std[i] + xoffset, real_std[i] + yoffset), size=6)
     ax[1].plot(linspace, linspace)
     fig.tight_layout()
-    return fig, ax
+    return fig
 
 
 def plot_marginals(
@@ -425,7 +440,7 @@ def pairwise_scatter_plot(
 
     # creating plot
     figsize = (base_size*ncols, base_size*nrows) 
-    fig, axes = plt.subplots(nrows, ncols, figsize=figsize, dpi=dpi, **figkwargs)
+    fig, axes = plt.subplots(nrows, ncols, figsize=figsize, dpi=dpi, squeeze=False, **figkwargs)
     fig.suptitle(title)
 
     # iterating over each axes
@@ -434,6 +449,7 @@ def pairwise_scatter_plot(
             # skipping diagonal and lower triangular
             # for symmetric plots
             if is_symmetric and cidx <= ridx:
+                axes[ridx, cidx].axis('off')
                 continue
 
             # retrieving axes
@@ -489,7 +505,7 @@ def pairwise_scatter_plot(
     fig.tight_layout()
     if show:
         fig.show()
-    return fig, axes
+    return fig
 
 
 def plot_dimensionality_reduced_condition_space(
@@ -596,7 +612,7 @@ def run_level_plots(
 
     # plot dimensionality reduced conditions
     gen_samples = inverse_results["trajectory"][-1]
-    plot_dimensionality_reduced_condition_space(
+    fig_proj = plot_dimensionality_reduced_condition_space(
         data_samples,
         gen_samples,
         data_color_val,
@@ -604,9 +620,19 @@ def run_level_plots(
         perturbation_prediction_model,
         n_noise_samples,
     )
+    fig_proj.savefig(
+        os.path.join(run_level_plots_dir, "dimensionality_reduced_conds.png"),
+        dpi=300,
+    )
+    plt.close(fig_proj)
 
     # plot distance to nn in real data (condition space)
-    plot_manifold_distances(data_samples, gen_samples, "Condition Space")
+    fig_cond_dist = plot_manifold_distances(data_samples, gen_samples, "Condition Space")
+    fig_cond_dist.savefig(
+        os.path.join(run_level_plots_dir, "distance_condition_space.png"),
+        dpi=300,
+    )
+    plt.close(fig_cond_dist)
 
 
 def covariate_level_plots(
@@ -625,12 +651,13 @@ def covariate_level_plots(
     
     # 1. Binned Histogram: Frequency of conditions colored by Target Prop
     fig_bins = binplot_with_colors(
-        protocol_columns=protocol_columns,
-        X=gen_samples,
-        ct_string=f"Mean {target_ct} Prob per Bin",
-        # We pass the probabilities as the values to aggregate (color)
-        target_values=target_probs, 
-        bins=50
+        protocol_columns,
+        gen_samples,
+        target_probs,
+        target_ct,
+        bins=100,
+        agg = "mean",
+        cmap_name="viridis",
     )
     fig_bins.savefig(os.path.join(plots_dir, f"covariate_bins_{suffix}.png"), dpi=300)
     plt.close(fig_bins)
@@ -671,7 +698,7 @@ def sample_level_plots(
             os.path.join(plots_dir, f"umap_cell_type_{suffix}.png"),
             dpi=300,
         )
-        plt.close(fig_first_quartile0)
+        plt.close(fig_first_quartile1)
 
     # dotplot
     fig_first_quartile2 = dotplot(adata_pred, target_ct)
@@ -738,7 +765,7 @@ def sample_level_plots(
     )
     if save:
         fig_marginals_channel.savefig(
-            os.path.join(plots_dir, f"marginals_scatter_{suffix}.png"),
+            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
             dpi=300,
         )
         plt.close(fig_marginals_channel)
@@ -750,13 +777,13 @@ def sample_level_plots(
     )
     if save:
         fig_marginals_scatter.savefig(
-            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            os.path.join(plots_dir, f"marginals_scatter_{suffix}.png"),
             dpi=300,
         )
         plt.close(fig_marginals_scatter)
 
     # scatter plot channel
-    fig_channel_vs_channel, _ = pairwise_scatter_plot(
+    fig_channel_vs_channel = pairwise_scatter_plot(
         X_channel_gen,
         Y=None,
         title="",
@@ -772,13 +799,13 @@ def sample_level_plots(
     )
     if save:
         fig_channel_vs_channel.savefig(
-            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            os.path.join(plots_dir, f"pairwise_channel_channel_{suffix}.png"),
             dpi=300,
         )
         plt.close(fig_channel_vs_channel)
 
     # scatter plot scatter
-    fig_scatter_vs_scatter, _ = pairwise_scatter_plot(
+    fig_scatter_vs_scatter = pairwise_scatter_plot(
         X_scatter_gen,
         Y=None,
         title="",
@@ -794,13 +821,13 @@ def sample_level_plots(
     )
     if save:
         fig_scatter_vs_scatter.savefig(
-            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            os.path.join(plots_dir, f"pairwise_scatter_scatter_{suffix}.png"),
             dpi=300,
         )
         plt.close(fig_scatter_vs_scatter)
 
     # scatter plot scatter-channel
-    fig_channel_vs_scatter, _ = pairwise_scatter_plot(
+    fig_channel_vs_scatter = pairwise_scatter_plot(
         X_scatter_gen,
         Y=X_channel_gen,
         title="",
@@ -816,7 +843,7 @@ def sample_level_plots(
     )
     if save:
         fig_channel_vs_scatter.savefig(
-            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            os.path.join(plots_dir, f"pairwise_scatter_channel_{suffix}.png"),
             dpi=300,
         )
         plt.close(fig_channel_vs_scatter)
