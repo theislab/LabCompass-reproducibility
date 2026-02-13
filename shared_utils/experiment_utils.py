@@ -1,4 +1,6 @@
+from collections import defaultdict
 import logging
+import math
 import os
 import sys
 from typing import Any
@@ -6,11 +8,16 @@ from typing import Any
 import numpy as np
 from omegaconf import DictConfig
 import pandas as pd
+import scanpy as sc
+from sklearn.decomposition import PCA
 from scipy.special import softmax
+from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import LabelEncoder
 import torch
+from tqdm import tqdm
 
 from sc_exp_design.constants import DataFields, ParamsFields, PredictionFields
+from sc_exp_design.metrics import compute_e_distance
 from sc_exp_design.models import FlowMatching, TargetPredictionModel
 
 sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
@@ -19,7 +26,10 @@ from forward_model import ForwardModel
 from z_norm_modules import ZNorm, IZNorm, RescaledTargetPredictionModel
 
 
-def create_dir(path: str, logger: logging.Logger | None = None) -> str:
+def create_dir(
+    path: str,
+    logger: logging.Logger | None = None
+) -> str:
     """Create a directory if it does not exist and log the action."""
     os.makedirs(path, exist_ok=True)
     if logger is not None:
@@ -27,7 +37,10 @@ def create_dir(path: str, logger: logging.Logger | None = None) -> str:
     return path
 
 
-def get_forward_model(config: DictConfig, logger: logging.Logger | None = None) -> "ForwardModel":
+def get_forward_model(
+    config: DictConfig,
+    logger: logging.Logger | None = None
+) -> "ForwardModel":
     # 0. Forward Model
     # step 0.0 Load perturbation response prediction model
     if logger is not None:
@@ -207,7 +220,11 @@ def get_transformed_data(
     return data_dict_transformed, data_dict_original
 
 
-def get_target_dict(config, classes, device):
+def get_target_dict(
+    config,
+    classes,
+    device
+):
     if config.sampling.query_pure_cell_types:
         nclasses = len(classes)
         idx = classes.index(config.sampling.target_cell_type)
@@ -235,3 +252,133 @@ def get_loss_fn(config):
     return {
         "cell_type": lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
     }
+
+
+def generated_density_knn(
+    X_true,
+    X_generated,
+    k=20,
+    bandwidth=None
+):
+
+    nbrs = NearestNeighbors(n_neighbors=k).fit(X_true)
+    distances, indices = nbrs.kneighbors(X_generated)
+    
+    # Auto-bandwidth: median distance of neighbors
+    if bandwidth is None:
+        bandwidth = np.median(distances)
+    density = np.zeros(X_true.shape[0])
+
+    # Gaussian kernel weights
+    weights = np.exp(-(distances**2) / (2 * bandwidth**2))
+
+    # Add weighted contributions
+    for gen_idx in range(len(X_generated)):
+        for neighbor_pos, real_idx in enumerate(indices[gen_idx]):
+            density[real_idx] += weights[gen_idx, neighbor_pos]
+    return density
+
+
+def get_adata_from_idx(X_true, adata_g, ct_le, fwd_results, min_loss_idx, compute_stuff=True, n_scatter_feats=6):
+    X_gen = fwd_results["X"][min_loss_idx]
+    ct_label_gen = ct_le.inverse_transform(
+        fwd_results["ct_probs"][min_loss_idx].argmax(1)
+    )
+
+    X = np.concat((X_gen, X_true), axis=0)
+    X_channel = X[:, :-n_scatter_feats]
+    X_scatter = X[:, -n_scatter_feats:]
+    G = np.concatenate((ct_label_gen, adata_g.obs["cell_type"].values), axis=0)
+    ct_adata_gen = sc.AnnData(
+        X=X_channel,
+        obsm={"X_scatter": X_scatter},
+        obs={
+            "cell_type": G,
+            "data_type": ["gen"]*X_gen.shape[0] + \
+                ["real"]*len(adata_g)
+        },
+        var=pd.DataFrame(index=adata_g.var_names)
+    )
+    if compute_stuff:
+        sc.pp.pca(ct_adata_gen)
+        sc.pp.neighbors(ct_adata_gen)
+        sc.tl.umap(ct_adata_gen)
+    return ct_adata_gen
+
+
+def get_distance_df(
+    adata,
+    obsm_key,
+    classes,
+    distance_fn=compute_e_distance,
+):
+    adata_pred = adata[adata.obs["data_type"] == "gen"]
+    adata_true = adata[adata.obs["data_type"] != "gen"]
+
+    edist_dict = defaultdict(list)
+    for ct in tqdm(classes):
+        adata_ct = adata_true[adata_true.obs.cell_type == ct]
+        x_true = adata_ct.obsm[obsm_key] if obsm_key is not None else adata_ct.X
+        edist = distance_fn(adata_pred.obsm[obsm_key]if obsm_key is not None else adata_pred.X, x_true)
+        edist_dict["ct"].append(ct)
+        edist_dict["edist"].append(edist)
+    return pd.DataFrame(edist_dict).sort_values("edist", axis=0, ascending=False)
+
+
+def get_distance_matrix(
+    X,
+    Y,
+    metric="jensen-shannon"
+):
+    """
+    Compute KL divergence from each row in X to each row in Y.
+    X: shape (N, D)
+    Y: shape (K, D)
+    Returns: shape (N, K)
+    """
+    eps = 1e-12
+    X = np.clip(X, eps, 1)[:, None, :]
+    Y = np.clip(Y, eps, 1)[None, :, :]
+    if metric == "jensen-shannon":
+        return np.sqrt(0.5*np.sum(X*np.log(2*X / (Y + X)), axis=-1) + 0.5*np.sum(Y*np.log(2*Y / (Y + X)), axis=-1))
+    elif metric == "jeffrey":
+        return 0.5*np.sum(X* np.log(X / Y), axis=-1) + 0.5*np.sum(Y* np.log(Y/ X), axis=-1)
+    elif metric == "kl-div":
+        return np.sum(X * np.log(X / Y), axis=-1) # WARNING: not a metric
+    else:
+        raise ValueError
+
+
+def get_dimensionality_reduced_condition_space(
+    original_data,
+    perturbation_prediction_model,
+    n_noise_samples
+):
+    # extract latent representation from model
+    perturbation_reps = next(
+        iter(
+            perturbation_prediction_model.forward_model.train_data.data.perturbation_covariates
+        )
+    )
+    latent_rep = perturbation_prediction_model.velocity_field.get_condition_embedding(
+        {
+            perturbation_reps: torch.from_numpy(
+                original_data).float().to(perturbation_prediction_model.forward_model.device
+            ),
+        }
+    ).detach().cpu().numpy()
+
+    # sample noise for projection
+    noise_orig = np.random.randn(n_noise_samples, original_data.shape[1], 2)
+    noise_latent = np.random.randn(n_noise_samples, latent_rep.shape[1], 2)
+
+    # project latent representation and data
+    orig_rep_rand_proj = np.einsum("nd,mdk->nmk", original_data, noise_orig) / math.sqrt(2)
+    latent_rep_rand_proj = np.einsum("nd,mdk->nmk", latent_rep, noise_latent) / math.sqrt(2)
+
+    # compute pcs
+    orig_rep_pcs = PCA(2).fit_transform(original_data)
+    latent_rep_pcs = PCA(2).fit_transform(latent_rep)
+    return (
+        orig_rep_rand_proj, latent_rep_rand_proj, orig_rep_pcs, latent_rep_pcs
+    )

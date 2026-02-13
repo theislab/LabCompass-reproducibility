@@ -24,30 +24,33 @@ def main(config: DictConfig):
     ################################################################
     # lazily import modules 
     sys.path.insert(0, os.path.join(BASE_DIR, "shared_utils"))
-    from experiment_utils import get_forward_model, create_dir
-    from plot_utils import (
+    from experiment_utils import (
         get_adata_from_idx,
-        plot_adata,
+        get_forward_model,
+        create_dir,
+    )
+    from plot_utils import (
         run_level_plots,
         covariate_level_plots,
+        sample_level_plots,
     )
     from z_norm_modules import get_rescaling
 
     # initialize base config
     logger.info("Starting script for generating plots of inverse results")
     logger.info(f"Initializing base configuration.")
-    with initialize(config_path=config.paths.base_config_path, version_base=None):
-        base_cfg = compose(config_name=config.paths.base_config_name)
+    with initialize(config_path=config.base_config_path, version_base=None):
+        base_cfg = compose(config_name=config.base_config_name)
     annotation_dict = base_cfg.annotation
 
-    ct_string = config.sampling.target_cell_type
+    ct_string = config.target_cell_type
     ct_safe_string = ct_string.replace("/", ":") # cell type dir
 
     ################################################################
     ############# LOAD MODELS AND PREPARE DATA
     ################################################################
     # load forward model
-    forward_model, (
+    _, (
         perturbation_response_prediction_model,
         target_prediction_model,
     ) = get_forward_model(base_cfg, logger=logger)
@@ -60,12 +63,12 @@ def main(config: DictConfig):
     # subsampling data
     train_adata_phi = sc.pp.sample(
         train_adata_phi,
-        n=config.subsample.n_train_cells,
+        n=config.n_train_cells,
         copy=True
     )
     val_adata_phi = sc.pp.sample(
         val_adata_phi,
-        n=config.subsample.n_val_cells,
+        n=config.n_val_cells,
         copy=True
     )
     logger.info(f"{train_adata_phi=}, {val_adata_phi=}")
@@ -103,7 +106,7 @@ def main(config: DictConfig):
     ################################################################
     # construct current cell type directory
     logger.info(f"Generating plots for target cell type {ct_string}.")
-    target_ct_dir = os.path.join(config.paths.target_ct_dir, ct_safe_string)
+    target_ct_dir = os.path.join(config.target_ct_dir, ct_safe_string)
     logger.info(f"Reading cell type results results from directory {target_ct_dir}")
 
     # read run files
@@ -167,15 +170,19 @@ def main(config: DictConfig):
 
         # get adata
         adata_pred_min = get_adata_from_idx(X_true, adata_g, ct_le, fwd_results, idx)
-        plot_adata(adata_pred_min, config.target_ct, classes, sample_dir, "", annotation_dict)
+        sample_level_plots(adata_pred_min, config.target_ct, classes, sample_dir, "", annotation_dict)
 
 
 def parse_args():
     import argparse    
     parser = argparse.ArgumentParser()
-    parser.add_argument("--target_ct", required=True)
+    parser.add_argument("--target_cell_type", required=True)
     parser.add_argument("--run", required=True)
     parser.add_argument("--n_noise_samples", required=False, default=10_000)
+    parser.add_argument("--base_config_path", required=False, default=...)
+    parser.add_argument("--base_config_name", required=False, default=...)
+    parser.add_argument("--n_train_cells", required=False, default=70_000)
+    parser.add_argument("--n_val_cells", required=False, default=30_000)
     return parser.parse_args()
 
 

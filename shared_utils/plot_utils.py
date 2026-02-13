@@ -1,68 +1,24 @@
-from collections import defaultdict
-import math
 import os
+import sys
 
 from matplotlib import cm, colors
 import matplotlib.pyplot as plt
-from matplotlib.patches import PathPatch, Rectangle
+from matplotlib.patches import Rectangle
 import numpy as np
 import pandas as pd
 import scanpy as sc
 import seaborn as sns
 from scipy.stats import gaussian_kde
 from sklearn.neighbors import NearestNeighbors
-from sklearn.decomposition import PCA
-from tqdm import tqdm
-import torch
 
 from sc_exp_design.metrics import compute_e_distance
 
-
-def generated_density_knn(X_true, X_generated, k=20, bandwidth=None):
-
-    nbrs = NearestNeighbors(n_neighbors=k).fit(X_true)
-    distances, indices = nbrs.kneighbors(X_generated)
-    
-    # Auto-bandwidth: median distance of neighbors
-    if bandwidth is None:
-        bandwidth = np.median(distances)
-    density = np.zeros(X_true.shape[0])
-
-    # Gaussian kernel weights
-    weights = np.exp(-(distances**2) / (2 * bandwidth**2))
-
-    # Add weighted contributions
-    for gen_idx in range(len(X_generated)):
-        for neighbor_pos, real_idx in enumerate(indices[gen_idx]):
-            density[real_idx] += weights[gen_idx, neighbor_pos]
-    return density
-
-
-def get_adata_from_idx(X_true, adata_g, ct_le, fwd_results, min_loss_idx, compute_stuff=True, n_scatter_feats=6):
-    X_gen = fwd_results["X"][min_loss_idx]
-    ct_label_gen = ct_le.inverse_transform(
-        fwd_results["ct_probs"][min_loss_idx].argmax(1)
-    )
-
-    X = np.concat((X_gen, X_true), axis=0)
-    X_channel = X[:, :-n_scatter_feats]
-    X_scatter = X[:, -n_scatter_feats:]
-    G = np.concatenate((ct_label_gen, adata_g.obs["cell_type"].values), axis=0)
-    ct_adata_gen = sc.AnnData(
-        X=X_channel,
-        obsm={"X_scatter": X_scatter},
-        obs={
-            "cell_type": G,
-            "data_type": ["gen"]*X_gen.shape[0] + \
-                ["real"]*len(adata_g)
-        },
-        var=pd.DataFrame(index=adata_g.var_names)
-    )
-    if compute_stuff:
-        sc.pp.pca(ct_adata_gen)
-        sc.pp.neighbors(ct_adata_gen)
-        sc.tl.umap(ct_adata_gen)
-    return ct_adata_gen
+sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+from experiment_utils import (
+    get_distance_df,
+    get_dimensionality_reduced_condition_space,
+    get_distance_matrix,
+)
 
 
 def plot_embedding(ct_adata, target_ct, base="X_umap"):
@@ -130,42 +86,6 @@ def dotplot(adata, target_ct, vmin=0.0, vmax=30.0):
     return fig
 
 
-def get_distance_df(adata, obsm_key, classes, distance_fn=compute_e_distance):
-
-    adata_pred = adata[adata.obs["data_type"] == "gen"]
-    adata_true = adata[adata.obs["data_type"] != "gen"]
-
-    edist_dict = defaultdict(list)
-    for ct in tqdm(classes):
-        adata_ct = adata_true[adata_true.obs.cell_type == ct]
-        x_true = adata_ct.obsm[obsm_key] if obsm_key is not None else adata_ct.X
-        edist = distance_fn(adata_pred.obsm[obsm_key]if obsm_key is not None else adata_pred.X, x_true)
-        edist_dict["ct"].append(ct)
-        edist_dict["edist"].append(edist)
-    return pd.DataFrame(edist_dict).sort_values("edist", axis=0, ascending=False)
-
-
-
-def get_distance_matrix(X, Y, metric="jensen-shannon"):
-    """
-    Compute KL divergence from each row in X to each row in Y.
-    X: shape (N, D)
-    Y: shape (K, D)
-    Returns: shape (N, K)
-    """
-    eps = 1e-12
-    X = np.clip(X, eps, 1)[:, None, :]
-    Y = np.clip(Y, eps, 1)[None, :, :]
-    if metric == "jensen-shannon":
-        return np.sqrt(0.5*np.sum(X*np.log(2*X / (Y + X)), axis=-1) + 0.5*np.sum(Y*np.log(2*Y / (Y + X)), axis=-1))
-    elif metric == "jeffrey":
-        return 0.5*np.sum(X* np.log(X / Y), axis=-1) + 0.5*np.sum(Y* np.log(Y/ X), axis=-1)
-    elif metric == "kl-div":
-        return np.sum(X * np.log(X / Y), axis=-1) # WARNING: not a metric
-    else:
-        raise ValueError
-
-
 def binplot_with_colors(
     protocol_columns,
     X,
@@ -216,11 +136,11 @@ def binplot_with_colors(
 
 
 def scatter_protocol_covariate_against_prop(
-        protocol_columns,
-        X,
-        ubounds,
-        margin=10
-    ):
+    protocol_columns,
+    X,
+    ubounds,
+    margin=10
+):
     fig, ax = plt.subplots(nrows=1, ncols=len(protocol_columns), figsize=(50, 12))
     for cidx, col in enumerate(protocol_columns):
         x = X[:, cidx]
@@ -240,7 +160,13 @@ def scatter_protocol_covariate_against_prop(
 
 
 
-def barplot_clusters_distances(target_cell_type, adata, obsm_key, classes, distance_fn=compute_e_distance):
+def barplot_clusters_distances(
+    target_cell_type,
+    adata,
+    obsm_key,
+    classes,
+    distance_fn=compute_e_distance
+):
     # Create a color column
     edist_channel_df = get_distance_df(adata, obsm_key, classes, distance_fn=distance_fn)
     edist_channel_df["color"] = edist_channel_df["ct"].apply(
@@ -280,8 +206,6 @@ def plot_heatmap(
 ):
     trajectory = inverse_results["trajectory"]
     loss_history = inverse_results["loss_history"]
-    lambda_history = inverse_results["lambda_history"]
-    noise = inverse_results["noise"]
     ct_probs = fwd_results["ct_probs"].mean(1)
 
     samples = np.maximum(trajectory[:, -1, :], 0)
@@ -340,8 +264,6 @@ def plot_heatmap(
     min_loss_idx = np.argmin(loss)
     ax = cg.ax_heatmap
     xmin, xmax = ax.get_xlim()  # full heatmap width
-    ymin, ymax = ax.get_ylim()  # row coordinates (usually ymax < ymin)
-
 
     if plot_pheno:
         for label in ax.get_xticklabels():
@@ -379,13 +301,19 @@ def plot_heatmap(
     plt.close(cg.figure)
 
 
-def plot_loss_history(target_ct, loss_history):
+def plot_loss_history(
+    target_ct,
+    loss_history,
+    take_transpose=True
+):
+    if take_transpose:
+        loss_history = loss_history.T
     fig, ax = plt.subplots(figsize=(7, 7), dpi=50)
     t = np.arange(0, 1, 1/loss_history.shape[1])
     try:
-        lines = ax.plot(t, loss_history.T)
+        _ = ax.plot(t, loss_history)
     except:
-        lines = ax.plot(loss_history.T)
+        _ = ax.plot(loss_history)
     fig.suptitle(f"{target_ct}")
     ax.set_xlabel("Sampling Time.")
     ax.set_ylabel("Loss.")
@@ -434,7 +362,12 @@ def xy_plot_summary_stats(
     return fig, ax
 
 
-def plot_marginals(X_real, X_gen=None, col_names=None, title=""):
+def plot_marginals(
+    X_real,
+    X_gen=None,
+    col_names=None,
+    title=""
+):
     n_channels = X_real.shape[1]
     if X_gen is not None:
         assert X_gen.shape[1] == n_channels
@@ -558,217 +491,6 @@ def pairwise_scatter_plot(
         fig.show()
     return fig, axes
 
-
-def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, annotation_dict, save=True):
-    # pca
-    fig_first_quartile0 = plot_embedding(adata_pred, target_ct, base="X_pca")
-    if save:
-        fig_first_quartile0.savefig(
-            os.path.join(plots_dir, f"pca_cell_type_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_first_quartile0)
-
-    # umap
-    fig_first_quartile1 = plot_embedding(adata_pred, target_ct)
-    if save:
-        fig_first_quartile1.savefig(
-            os.path.join(plots_dir, f"umap_cell_type_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_first_quartile0)
-
-    # dotplot
-    fig_first_quartile2 = dotplot(adata_pred, target_ct)
-    if save:
-        fig_first_quartile2.savefig(
-            os.path.join(plots_dir, f"dotplot_cell_type_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_first_quartile2)
-
-    # barplot cluster distances
-    fig_first_quartile3 = barplot_clusters_distances(
-        target_ct, adata_pred, None, classes
-    )
-    if save:
-        fig_first_quartile3.savefig(
-            os.path.join(plots_dir, f"barplot_cluster_dists_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_first_quartile3)
-
-    # parsing data
-    adata_gen = adata_pred[adata_pred.obs["data_type"] == "gen"]
-    adata_tgt = adata_pred[(adata_pred.obs["data_type"] != "gen") & (adata_pred.obs["cell_type"] == target_ct)]
-
-    X_channel_gen = adata_gen.X
-    X_channel_tgt = adata_tgt.X
-
-    X_scatter_gen = adata_gen.obsm["X_scatter"]
-    X_scatter_tgt = adata_tgt.obsm["X_scatter"]
-
-    # xy plot marker and scatter
-    fig_xy_channel = xy_plot_summary_stats(
-        X_channel_gen,
-        X_channel_tgt,
-        adata_pred.var_names,
-        title="Channel Features"
-    )
-    if save:
-        fig_xy_channel.savefig(
-            os.path.join(plots_dir, f"xy_plt_channel_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_xy_channel)
-    fig_xy_scatter = xy_plot_summary_stats(
-        X_scatter_gen,
-        X_scatter_tgt,
-        annotation_dict["scatter_columns"],
-        title="Scatter Features"
-    )
-    if save:
-        fig_xy_scatter.savefig(
-            os.path.join(plots_dir, f"xy_plt_scatter_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_xy_scatter)
-
-    # marginals plot
-    fig_marginals_channel = plot_marginals(
-        X_channel_tgt,
-        X_gen=X_channel_gen,
-        col_names=adata_pred.var_names,
-        title=""
-    )
-    if save:
-        fig_marginals_channel.savefig(
-            os.path.join(plots_dir, f"marginals_scatter_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_marginals_channel)
-    fig_marginals_scatter = plot_marginals(
-        X_scatter_tgt,
-        X_gen=X_scatter_gen,
-        col_names=annotation_dict["scatter_columns"],
-        title=""
-    )
-    if save:
-        fig_marginals_scatter.savefig(
-            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_marginals_scatter)
-
-    # scatter plot channel
-    fig_channel_vs_channel, _ = pairwise_scatter_plot(
-        X_channel_gen,
-        Y=None,
-        title="",
-        X_names=None,
-        Y_names=None,
-        base_size=5,
-        dpi=500,
-        compute_kde=True,
-        figkwargs=None,
-        scatterkwargs=None,
-        show=True,
-        use_seaborn=False
-    )
-    if save:
-        fig_channel_vs_channel.savefig(
-            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_channel_vs_channel)
-
-    # scatter plot scatter
-    fig_scatter_vs_scatter, _ = pairwise_scatter_plot(
-        X_scatter_gen,
-        Y=None,
-        title="",
-        X_names=None,
-        Y_names=None,
-        base_size=5,
-        dpi=500,
-        compute_kde=True,
-        figkwargs=None,
-        scatterkwargs=None,
-        show=True,
-        use_seaborn=False
-    )
-    if save:
-        fig_scatter_vs_scatter.savefig(
-            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_scatter_vs_scatter)
-
-
-    # scatter plot scatter-channel
-    fig_channel_vs_scatter, _ = pairwise_scatter_plot(
-        X_scatter_gen,
-        Y=X_channel_gen,
-        title="",
-        X_names=None,
-        Y_names=None,
-        base_size=5,
-        dpi=500,
-        compute_kde=True,
-        figkwargs=None,
-        scatterkwargs=None,
-        show=True,
-        use_seaborn=False
-    )
-    if save:
-        fig_channel_vs_scatter.savefig(
-            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
-            dpi=300,
-        )
-        plt.close(fig_channel_vs_scatter)
-
-    return (
-        fig_first_quartile0, fig_first_quartile1, fig_first_quartile2, fig_first_quartile3,
-        fig_xy_channel, fig_xy_scatter, fig_marginals_channel, fig_marginals_scatter,
-        fig_channel_vs_channel, fig_scatter_vs_scatter, fig_channel_vs_scatter
-
-    )
-
-
-def get_dimensionality_reduced_condition_space(
-    original_data,
-    perturbation_prediction_model,
-    n_noise_samples
-):
-    # extract latent representation from model
-    perturbation_reps = next(
-        iter(
-            perturbation_prediction_model.forward_model.train_data.data.perturbation_covariates
-        )
-    )
-    latent_rep = perturbation_prediction_model.velocity_field.get_condition_embedding(
-        {
-            perturbation_reps: torch.from_numpy(
-                original_data).float().to(perturbation_prediction_model.forward_model.device
-            ),
-        }
-    ).detach().cpu().numpy()
-
-    # sample noise for projection
-    noise_orig = np.random.randn(n_noise_samples, original_data.shape[1], 2)
-    noise_latent = np.random.randn(n_noise_samples, latent_rep.shape[1], 2)
-
-    # project latent representation and data
-    orig_rep_rand_proj = np.einsum("nd,mdk->nmk", original_data, noise_orig) / math.sqrt(2)
-    latent_rep_rand_proj = np.einsum("nd,mdk->nmk", latent_rep, noise_latent) / math.sqrt(2)
-
-    # compute pcs
-    orig_rep_pcs = PCA(2).fit_transform(original_data)
-    latent_rep_pcs = PCA(2).fit_transform(latent_rep)
-
-    return (
-        orig_rep_rand_proj, latent_rep_rand_proj, orig_rep_pcs, latent_rep_pcs
-    )
 
 def plot_dimensionality_reduced_condition_space(
     data_samples,
@@ -922,3 +644,185 @@ def covariate_level_plots(
     )
     fig_scatter.savefig(os.path.join(plots_dir, f"covariate_scatters_{suffix}.png"), dpi=300)
     plt.close(fig_scatter)
+
+
+def sample_level_plots(
+    adata_pred,
+    target_ct,
+    classes,
+    plots_dir,
+    suffix,
+    annotation_dict,
+    save=True
+):
+    # pca
+    fig_first_quartile0 = plot_embedding(adata_pred, target_ct, base="X_pca")
+    if save:
+        fig_first_quartile0.savefig(
+            os.path.join(plots_dir, f"pca_cell_type_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_first_quartile0)
+
+    # umap
+    fig_first_quartile1 = plot_embedding(adata_pred, target_ct)
+    if save:
+        fig_first_quartile1.savefig(
+            os.path.join(plots_dir, f"umap_cell_type_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_first_quartile0)
+
+    # dotplot
+    fig_first_quartile2 = dotplot(adata_pred, target_ct)
+    if save:
+        fig_first_quartile2.savefig(
+            os.path.join(plots_dir, f"dotplot_cell_type_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_first_quartile2)
+
+    # barplot cluster distances
+    fig_first_quartile3 = barplot_clusters_distances(
+        target_ct, adata_pred, None, classes
+    )
+    if save:
+        fig_first_quartile3.savefig(
+            os.path.join(plots_dir, f"barplot_cluster_dists_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_first_quartile3)
+
+    # parsing data
+    adata_gen = adata_pred[adata_pred.obs["data_type"] == "gen"]
+    adata_tgt = adata_pred[(adata_pred.obs["data_type"] != "gen") & (adata_pred.obs["cell_type"] == target_ct)]
+
+    X_channel_gen = adata_gen.X
+    X_channel_tgt = adata_tgt.X
+
+    X_scatter_gen = adata_gen.obsm["X_scatter"]
+    X_scatter_tgt = adata_tgt.obsm["X_scatter"]
+
+    # xy plot marker and scatter
+    fig_xy_channel = xy_plot_summary_stats(
+        X_channel_gen,
+        X_channel_tgt,
+        adata_pred.var_names,
+        title="Channel Features"
+    )
+    if save:
+        fig_xy_channel.savefig(
+            os.path.join(plots_dir, f"xy_plt_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_xy_channel)
+    fig_xy_scatter = xy_plot_summary_stats(
+        X_scatter_gen,
+        X_scatter_tgt,
+        annotation_dict["scatter_columns"],
+        title="Scatter Features"
+    )
+    if save:
+        fig_xy_scatter.savefig(
+            os.path.join(plots_dir, f"xy_plt_scatter_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_xy_scatter)
+
+    # marginals plot
+    fig_marginals_channel = plot_marginals(
+        X_channel_tgt,
+        X_gen=X_channel_gen,
+        col_names=adata_pred.var_names,
+        title=""
+    )
+    if save:
+        fig_marginals_channel.savefig(
+            os.path.join(plots_dir, f"marginals_scatter_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_marginals_channel)
+    fig_marginals_scatter = plot_marginals(
+        X_scatter_tgt,
+        X_gen=X_scatter_gen,
+        col_names=annotation_dict["scatter_columns"],
+        title=""
+    )
+    if save:
+        fig_marginals_scatter.savefig(
+            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_marginals_scatter)
+
+    # scatter plot channel
+    fig_channel_vs_channel, _ = pairwise_scatter_plot(
+        X_channel_gen,
+        Y=None,
+        title="",
+        X_names=None,
+        Y_names=None,
+        base_size=5,
+        dpi=500,
+        compute_kde=True,
+        figkwargs=None,
+        scatterkwargs=None,
+        show=True,
+        use_seaborn=False
+    )
+    if save:
+        fig_channel_vs_channel.savefig(
+            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_channel_vs_channel)
+
+    # scatter plot scatter
+    fig_scatter_vs_scatter, _ = pairwise_scatter_plot(
+        X_scatter_gen,
+        Y=None,
+        title="",
+        X_names=None,
+        Y_names=None,
+        base_size=5,
+        dpi=500,
+        compute_kde=True,
+        figkwargs=None,
+        scatterkwargs=None,
+        show=True,
+        use_seaborn=False
+    )
+    if save:
+        fig_scatter_vs_scatter.savefig(
+            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_scatter_vs_scatter)
+
+    # scatter plot scatter-channel
+    fig_channel_vs_scatter, _ = pairwise_scatter_plot(
+        X_scatter_gen,
+        Y=X_channel_gen,
+        title="",
+        X_names=None,
+        Y_names=None,
+        base_size=5,
+        dpi=500,
+        compute_kde=True,
+        figkwargs=None,
+        scatterkwargs=None,
+        show=True,
+        use_seaborn=False
+    )
+    if save:
+        fig_channel_vs_scatter.savefig(
+            os.path.join(plots_dir, f"marginals_channel_{suffix}.png"),
+            dpi=300,
+        )
+        plt.close(fig_channel_vs_scatter)
+
+    return (
+        fig_first_quartile0, fig_first_quartile1, fig_first_quartile2, fig_first_quartile3,
+        fig_xy_channel, fig_xy_scatter, fig_marginals_channel, fig_marginals_scatter,
+        fig_channel_vs_channel, fig_scatter_vs_scatter, fig_channel_vs_scatter
+    )
