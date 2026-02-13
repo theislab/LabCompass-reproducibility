@@ -52,6 +52,8 @@ esac
 
 # select script
 [[ "$OPT" == "unconstrained" ]] && script_name="run_inverse_experiment" || script_name="run_inverse_experiment_penalized"
+[[ "$OPT" == "penalized_all_axes" ]] && constraints="default_all_cols" || constraints="default"
+
 
 # Map scheduler to configurations
 case $QUERY_TYPE in
@@ -82,6 +84,7 @@ conda run -n sc_exp_design --no-capture-output \
     --multirun \
     +launcher=slurm \
     +hparam_search="${hparam_search}" \
+    constraints="${constraints}" \
     paths.dump_dir=${dump_dir} \
     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
     sampling.query_pure_cell_types="${query_pure}" \

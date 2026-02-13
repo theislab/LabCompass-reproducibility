@@ -4,6 +4,7 @@
 defaults:
   - _self_
   - annotation: default_new
+  - constraints: default
   - forward_model: default
   - hydra: default
   - loss_guidance: default

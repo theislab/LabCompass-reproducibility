@@ -26,6 +26,7 @@ def main(config: DictConfig):
     sys.path.insert(0, os.path.join(BASE_DIR, "shared_utils"))
     from experiment_utils import get_forward_model, create_dir
     from plot_utils import (
+        get_adata_from_idx,
         plot_adata,
         run_level_plots,
         covariate_level_plots,
@@ -143,8 +144,7 @@ def main(config: DictConfig):
     ################################################################
     ############# COVARIATE LEVEL VISUALIZATIONS
     ################################################################
-
-    ...
+    covariate_level_plots()
 
     ################################################################
     ############# SAMPLE LEVEL VISUALIZATIONS
@@ -158,7 +158,7 @@ def main(config: DictConfig):
 
         # get adata
         adata_pred_min = get_adata_from_idx(X_true, adata_g, ct_le, fwd_results, idx)
-        plot_adata(adata_pred_min, config.target_ct, classes, sample_dir, "")
+        plot_adata(adata_pred_min, config.target_ct, classes, sample_dir, "", annotation_dict)
 
 
 def parse_args():

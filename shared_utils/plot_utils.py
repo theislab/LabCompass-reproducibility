@@ -463,7 +463,7 @@ def pairwise_scatter_plot(
     return fig, axes
 
 
-def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
+def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, annotation_dict, save=True):
     # pca
     fig_first_quartile0 = plot_embedding(adata_pred, target_ct, base="X_pca")
     if save:
@@ -472,6 +472,7 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
             dpi=300,
         )
         plt.close(fig_first_quartile0)
+
     # umap
     fig_first_quartile1 = plot_embedding(adata_pred, target_ct)
     if save:
@@ -480,6 +481,7 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
             dpi=300,
         )
         plt.close(fig_first_quartile0)
+
     # dotplot
     fig_first_quartile2 = dotplot(adata_pred, target_ct)
     if save:
@@ -488,6 +490,7 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
             dpi=300,
         )
         plt.close(fig_first_quartile2)
+
     # barplot cluster distances
     fig_first_quartile3 = barplot_clusters_distances(
         target_ct, adata_pred, None, classes
@@ -498,17 +501,44 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
             dpi=300,
         )
         plt.close(fig_first_quartile3)
+
+    # parsing data
+    adata_gen = adata_pred[adata_pred.obs["data_type"] == "gen"]
+    adata_tgt = adata_pred[(adata_pred.obs["data_type"] != "gen") & (adata_pred.obs["cell_type"] == target_ct)]
+
+    X_channel_gen = adata_gen.X
+    X_channel_tgt = adata_tgt.X
+
+    X_scatter_gen = adata_gen.obsm["X_scatter"]
+    X_scatter_tgt = adata_tgt.obsm["X_scatter"]
+
     # xy plot marker and scatter
-    fig_xy_genes = xy_plot_summary_stats(
-        gen_samples,
-        true_samples,
-        var_names,
-        title=""
+    fig_xy_channel = xy_plot_summary_stats(
+        X_channel_gen,
+        X_channel_tgt,
+        adata_pred.var_names,
+        title="Channel Features"
+    )
+    fig_xy_scatter = xy_plot_summary_stats(
+        X_scatter_gen,
+        X_scatter_tgt,
+        annotation_dict["scatter_columns"],
+        title="Scatter Features"
     )
 
     # marginals plot
-    fig_marginals_channel = plot_marginals(X_real, X_gen=None, col_names=None, title="")
-    fig_marginals_scatter = plot_marginals(X_real, X_gen=None, col_names=None, title="")
+    fig_marginals_channel = plot_marginals(
+        X_channel_tgt,
+        X_gen=X_channel_gen,
+        col_names=adata_pred.var_names,
+        title=""
+    )
+    fig_marginals_scatter = plot_marginals(
+        X_scatter_tgt,
+        X_gen=X_scatter_gen,
+        col_names=annotation_dict["scatter_columns"],
+        title=""
+    )
 
     # scatter plot
     pairwise_scatter_plot(
@@ -643,8 +673,7 @@ def run_level_plots(
     )
 
     # plot dimensionality reduced conditions
-    gen_samples = ...
-    data_samples = ...
+    gen_samples = inverse_results["trajectory"][-1]
     plot_dimensionality_reduced_condition_space(
         data_samples,
         gen_samples,
