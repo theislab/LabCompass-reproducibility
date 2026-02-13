@@ -19,14 +19,16 @@ logger = logging.getLogger(__name__)
 
 
 def main(config: DictConfig):
+    ################################################################
+    ############# PREPARE SCRIPT
+    ################################################################
     # lazily import modules 
     sys.path.insert(0, os.path.join(BASE_DIR, "shared_utils"))
     from experiment_utils import get_forward_model, create_dir
     from plot_utils import (
-        get_adata_from_idx,
-        plot_heatmap,
-        plot_loss_history,
         plot_adata,
+        run_level_plots,
+        covariate_level_plots,
     )
     from z_norm_modules import get_rescaling
 
@@ -37,6 +39,9 @@ def main(config: DictConfig):
         base_cfg = compose(config_name=config.paths.base_config_name)
     annotation_dict = base_cfg.annotation
 
+    ################################################################
+    ############# LOAD MODELS AND PREPARE DATA
+    ################################################################
     # load forward model
     forward_model, (
         perturbation_response_prediction_model,
@@ -89,6 +94,9 @@ def main(config: DictConfig):
     ct_le.fit(ct_values)
     classes = ct_le.classes_.tolist()
 
+    ################################################################
+    ############# LOAD RESULTS AND PREPARE FOLDERS
+    ################################################################
     # construct current cell type directory
     logger.info(f"Generating plots for target cell type {config.target_ct}.")
     target_ct_dir = os.path.join(config.paths.target_ct_dir, config.target_ct)
@@ -115,47 +123,32 @@ def main(config: DictConfig):
     samples_level_plots_dir = os.path.join(plots_dir, "samples")
     create_dir(samples_level_plots_dir)
 
-    # parse inverse results archive
-    loss_history = inverse_results["loss_history"]
-    loss = loss_history[:, -1]
-
-    # loss history
-    loss_history_fig = plot_loss_history(config.target_ct, loss_history)
-    loss_history_fig.savefig(
-        os.path.join(run_level_plots_dir, "loss_history.png"),
-        dpi=300,
-    )
-    plt.close(loss_history_fig)
-
-    # heatmap samples
-    plot_heatmap(
-        run_level_plots_dir,
-        classes,
+    ################################################################
+    ############# RUN LEVEL VISUALIZATIONS
+    ################################################################
+    run_level_plots(
+        perturbation_response_prediction_model,
+        cond_adata,
         config.target_ct,
+        run_level_plots_dir,
         fwd_results,
         inverse_results,
         annotation_dict,
-        samples_vmin=0.0,
-        samples_vmax=10.0,
-        loss_vmin=0.0,
-        loss_vmax=10.0,
-        plot_pheno=False
+        classes,
+        data_color_val,
+        gen_color_val,
+        n_noise_samples=config.n_noise_samples,
     )
 
-    # heatmap pheno
-    plot_heatmap(
-        run_level_plots_dir,
-        classes,
-        config.target_ct,
-        fwd_results,
-        inverse_results,
-        annotation_dict,
-        samples_vmin=0.0,
-        samples_vmax=10.0,
-        loss_vmin=0.0,
-        loss_vmax=10.0,
-        plot_pheno=True
-    )
+    ################################################################
+    ############# COVARIATE LEVEL VISUALIZATIONS
+    ################################################################
+
+    ...
+
+    ################################################################
+    ############# SAMPLE LEVEL VISUALIZATIONS
+    ################################################################
 
     # iterate over each sample
     for idx in loss.shape[0]:
@@ -173,6 +166,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--target_ct", required=True)
     parser.add_argument("--run", required=True)
+    parser.add_argument("--n_noise_samples", required=False, default=10_000)
     return parser.parse_args()
 
 

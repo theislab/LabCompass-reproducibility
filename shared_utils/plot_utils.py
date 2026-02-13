@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import seaborn as sns
+from scipy.stats import gaussian_kde
 from sklearn.neighbors import NearestNeighbors
 from sklearn.decomposition import PCA
 from tqdm import tqdm
@@ -297,6 +298,171 @@ def plot_loss_history(target_ct, loss_history):
     return fig
 
 
+def xy_plot_summary_stats(
+    gen_samples,
+    true_samples,
+    var_names,
+    title=""
+):
+    # mean
+    prior_mean = gen_samples.mean(0)
+    real_mean = true_samples.mean(0)
+
+    # standard deviation
+    prior_std = gen_samples.std(0)
+    real_std = true_samples.std(0)
+
+    # initializing plot
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5), dpi=100)
+    fig.suptitle(title)
+
+    # contructing linear space
+    linspace = np.linspace(0.0, 6.5, 100)
+
+    # plotting mean
+    ax[0].scatter(prior_mean, real_mean); ax[0].grid(True)
+    ax[0].set_title("Mean"); ax[0].set_xlabel("Generated"); ax[0].set_ylabel("Real")
+    ax[0].plot(linspace, linspace)
+    yoffset = 0.0
+    xoffset = 0.3
+    for i, txt in enumerate(var_names):
+        ax[0].annotate(txt, (prior_mean[i] + xoffset, real_mean[i] + yoffset), size=6)
+
+    # plotting standard deviation
+    ax[1].scatter(prior_std, real_std); ax[1].grid(True)
+    ax[1].set_title("Standard Deviation"); ax[1].set_xlabel("Generated"); ax[1].set_ylabel("Real")
+    for i, txt in enumerate(var_names):
+        ax[1].annotate(txt, (prior_std[i] + xoffset, real_std[i] + yoffset), size=6)
+    ax[1].plot(linspace, linspace)
+    fig.tight_layout()
+    return fig, ax
+
+
+def plot_marginals(X_real, X_gen=None, col_names=None, title=""):
+    n_channels = X_real.shape[1]
+    if X_gen is not None:
+        assert X_gen.shape[1] == n_channels
+    if col_names is not None:
+        assert len(col_names) == n_channels
+
+    fig, ax = plt.subplots(1, n_channels, figsize=(45, 5))
+    fig.suptitle(f"{title}", fontsize=16)
+    for i in range(n_channels):
+        ax[i].grid(True)
+        sns.kdeplot(X_real[:, i], ax=ax[i], color="green", label="real")
+        sns.histplot(X_real[:, i], alpha=0.4, ax=ax[i], color="green", stat="density")
+        if X_gen is not None:
+            sns.kdeplot(X_gen[:, i], ax=ax[i], color="red", label="gen")
+            sns.histplot(X_gen[:, i], alpha=0.4,  ax=ax[i], color="red", stat="density")
+        ax[i].legend()
+        if col_names is not None:
+            ax[i].set_title(col_names[i])
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    return fig
+
+
+def pairwise_scatter_plot(
+    X,
+    Y=None,
+    title="",
+    X_names=None,
+    Y_names=None,
+    base_size=5,
+    dpi=500,
+    compute_kde=True,
+    figkwargs=None,
+    scatterkwargs=None,
+    show=True,
+    use_seaborn=False
+):
+
+    # handling optional kwargs arguments
+    figkwargs = {} if figkwargs is None else figkwargs
+    scatterkwargs = {} if scatterkwargs is None else scatterkwargs
+
+    # check for symmetric scatter plot
+    if Y is None:
+        Y=X
+        is_symmetric = True
+    else:
+        is_symmetric = False
+    
+    # sanity check
+    assert Y.shape[0] == X.shape[0], f"Shape error: {Y.shape=}, {X.shape=}"
+
+    # retrieving number of cols and rows
+    nrows = X.shape[-1]
+    ncols = Y.shape[-1]
+
+    # creating plot
+    figsize = (base_size*ncols, base_size*nrows) 
+    fig, axes = plt.subplots(nrows, ncols, figsize=figsize, dpi=dpi, **figkwargs)
+    fig.suptitle(title)
+
+    # iterating over each axes
+    for ridx in range(nrows):
+        for cidx in range(ncols):
+            # skipping diagonal and lower triangular
+            # for symmetric plots
+            if is_symmetric and cidx <= ridx:
+                continue
+
+            # retrieving axes
+            ax = axes[ridx, cidx]
+            ax.grid(True)
+
+            # retrieving data
+            x = X[:, ridx]
+            y = Y[:, cidx]
+
+            # retrieving name of variables
+            if X_names is not None:
+                assert len(X_names) == nrows, f"name length mismatch for X {len(X_names)} exp {nrows}"
+                x_name = X_names[ridx]
+            else:
+                x_name = f"X comp {ridx}"
+            if Y_names is not None:
+                assert len(Y_names) == ncols, f"name length mismatch for Y {len(Y_names)} exp {ncols}"
+                y_name = Y_names[cidx]
+            else:
+                if is_symmetric and X_names is not None:
+                    y_name = X_names[cidx]
+                else:
+                    y_name = f"Y comp {cidx}"
+            
+            # creating df to plot
+            df = pd.DataFrame(
+                {
+                    x_name: x.tolist(),
+                    y_name: y.tolist()
+                }
+            )
+
+            # optionally computing kde
+            if compute_kde:
+                xy = np.vstack([x, y])
+                kde = gaussian_kde(xy)
+                density = kde(xy)
+                df["_density"] = density
+                hue_arg = "_density"
+            else:
+                density = None
+                hue_arg = None
+
+            # scatter plot
+            if use_seaborn:
+                sns.scatterplot(df, x=x_name, y=y_name, ax=ax, hue=hue_arg, **scatterkwargs)
+            else:
+                ax.scatter(x, y, c=density, **scatterkwargs)
+                ax.set_xlabel(x_name)
+                ax.set_ylabel(y_name)
+
+    fig.tight_layout()
+    if show:
+        fig.show()
+    return fig, axes
+
+
 def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
     # pca
     fig_first_quartile0 = plot_embedding(adata_pred, target_ct, base="X_pca")
@@ -332,6 +498,33 @@ def plot_adata(adata_pred, target_ct, classes, plots_dir, suffix, save=True):
             dpi=300,
         )
         plt.close(fig_first_quartile3)
+    # xy plot marker and scatter
+    fig_xy_genes = xy_plot_summary_stats(
+        gen_samples,
+        true_samples,
+        var_names,
+        title=""
+    )
+
+    # marginals plot
+    fig_marginals_channel = plot_marginals(X_real, X_gen=None, col_names=None, title="")
+    fig_marginals_scatter = plot_marginals(X_real, X_gen=None, col_names=None, title="")
+
+    # scatter plot
+    pairwise_scatter_plot(
+        X,
+        Y=None,
+        title="",
+        X_names=None,
+        Y_names=None,
+        base_size=5,
+        dpi=500,
+        compute_kde=True,
+        figkwargs=None,
+        scatterkwargs=None,
+        show=True,
+        use_seaborn=False
+    )
     return fig_first_quartile0, fig_first_quartile1, fig_first_quartile2, fig_first_quartile3
 
 
@@ -393,18 +586,18 @@ def plot_dimensionality_reduced_condition_space(
     ...
 
 
-def run_level_plot(
+def run_level_plots(
     perturbation_prediction_model,
-    cond_adata,
+    data_samples,
     target_ct,
     run_level_plots_dir,
     fwd_results,
     inverse_results,
     annotation_dict,
     classes,
-    n_noise_samples,
     data_color_val,
     gen_color_val,
+    n_noise_samples=1000,
 ):
 
     # parse inverse results archive
@@ -461,3 +654,15 @@ def run_level_plot(
         n_noise_samples,
     )
 
+    # plot distance to nn in real data (condition space)
+    ...
+
+    # plot distance to target (phenotype space)
+    ...
+
+def covariate_level_plots():
+    # histogram over each covariate axes colore by target prop
+    ...
+
+    # scatter plot vs target proportions
+    ...
