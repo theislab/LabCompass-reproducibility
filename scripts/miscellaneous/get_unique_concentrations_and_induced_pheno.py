@@ -28,15 +28,12 @@ def main(config):
     # lazily import modules
     sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
     from experiment_utils import get_forward_model
-    from run_plots_inverse import get_rescaling
+    from z_norm_modules import get_rescaling
 
-
-    # open annotation config dict
-    with open(ANNOTATION_CONFIG_PATH, "r") as fb:
-        annotation_dict = yaml.safe_load(fb)
     # open data config dict
     with open(DATA_CONFIG_PATH, "r") as fb:
         data_cfg_dict = yaml.safe_load(fb)
+    annotation_dict = config.annotation
 
     # Get forward model
     logger.info(f"Preparing forward model...")

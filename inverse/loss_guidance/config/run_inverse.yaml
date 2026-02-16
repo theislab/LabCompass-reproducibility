@@ -3,7 +3,7 @@
 # default (unconditional)
 defaults:
   - _self_
-  - annotation: default_new
+  - annotation: default
   - constraints: default
   - forward_model: default
   - hydra: default

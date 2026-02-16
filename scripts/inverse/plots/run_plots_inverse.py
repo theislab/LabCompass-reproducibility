@@ -105,8 +105,9 @@ def main(config: DictConfig):
     ############# LOAD RESULTS AND PREPARE FOLDERS
     ################################################################
     # construct current cell type directory
-    logger.info(f"Generating plots for target cell type {ct_string}.")
-    target_ct_dir = os.path.join(config.target_ct_dir, ct_safe_string)
+    logger.info(f"Generating plots for target cell type {ct_string} for {config.experiment_type}")
+    target_ct_dir = os.path.join(config.base_dir, config.experiment_type)
+    target_ct_dir = os.path.join(target_ct_dir, ct_safe_string)
     logger.info(f"Reading cell type results results from directory {target_ct_dir}")
 
     # read run files
@@ -171,7 +172,7 @@ def main(config: DictConfig):
     ################################################################
 
     # iterate over each sample
-    for idx in range(base_cfg.sampling.N):
+    for idx in tqdm(range(base_cfg.sampling.N)):
         # create sample plot dir
         sample_dir = os.path.join(samples_level_plots_dir, str(idx))
         create_dir(sample_dir)
@@ -191,6 +192,8 @@ def parse_args():
     parser.add_argument("--base_config_name", required=False, default=...)
     parser.add_argument("--n_train_cells", required=False, default=70_000)
     parser.add_argument("--n_val_cells", required=False, default=30_000)
+    parser.add_argument("--base_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
+    parser.add_argument("--experiment_type", required=False, default="unconstrained-pure_populations-reciprocal")
     return parser.parse_args()
 
 

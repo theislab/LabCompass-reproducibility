@@ -1,5 +1,6 @@
 from typing import Literal, Type
 
+import numpy as np
 import scanpy as sc
 import torch
 
