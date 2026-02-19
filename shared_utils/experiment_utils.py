@@ -165,7 +165,7 @@ def generate_with_condition(
     cforward_out = forward_model.predict(
         batch_dict,
         return_trajectory=False,
-        num_samples=None if noise is None else num_samples,
+        num_samples=num_samples if noise is None else None,
         no_grad=True,
         num_time_steps=num_time_steps,
         solver_kwargs=solver_kwargs,
