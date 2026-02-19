@@ -103,6 +103,8 @@ def annotate_perturbations(
     one_hot_uns_key_added: str = "one_hot",
     column2tranform: dict[str, Callable | None] = {},
     protocol_obsm_key="protocol_concat",
+    one_hot_reps=True,
+    typecast_anyway=False,
 ):
 
     # Perturbation data 0. write unique protocol conditions to obs
@@ -111,24 +113,27 @@ def annotate_perturbations(
     adata.obs[protocol_obs_key_added] = adata.obs[protocol_columns].astype(str).apply(lambda x: protocol_sep.join(x), axis=1)
 
     # Perturbation data 1. adding one hot encoded lookup dictionary for protocol id column
-    adata.uns[one_hot_uns_key_added] = get_onehot_dict(adata.obs[protocol_obs_key_added].unique())
+    if one_hot_reps:
+        adata.uns[one_hot_uns_key_added] = get_onehot_dict(adata.obs[protocol_obs_key_added].unique())
 
     # Perturbation data 2. adding one hot encoded lookup dictionary for protocol column
-    for column in protocol_columns:
-        key = f"{column}{protocol_sep}{one_hot_uns_key_added}"
-        adata.uns[key] = get_onehot_dict(adata.obs[column].unique())
+    if one_hot_reps:
+        for column in protocol_columns:
+            key = f"{column}{protocol_sep}{one_hot_uns_key_added}"
+            adata.uns[key] = get_onehot_dict(adata.obs[column].unique())
     
     # Perturbation data 3. adding protocol features to obsm
     for column in protocol_columns:
         # 3.1 retrieving column values and handling type
         col_values = adata.obs[column]
-        if pd.api.types.is_categorical_dtype(col_values):
+        if pd.api.types.is_categorical_dtype(col_values) or typecast_anyway:
             col_values = adata.obs[column].astype(float).values[:, None]
         else:
             col_values = col_values.values[:, None]
 
         # 3.2 optionally applying transformations
         tranform_fn = column2tranform.get(column, None)
+        print(column, tranform_fn, col_values, col_values.dtype)
         col_values = col_values if tranform_fn is None else tranform_fn(col_values)
 
         # 3.3 store transformed medium condition data back in obsm
@@ -299,3 +304,47 @@ def get_adata_splits(config: DictConfig, logger_orig: logging.Logger | None = No
     )
     logger.info("Shared tranformations applied!")
     return train_adata, ood_adatas_dict
+
+
+def get_condition_data_from_file(
+    data_manager,
+    condition_metadata_path,
+    protocol_columns,
+    log1p_exp_cols,
+    log21p_exp_cols,
+    protocol_obs_key_added,
+    protocol_sep,
+    one_hot_uns_key_added,
+    protocol_obsm_key,
+    experiment_id="LPHO012",
+    experiment_col="experiment_id",
+):
+
+    # prepare data and annotate perturbation data
+    condition_df = pd.read_excel(condition_metadata_path)
+    condition_df.columns = [col.replace("/", "_") for col in condition_df.columns]
+    condition_df = condition_df.loc[
+        condition_df[experiment_col] == experiment_id, protocol_columns
+    ]
+    condition_adata = AnnData(
+        X=np.empty((len(condition_df), 2)),
+        obs=condition_df
+    )
+    column2tranform = get_protocol_tranformations(
+        protocol_columns,
+        log1p_exp_cols=log1p_exp_cols,
+        log21p_exp_cols=log21p_exp_cols
+    )
+    print(column2tranform)
+    annotate_perturbations(
+        condition_adata,
+        protocol_columns,
+        protocol_obs_key_added,
+        protocol_sep=protocol_sep,
+        one_hot_uns_key_added=one_hot_uns_key_added,
+        column2tranform=column2tranform,
+        protocol_obsm_key=protocol_obsm_key,
+        one_hot_reps=False,
+        typecast_anyway=True
+    )
+    return data_manager.perturbation_data_schema.get_data(condition_adata)

@@ -42,20 +42,20 @@ TARGET_CELL_TYPES=(
     # "pDCs/cDCs"
 )
 SCHEDULERS=(
-    "constant"
-    "exp-decay"
+    # "constant"
+    # "exp-decay"
     "reciprocal"
-    "lin-decay"
+    # "lin-decay"
 )
 OPTIMIZATION_TYPE=(
-    # "unconstrained"
-    # "penalized_oxy_days"
+    "unconstrained"
+    "penalized_oxy_days"
     "penalized_all_axes"
 )
 QUERY_TYPE=(
     "pure_populations"
-    "custom_populations"
-    "custom_populations_masked"
+    # "custom_populations"
+    # "custom_populations_masked"
 )
 
 # iterate over each axes

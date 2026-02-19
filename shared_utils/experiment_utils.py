@@ -136,38 +136,40 @@ def get_forward_model(
     )
 
 
-def query_forward_model(
-    traj: np.ndarray,
-    noise: np.ndarray,
-    forward_model: "ForwardModel",
-    num_time_steps: int,
-    solver_kwargs: dict[str, Any],
-    le_ct: LabelEncoder,
-    n_scatter_feats: int = 6,
-    logger: logging.Logger | None = None
+def generate_with_condition(
+    samples,
+    forward_model,
+    num_time_steps,
+    solver_kwargs,
+    le_ct,
+    num_samples=None,
+    noise=None,
+    logger=None,
+    n_scatter_feats=6,
 ):
-    # prepare condition data
-    samples = np.maximum(traj[:, -1, :], 0) # this is hard-coded now, maybe change?
+    # prepare batch data
     perturbation_reps = next(iter(forward_model.forward_model.train_data.data.perturbation_covariates))
     ccondition_data = torch.from_numpy(samples).float().to(forward_model.forward_model.device)
+    if noise is not None:
+        ccondition_data = ccondition_data.unsqueeze(1).repeat(1, noise.shape[1], 1)
     ccondition_dict = {
-        perturbation_reps: ccondition_data.unsqueeze(1).repeat(1, noise.shape[1], 1),
+        perturbation_reps: ccondition_data,
     }
-
-    # construct batch dictionary
     batch_dict = {
         DataFields.PERTURBATION_DATA: ccondition_dict,
-        DataFields.SOURCE_STATE: noise
     }
+    if noise is not None:
+        batch_dict[DataFields.SOURCE_STATE] = noise
 
     # query forward model
     cforward_out = forward_model.predict(
         batch_dict,
         return_trajectory=False,
+        num_samples=None if noise is None else num_samples,
         no_grad=True,
         num_time_steps=num_time_steps,
         solver_kwargs=solver_kwargs,
-        fix_noise=True,
+        fix_noise=noise is not None,
     )
     X_gen = cforward_out[PredictionFields.PREDICTION_DATA].detach().cpu().numpy()
     gen_ct_logits = cforward_out[PredictionFields.TARGET_PREDICTION_DATA]["cell_type"].detach().cpu().numpy()
@@ -179,10 +181,10 @@ def query_forward_model(
     # compute cell type probabilities and labels
     gen_ct_probs = softmax(gen_ct_logits, axis=-1)
     gen_ct_id_label = gen_ct_probs.argmax(-1)
-    gen_ct_label = le_ct.inverse_transform(gen_ct_id_label.reshape(-1)).\
-        reshape(gen_ct_id_label.shape[0], gen_ct_id_label.shape[1])
+    # gen_ct_label = le_ct.inverse_transform(gen_ct_id_label.reshape(-1)).\
+    #     reshape(gen_ct_id_label.shape[0], gen_ct_id_label.shape[1])
     if logger is not None:
-        logger.info(f"{X_gen.shape=}, {X_channel_gen.shape=}, {X_scatter_gen.shape=}, {gen_ct_logits.shape=} {gen_ct_id_label.shape=}, {gen_ct_label.shape=}")
+        logger.info(f"{X_gen.shape=}, {X_channel_gen.shape=}, {X_scatter_gen.shape=}, {gen_ct_logits.shape=}")# {gen_ct_id_label.shape=}, {gen_ct_label.shape=}")
     return {
         "X": X_gen,
         "X_channel": X_channel_gen,
@@ -190,6 +192,31 @@ def query_forward_model(
         "ct_logits": gen_ct_logits,
         "ct_probs": gen_ct_probs,
     }
+
+
+def query_forward_model(
+    traj: np.ndarray,
+    noise: np.ndarray,
+    forward_model: "ForwardModel",
+    num_time_steps: int,
+    solver_kwargs: dict[str, Any],
+    le_ct: LabelEncoder,
+    n_scatter_feats: int = 6,
+    logger: logging.Logger | None = None,
+    dim_to_take: int = 1,
+):
+    # prepare condition data
+    samples = np.maximum(np.take(traj, -1, axis=dim_to_take), 0) # this is hard-coded now, maybe change?
+    return generate_with_condition(
+        samples,
+        forward_model,
+        num_time_steps,
+        solver_kwargs,
+        le_ct,
+        noise=noise,
+        logger=logger,
+        n_scatter_feats=n_scatter_feats,
+    )
 
 
 def flatten_conf(conf_dict):

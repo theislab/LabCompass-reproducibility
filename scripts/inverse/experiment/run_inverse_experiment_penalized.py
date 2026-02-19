@@ -68,6 +68,8 @@ def main(config: DictConfig) -> float:
         target_prediction_model
     ) = get_forward_model(config, logger=logger)
     logger.info(f"Forward model ready!\n{forward_model}")
+    forward_model.target_prediction_model.resc_model["model"].eval()
+    forward_model.forward_model.velocity_field.eval()
 
     # Prepare label encoder
     ct_le = LabelEncoder()
