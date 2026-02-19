@@ -197,10 +197,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def run():
+if __name__ == "__main__":
     args = parse_args()
     main(args)
-
-
-if __name__ == "__main__":
-    run()

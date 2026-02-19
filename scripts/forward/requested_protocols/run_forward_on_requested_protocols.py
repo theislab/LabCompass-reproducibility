@@ -5,6 +5,7 @@ import sys
 import uuid
 import traceback
 
+import cloudpickle
 import hydra
 import numpy as np
 from omegaconf import OmegaConf
@@ -86,7 +87,7 @@ def main(config):
     X_val_g = zn_phi(X_val_g).detach().cpu().numpy()
 
     # preparing protocol data
-    protocol_data = get_condition_data_from_file(
+    protocol_data, condition_adata = get_condition_data_from_file(
         phi_model.data_manager,
         config.paths.condition_metadata_path,
         config.annotation.protocol_columns,
@@ -97,11 +98,8 @@ def main(config):
         config.annotation.one_hot_uns_key_added,
         config.annotation.protocol_obsm_key,
     )
-    protocol_data = DataMixin(protocol_data)
-    # protocol_data = protocol_data.apply(
-    #     lambda x: torch.from_numpy(x).float().to(phi_model.device)
-    # )
-    samples = next(iter(protocol_data.values()))
+    protocol_dict = DataMixin(protocol_data)
+    samples = next(iter(protocol_dict.values()))
 
     # Define paths directories
     run_dir = os.path.join(config.paths.dump_dir, run_id) # cell type dir
@@ -138,7 +136,7 @@ def main(config):
     logger.info(f"Configuration saved!")
 
     # Save forward model results
-    logger.info("Saving raw forward query data...")
+    logger.info("Saving raw forward query data and protocol metadata...")
     np.savez(fwd_results_path, **fwd_query_res_dict)
     logger.info(
         f"Forward results saved! \n"
@@ -147,7 +145,6 @@ def main(config):
     )
     logger.info("Exit code 0, goodbye!")
     return 0.0
-
 
 
 if __name__ == "__main__":

@@ -409,3 +409,67 @@ def get_dimensionality_reduced_condition_space(
     return (
         orig_rep_rand_proj, latent_rep_rand_proj, orig_rep_pcs, latent_rep_pcs
     )
+
+
+def get_sample_grid_per_dim(samples, dim, grid_size=5, lbound=None, ubound=None):
+    nperturbed = []
+    pperturbed = []
+    if lbound is not None and ubound is not None:
+        pert_arr = np.linspace(lbound, ubound, num=grid_size*2)
+    else:
+        pert_arr = np.array(
+            [samples[dim] - (step/grid_size)*samples[dim] for step in range(1, grid_size + 1)] + \
+            [samples[dim] + (step/grid_size)*samples[dim] for step in range(1, grid_size + 1)]
+        )
+    for step in range(1, grid_size + 1):
+        nperturbed_sample = samples.copy()
+        pperturbed_sample = samples.copy()
+        nperturbed_sample[..., dim] = pert_arr[step]
+        pperturbed_sample[..., dim] = pert_arr[-step]
+        pperturbed.append(pperturbed_sample)
+        nperturbed.append(nperturbed_sample)
+    return np.stack(
+        nperturbed + pperturbed, axis=0
+    )
+
+
+def get_sample_grid(samples, grid_size=5, lbound=None, ubound=None):
+    perturbed = []
+    for dim in range(samples.shape[-1]):
+        dim_lbound = lbound[dim] if lbound is not None else None
+        dim_ubound = ubound[dim] if ubound is not None else None
+        grid = get_sample_grid_per_dim(samples, dim, grid_size=grid_size, lbound=dim_lbound, ubound=dim_ubound)
+        perturbed.append(grid)
+    return np.stack(perturbed, axis=0)
+
+
+def get_sensitivity_results(
+    forward_model,
+    sample_grid,
+    noise,
+    n_time_steps,
+    solver_kwargs,
+    le_ct,
+    protocol_cols=None,
+):
+    ct_res = {}
+    for perturbed_ax in range(sample_grid.shape[0]):
+        ax_grid = sample_grid[perturbed_ax]
+        if protocol_cols is not None:
+            assert len(ax_grid) == len(protocol_cols)
+        ax_name = protocol_cols[ax_grid]
+        ax_res = {}
+        for grid_val in range(ax_grid.shape[0]):
+            val = ax_grid[grid_val]
+            fwd_results = query_forward_model(
+                val,
+                noise,
+                forward_model,
+                n_time_steps,
+                solver_kwargs,
+                le_ct
+            )
+            fwd_results["mean_probs"] = fwd_results["ct_probs"].mean(1)
+            ax_res[grid_val] = fwd_results
+        ct_res[ax_name] = ax_res
+    return ct_res

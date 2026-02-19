@@ -347,4 +347,4 @@ def get_condition_data_from_file(
         one_hot_reps=False,
         typecast_anyway=True
     )
-    return data_manager.perturbation_data_schema.get_data(condition_adata)
+    return data_manager.perturbation_data_schema.get_data(condition_adata), condition_adata
