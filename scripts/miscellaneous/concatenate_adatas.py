@@ -20,10 +20,10 @@ def main(config):
 
     # concatenating data
     logger.info(f"Concatenating new measurements with full data...")
-    concat_full = sc.pp.concat((full_base_adata, additional_adata), uns_merge="same")
+    concat_full = sc.concat((full_base_adata, additional_adata), uns_merge="same")
     logger.info(f"{concat_full=}")
     logger.info(f"Concatenating new measurements with annotated subset of data...")
-    concat_annot = sc.pp.concat((annot_base_adata, additional_adata), uns_merge="same")
+    concat_annot = sc.concat((annot_base_adata, additional_adata), uns_merge="same")
     logger.info(f"{concat_annot=}")
 
     # saving to disk
