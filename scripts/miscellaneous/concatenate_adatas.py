@@ -10,10 +10,10 @@ def main(config):
     # read anndatas
     logger.info(f"Reading full data from {config.full_base_data_path}...")
     full_base_adata = sc.read_h5ad(config.full_base_data_path)
-    logger.info(f"{config.full_base_adata=}")
+    logger.info(f"{full_base_adata=}")
     logger.info(f"Reading annotated subset of data from {config.annot_base_data_path}...")
     annot_base_adata = sc.read_h5ad(config.annot_base_data_path)
-    logger.info(f"{config.annot_base_adata=}")
+    logger.info(f"{annot_base_adata=}")
     logger.info(f"Reading additional experiment data from {config.annot_base_data_path}...")
     additional_adata = sc.read_h5ad(config.additional_base_data_path)
     logger.info(f"{additional_adata=}")
