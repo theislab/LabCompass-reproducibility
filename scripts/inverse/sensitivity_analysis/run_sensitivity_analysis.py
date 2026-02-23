@@ -105,7 +105,7 @@ def main(config: DictConfig):
     run_dir = os.path.join(target_ct_dir, config.run)
     sensitivity_res_dir = os.path.join(run_dir, "sensitivity_analysis")
     dump_dir = os.path.join(sensitivity_res_dir, run_id)
-    plot_dir = os.path.join(plot_dir, "plots")
+    plot_dir = os.path.join(dump_dir, "plots")
     logger.info(f"Reading cell type results results from directory {target_ct_dir}")
     logger.info(f"Sensivity analysis data will be saved at {dump_dir}")
     logger.info(f"Sensivity analysis plots will be saved at {plot_dir}")
@@ -153,7 +153,6 @@ def main(config: DictConfig):
         plot_path,
         dpi=300
     )
-    fig.close()
     logger.info("Figured saved to disk.")
     logger.info("Run finished with exit code 0, goodbye!")
 
