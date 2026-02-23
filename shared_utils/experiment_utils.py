@@ -152,6 +152,8 @@ def generate_with_condition(
     ccondition_data = torch.from_numpy(samples).float().to(forward_model.forward_model.device)
     if noise is not None:
         ccondition_data = ccondition_data.unsqueeze(1).repeat(1, noise.shape[1], 1)
+    num_samples = num_samples if noise is None else None
+    print(f"generate_with_condition::{ccondition_data.shape=}, {num_samples=}")
     ccondition_dict = {
         perturbation_reps: ccondition_data,
     }
@@ -160,12 +162,13 @@ def generate_with_condition(
     }
     if noise is not None:
         batch_dict[DataFields.SOURCE_STATE] = noise
+    print(f"generate_with_condition::{batch_dict}")
 
     # query forward model
     cforward_out = forward_model.predict(
         batch_dict,
         return_trajectory=False,
-        num_samples=num_samples if noise is None else None,
+        num_samples=num_samples,
         no_grad=True,
         num_time_steps=num_time_steps,
         solver_kwargs=solver_kwargs,
@@ -412,25 +415,19 @@ def get_dimensionality_reduced_condition_space(
 
 
 def get_sample_grid_per_dim(samples, dim, grid_size=5, lbound=None, ubound=None):
-    nperturbed = []
-    pperturbed = []
     if lbound is not None and ubound is not None:
         pert_arr = np.linspace(lbound, ubound, num=grid_size*2)
     else:
         pert_arr = np.array(
-            [samples[dim] - (step/grid_size)*samples[dim] for step in range(1, grid_size + 1)] + \
+            [samples[dim] - (step/grid_size)*samples[dim] for step in reversed(range(1, grid_size + 1))] + \
             [samples[dim] + (step/grid_size)*samples[dim] for step in range(1, grid_size + 1)]
         )
-    for step in range(1, grid_size + 1):
-        nperturbed_sample = samples.copy()
-        pperturbed_sample = samples.copy()
-        nperturbed_sample[..., dim] = pert_arr[step]
-        pperturbed_sample[..., dim] = pert_arr[-step]
-        pperturbed.append(pperturbed_sample)
-        nperturbed.append(nperturbed_sample)
-    return np.stack(
-        nperturbed + pperturbed, axis=0
-    )
+    perturbed = []
+    for val in pert_arr:
+        perturbed_sample = samples.copy()
+        perturbed_sample[..., dim] = val
+        perturbed.append(perturbed_sample)
+    return np.stack(perturbed, axis=0)
 
 
 def get_sample_grid(samples, grid_size=5, lbound=None, ubound=None):
@@ -456,20 +453,39 @@ def get_sensitivity_results(
     for perturbed_ax in range(sample_grid.shape[0]):
         ax_grid = sample_grid[perturbed_ax]
         if protocol_cols is not None:
-            assert len(ax_grid) == len(protocol_cols)
-        ax_name = protocol_cols[ax_grid]
+            assert ax_grid.shape[0] == len(protocol_cols)
+            ax_name = protocol_cols[perturbed_ax]
+        else:
+            ax_name = perturbed_ax
         ax_res = {}
         for grid_val in range(ax_grid.shape[0]):
             val = ax_grid[grid_val]
-            fwd_results = query_forward_model(
+            # val = val[:, np.newaxis, :]
+            # val = np.repeat(val, noise.shape[1], axis=1)
+            print(f"get_sensitivity_results::call with {val.shape=}, {noise.shape=}")
+            fwd_results = generate_with_condition(
                 val,
-                noise,
                 forward_model,
                 n_time_steps,
                 solver_kwargs,
-                le_ct
+                le_ct,
+                noise=noise,
             )
             fwd_results["mean_probs"] = fwd_results["ct_probs"].mean(1)
             ax_res[grid_val] = fwd_results
         ct_res[ax_name] = ax_res
     return ct_res
+
+
+def shuffle_and_reshape(data, n_pops=5):
+    idxs = np.arange(data.shape[0])
+    idxs = np.random.shuffle(idxs)
+    return data[idxs].reshape(n_pops, -1, data.shape[-1])
+
+
+def get_shuffled_populations(data, n_pops=5, n_iters=500):
+    shuffled_data_list = []
+    for _ in range(n_iters):
+        shuffled_data = shuffle_and_reshape(data, n_pops=n_pops)
+        shuffled_data_list.append(shuffled_data)
+    return np.stack(shuffled_data_list, axis=0)

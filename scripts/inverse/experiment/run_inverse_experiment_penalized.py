@@ -18,6 +18,14 @@ from sc_exp_design.models import FlowMatching
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.inverse import LossGuidedFlow
 
+# 1. Configure the logging behavior
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout) # Ensures it goes to console
+    ]
+)
 logger = logging.getLogger(__name__)
 
 
@@ -149,6 +157,13 @@ def main(config: DictConfig) -> float:
     )
 
     # sampling from guided flow
+    logger.info(
+        "Sampling from guided flow with configurations:\n"
+        f"N={config.sampling.N}\n"
+        f"num_time_steps={config.sampling.num_time_steps}\n"
+        f"solver_kwargs={config.sampling.solver_kwargs}\n"
+        f"sde_sampling={config.sampling.sde_sampling}\n"
+    )
     torch.cuda.empty_cache()
     trajectory, loss_history, lambda_history = guided_flow.sample_posterior(
         config.sampling.N,
@@ -161,6 +176,8 @@ def main(config: DictConfig) -> float:
     )
     # moving results to numpy
     trajectory = np.permute_dims(trajectory, (1, 0, 2))
+    loss_history = loss_history.T
+    lambda_history = lambda_history.T
     torch.cuda.empty_cache()
     logger.info(f"Inverse model queried! {trajectory.shape=}, {loss_history.shape=}, {lambda_history.shape=}, {noise.shape=}")
 
@@ -251,7 +268,7 @@ def main(config: DictConfig) -> float:
     )
     ct_props = fwd_query_res_dict["ct_probs"].mean(1)
     samples = np.maximum(samples, 0)
-    terminal_loss = loss_history[-1]
+    terminal_loss = loss_history[:, -1]
     logger.info(
         "* Post-Processed data of shape:\n"
         f"\t -> {ct_props.shape=}\n"
@@ -324,7 +341,7 @@ def main(config: DictConfig) -> float:
 
     # plot loss history
     logger.info("Plotting loss history...")
-    loss_history_fig = plot_loss_history(ct_string, loss_history.detach().cpu().numpy().T)
+    loss_history_fig = plot_loss_history(ct_string, loss_history.detach().cpu().numpy())
     loss_history_fig.savefig(
         loss_history_plot_path,
         dpi=300,

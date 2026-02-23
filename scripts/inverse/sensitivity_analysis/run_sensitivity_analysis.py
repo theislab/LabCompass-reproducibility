@@ -55,6 +55,8 @@ def main(config: DictConfig):
         perturbation_response_prediction_model,
         target_prediction_model,
     ) = get_forward_model(base_cfg, logger=logger)
+    forward_model.target_prediction_model.resc_model["model"].eval()
+    forward_model.forward_model.velocity_field.eval()
 
     # data for cellular response prediction model
     train_adata_phi = perturbation_response_prediction_model.train_data.adata
@@ -63,9 +65,6 @@ def main(config: DictConfig):
 
     # concatenate + compute pcs, neighbors and umap
     adata_phi = sc.concat((train_adata_phi, val_adata_phi), uns_merge="same")
-    sc.pp.pca(adata_phi)
-    sc.pp.neighbors(adata_phi)
-    sc.tl.umap(adata_phi)
 
     # data for classifier model
     train_adata_g = target_prediction_model.train_data.adata
@@ -133,7 +132,7 @@ def main(config: DictConfig):
         ct_le,
     )
     logger.info(f"Sensitivity Analysis Ran. Saving the results.")
-    with open(os.path.join(dump_dir, "sensitivity_response_data.pkl")) as fb:
+    with open(os.path.join(dump_dir, "sensitivity_response_data.pkl"), "wb") as fb:
         cloudpickle.dump(sensitivity_results_dict, fb)
 
 
@@ -143,7 +142,8 @@ def parse_args():
     parser.add_argument("--target_cell_type", required=False, default="CyclingProgenitor*")
     parser.add_argument("--run", required=False, default="2026-02-18_03-46-45_ce20f2e0")
     parser.add_argument("--experiment_type", required=False, default="unconstrained-pure_populations-reciprocal")
-    parser.add_argument("--base_config_path", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config")
+    # parser.add_argument("--base_config_path", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config")
+    parser.add_argument("--base_config_path", required=False, default="../../../inverse/loss_guidance/config")
     parser.add_argument("--base_config_name", required=False, default="run_inverse")
     parser.add_argument("--base_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
     parser.add_argument("--grid_size", required=False, default=2)
