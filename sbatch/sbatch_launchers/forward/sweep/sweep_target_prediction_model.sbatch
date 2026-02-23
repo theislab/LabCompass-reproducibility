@@ -11,6 +11,7 @@
 
 
 SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
+USE_NEW_MEASUREMENTS=${2:-0}
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
@@ -24,6 +25,12 @@ echo "Current Working Directory: $WDIR"
 export HYDRA_FULL_ERROR=1
 
 wandb_name="sweep_classifier_${SAMPLE_REP}"
+wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
+paths="hpc_subset"
+if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
+    paths="${paths}_new_measurements"
+    wandb_name="${wandb_name}_new_measurements"
+fi
 echo "Wandb project ${wandb_name}"
 
 conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_target_prediction_model.py \

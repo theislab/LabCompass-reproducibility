@@ -64,10 +64,10 @@ for sample_rep in ${SAMPLE_REPS[@]}; do
   # if [ [$CLASSIFIER_FLAG==1] ]; then
   #   if [ [$SWEEP_FLAG==1] ]; then
   #     echo "Running Sweep (Target Prediction Model)"
-  #     sbatch launchers/sweep_target_prediction_model.sbatch $sample_rep
+  #     sbatch launchers/sweep_target_prediction_model.sbatch $sample_rep $NEW_MEASUREMENTS_FLAG
   #   else
   #     echo "Running base training (Target Prediction Model)"
-  #     sbatch launchers/train_target_prediction_model.sbatch $sample_rep
+  #     sbatch launchers/train_target_prediction_model.sbatch $sample_rep $NEW_MEASUREMENTS_FLAG
   #   fi
   # else
     for protocol_axis in "${!PROTOCOL_AXES_TO_NUNIQUE[@]}"; do
