@@ -12,6 +12,8 @@ import scanpy as sc
 from sklearn.preprocessing import LabelEncoder
 import torch
 
+from sc_exp_design.utils import set_reproducibility
+
 
 BASE_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
 
@@ -38,6 +40,10 @@ def main(config: DictConfig):
     ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     run_id = f"{ts}_{run_id}"
     logger.info(f"Starting inverse run {run_id}...")
+
+    # Set reproducibility
+    logger.info(f"Reproducibility set to {config.random_seed}")
+    set_reproducibility(config.random_seed)
 
     # initialize base config
     logger.info("Starting script for running sensitivity analysis of inverse results.")
@@ -167,6 +173,7 @@ def parse_args():
     parser.add_argument("--base_config_name", required=False, default="run_inverse")
     parser.add_argument("--base_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
     parser.add_argument("--grid_size", required=False, default=10)
+    parser.add_argument("--random_seed", required=False, default=42)
     return parser.parse_args()
 
 if __name__ == "__main__":

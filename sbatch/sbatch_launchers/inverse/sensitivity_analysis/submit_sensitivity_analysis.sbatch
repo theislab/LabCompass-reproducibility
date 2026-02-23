@@ -10,7 +10,7 @@
 #SBATCH --mem=500G
 #SBATCH --time=10:00:00
 
-grid_size={$1:-10}
+grid_size=10
 
 echo "Executing script with parameters"
 echo "PY_SCRIPT: ${PY_SCRIPT}"

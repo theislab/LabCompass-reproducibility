@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BASE_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data"
-EXP_TYPE="unconstrained-custom_populations_masked-constant"
+EXP_TYPE="unconstrained-custom_populations_masked-reciprocal"
 PYTHON_SCRIPT="./scripts/inverse/sensitivity_analysis/run_sensitivity_analysis.py"
 LOG_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions"
 
