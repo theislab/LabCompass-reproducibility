@@ -118,7 +118,7 @@ def main(config: DictConfig):
     logger.info("Preparing grid.")
     samples = np.maximum(0, inverse_results["trajectory"][:, -1, :])
     sample_grid = get_sample_grid(samples, grid_size=config.grid_size, lbound=conc_lbound, ubound=conc_ubound)
-    noise = inverse_results["noise"]
+    noise = torch.from_numpy(inverse_results["noise"]).float().to(perturbation_response_prediction_model.device_id)
     logger.info(f"Grid ready! {samples.shape=}, {sample_grid.shape=}, {noise.shape=}.")
 
     # retrieve sensitivity results

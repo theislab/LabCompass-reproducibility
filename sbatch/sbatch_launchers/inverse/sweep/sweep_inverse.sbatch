@@ -55,9 +55,18 @@ case $SCHEDULER in
     *) echo "❌ Unknown scheduler: $SCHEDULER"; exit 1 ;;
 esac
 
-# select script
-[[ "$OPT" == "unconstrained" ]] && script_name="run_inverse_experiment" || script_name="run_inverse_experiment_penalized"
-[[ "$OPT" == "penalized_all_axes" ]] && constraints="default_all_cols" || constraints="default"
+if [[ "$OPT" == "unconstrained" ]]; then
+    script_name="run_inverse_experiment"
+else
+    script_name="run_inverse_experiment_penalized"
+    hparam_search="${hparam_search}_penalized"
+fi
+
+if [[ "$OPT" == "penalized_all_axes" ]]; then
+    constraints="default_all_cols"
+else
+    constraints="default"
+fi
 
 
 # Map scheduler to configurations
