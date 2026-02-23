@@ -853,3 +853,64 @@ def sample_level_plots(
         fig_xy_channel, fig_xy_scatter, fig_marginals_channel, fig_marginals_scatter,
         fig_channel_vs_channel, fig_scatter_vs_scatter, fig_channel_vs_scatter
     )
+
+
+def plot_sensitivity_analysis_results(
+    res_dict,
+    protocol_cols,
+    ct_label,
+    le_ct,
+):
+    ct_index = le_ct.classes_.tolist().index(ct_label)
+
+    n_cols = len(protocol_cols)
+    fig, axes = plt.subplots(
+        1, n_cols,
+        figsize=(2.5 * n_cols, 2.2 * 1),
+        sharey="row"
+    )
+
+    for c, ax_name in enumerate(protocol_cols):
+        ax_plot = axes[c]
+        ax_dict = res_dict[c]
+        gids = sorted(ax_dict.keys())
+
+        # 1. Stack ALL samples: Resulting shape is (n_gids, n_samples)
+        # Each row is a GID, each column is one of the many elements in the ensemble
+        vals = np.stack(
+            [ax_dict[gid]["mean_probs"][:, ct_index] for gid in gids],
+            axis=0
+        )
+
+        # 2. Plot the entire ensemble at once
+        # Using low alpha (0.05-0.2) is essential to see the "density" of the lines
+        ax_plot.plot(
+            gids, 
+            vals, 
+            color="steelblue", 
+            alpha=0.1, 
+            linewidth=0.8,
+            zorder=1
+        )
+
+        # 3. Overlay the median or mean to give the ensemble a "spine"
+        ax_plot.plot(
+            gids, 
+            np.median(vals, axis=1), 
+            color="black", 
+            linewidth=1.5, 
+            label="Median",
+            zorder=2
+        )
+
+        # Formatting
+        ax_plot.set_title(ax_name, fontsize=10, fontweight='bold')
+        ax_plot.set_ylabel(f"{ct_label} Prop")
+        ax_plot.set_xlabel("Perturbation")
+        ax_plot.grid(True, linestyle="--", alpha=0.5)
+        
+        if c == 0:
+            ax_plot.legend(fontsize=8)
+
+    fig.tight_layout()
+    return fig

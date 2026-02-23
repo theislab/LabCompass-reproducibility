@@ -31,6 +31,7 @@ def main(config: DictConfig):
         get_sensitivity_results,
     )
     from z_norm_modules import get_rescaling
+    from plot_utils import plot_sensitivity_analysis_results
 
     # Create run id 
     run_id = uuid.uuid4().hex[:8]
@@ -104,10 +105,13 @@ def main(config: DictConfig):
     run_dir = os.path.join(target_ct_dir, config.run)
     sensitivity_res_dir = os.path.join(run_dir, "sensitivity_analysis")
     dump_dir = os.path.join(sensitivity_res_dir, run_id)
+    plot_dir = os.path.join(plot_dir, "plots")
     logger.info(f"Reading cell type results results from directory {target_ct_dir}")
     logger.info(f"Sensivity analysis data will be saved at {dump_dir}")
+    logger.info(f"Sensivity analysis plots will be saved at {plot_dir}")
     create_dir(sensitivity_res_dir, logger=logger)
     create_dir(dump_dir, logger=logger)
+    create_dir(plot_dir, logger=logger)
 
     # read run files
     inverse_results = np.load(
@@ -134,6 +138,24 @@ def main(config: DictConfig):
     logger.info(f"Sensitivity Analysis Ran. Saving the results.")
     with open(os.path.join(dump_dir, "sensitivity_response_data.pkl"), "wb") as fb:
         cloudpickle.dump(sensitivity_results_dict, fb)
+
+    # plotting sensitivity analysis results
+    logger.info("Generating plot...")
+    fig = plot_sensitivity_analysis_results(
+        sensitivity_results_dict,
+        base_cfg.annotation.protocol_columns,
+        ct_string,
+        ct_le,
+    )
+    plot_path = os.path.join(plot_dir, "sensitivity_analysis.svg")
+    logger.info(f"Plot generated, it will be saved at {plot_path}")
+    fig.savefig(
+        plot_path,
+        dpi=300
+    )
+    fig.close()
+    logger.info("Figured saved to disk.")
+    logger.info("Run finished with exit code 0, goodbye!")
 
 
 def parse_args():
