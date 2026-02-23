@@ -142,11 +142,10 @@ def parse_args():
     parser.add_argument("--target_cell_type", required=False, default="CyclingProgenitor*")
     parser.add_argument("--run", required=False, default="2026-02-18_03-46-45_ce20f2e0")
     parser.add_argument("--experiment_type", required=False, default="unconstrained-pure_populations-reciprocal")
-    # parser.add_argument("--base_config_path", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config")
     parser.add_argument("--base_config_path", required=False, default="../../../inverse/loss_guidance/config")
     parser.add_argument("--base_config_name", required=False, default="run_inverse")
     parser.add_argument("--base_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
-    parser.add_argument("--grid_size", required=False, default=2)
+    parser.add_argument("--grid_size", required=False, default=10)
     return parser.parse_args()
 
 if __name__ == "__main__":
