@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import scanpy as sc
 
@@ -7,13 +8,19 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def main(config):
+    # import modules
+    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    from data_utils import drop_duplicates, ensure_type_safety
+
     # read anndatas
     logger.info(f"Reading full data from {config.full_base_data_path}...")
     full_base_adata = sc.read_h5ad(config.full_base_data_path)
     logger.info(f"{full_base_adata=}")
+
     logger.info(f"Reading annotated subset of data from {config.annot_base_data_path}...")
     annot_base_adata = sc.read_h5ad(config.annot_base_data_path)
     logger.info(f"{annot_base_adata=}")
+
     logger.info(f"Reading additional experiment data from {config.annot_base_data_path}...")
     additional_adata = sc.read_h5ad(config.additional_base_data_path)
     logger.info(f"{additional_adata=}")
@@ -21,9 +28,15 @@ def main(config):
     # concatenating data
     logger.info(f"Concatenating new measurements with full data...")
     concat_full = sc.concat((full_base_adata, additional_adata), uns_merge="same")
+    concat_full = drop_duplicates(concat_full, logger=logger)
+    concat_full = ensure_type_safety(concat_full)
     logger.info(f"{concat_full=}")
+
+
     logger.info(f"Concatenating new measurements with annotated subset of data...")
     concat_annot = sc.concat((annot_base_adata, additional_adata), uns_merge="same")
+    concat_annot = drop_duplicates(concat_annot, logger=logger)
+    concat_annot = ensure_type_safety(concat_annot)
     logger.info(f"{concat_annot=}")
 
     # saving to disk

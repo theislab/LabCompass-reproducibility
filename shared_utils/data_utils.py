@@ -348,3 +348,26 @@ def get_condition_data_from_file(
         typecast_anyway=True
     )
     return data_manager.perturbation_data_schema.get_data(condition_adata), condition_adata
+
+
+def drop_duplicates(adata, logger=None):
+    duplicates_mask = adata.obs_names.duplicated(keep='first')
+    n_dups = duplicates_mask.sum()
+    if n_dups > 0:
+        if logger is not None:
+            logger.info(f"Found {n_dups} duplicate observation names. Dropping...")
+        # 2. Subset to keep only the first occurrence
+        adata = adata[~duplicates_mask].copy()
+        if logger is not None:
+            logger.info(f"New shape: {adata.n_obs} rows")
+    else:
+        if logger is not None:
+            logger.info("No duplicate observation names found.")
+    return adata
+
+
+def ensure_type_safety(adata):
+    for col in adata.obs.columns:
+        if adata.obs[col].dtype == 'object':
+            adata.obs[col] = adata.obs[col].astype(str)
+    return adata
