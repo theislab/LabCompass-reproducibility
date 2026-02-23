@@ -447,6 +447,7 @@ def get_sensitivity_results(
     le_ct,
     protocol_cols=None,
 ):
+    pbar = tqdm(range(sample_grid.shape[0]*sample_grid.shape[0]))
     ct_res = {}
     for perturbed_ax in range(sample_grid.shape[0]):
         ax_grid = sample_grid[perturbed_ax]
@@ -457,6 +458,8 @@ def get_sensitivity_results(
             ax_name = perturbed_ax
         ax_res = {}
         for grid_val in range(ax_grid.shape[0]):
+            pbar.set_description(f"axes:{ax_name}-grid:{grid_val}")
+            pbar.update()
             val = ax_grid[grid_val]
             fwd_results = generate_with_condition(
                 val,
