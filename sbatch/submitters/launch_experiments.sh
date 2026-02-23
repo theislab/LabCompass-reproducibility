@@ -1,11 +1,12 @@
 #!/bin/bash
 
 
-BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch/sbatch_launchers"
+BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch"
 
 SWEEP_FLAG=0
 VALIDATE_FLAG=0
 CLASSIFIER_FLAG=0
+NEW_MEASUREMENTS_FLAG=1
 # Check for debugging flag
 for arg in "$@"; do
     if [[ "$arg" == "--sweep" ]]; then
@@ -77,10 +78,10 @@ for sample_rep in ${SAMPLE_REPS[@]}; do
             echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_val"
             if [[ $SWEEP_FLAG -eq 1 ]]; then
               echo "Running Sweep"
-              sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/sweep/sweep_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
+              sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/sweep/sweep_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode $NEW_MEASUREMENTS_FLAG
             else
               echo "Running base training"
-              sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/train/train_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode
+              sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/train/train_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode $NEW_MEASUREMENTS_FLAG
             fi
           done
         done
