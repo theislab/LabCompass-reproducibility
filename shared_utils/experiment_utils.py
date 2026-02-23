@@ -153,7 +153,6 @@ def generate_with_condition(
     if noise is not None:
         ccondition_data = ccondition_data.unsqueeze(1).repeat(1, noise.shape[1], 1)
     num_samples = num_samples if noise is None else None
-    print(f"generate_with_condition::{ccondition_data.shape=}, {num_samples=}")
     ccondition_dict = {
         perturbation_reps: ccondition_data,
     }
@@ -162,7 +161,6 @@ def generate_with_condition(
     }
     if noise is not None:
         batch_dict[DataFields.SOURCE_STATE] = noise
-    print(f"generate_with_condition::{batch_dict}")
 
     # query forward model
     cforward_out = forward_model.predict(
@@ -460,9 +458,6 @@ def get_sensitivity_results(
         ax_res = {}
         for grid_val in range(ax_grid.shape[0]):
             val = ax_grid[grid_val]
-            # val = val[:, np.newaxis, :]
-            # val = np.repeat(val, noise.shape[1], axis=1)
-            print(f"get_sensitivity_results::call with {val.shape=}, {noise.shape=}")
             fwd_results = generate_with_condition(
                 val,
                 forward_model,
