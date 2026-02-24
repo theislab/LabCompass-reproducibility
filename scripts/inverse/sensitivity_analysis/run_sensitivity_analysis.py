@@ -172,8 +172,8 @@ def parse_args():
     parser.add_argument("--base_config_path", required=False, default="../../../inverse/loss_guidance/config")
     parser.add_argument("--base_config_name", required=False, default="run_inverse")
     parser.add_argument("--base_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
-    parser.add_argument("--grid_size", required=False, default=10)
-    parser.add_argument("--random_seed", required=False, default=42)
+    parser.add_argument("--grid_size", required=False, type=int, default=10)
+    parser.add_argument("--random_seed", required=False, type=int, default=42)
     return parser.parse_args()
 
 if __name__ == "__main__":

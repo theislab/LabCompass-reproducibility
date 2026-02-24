@@ -28,4 +28,4 @@ conda run -n sc_exp_design --no-capture-output \
         --run "$RUN_ID" \
         --experiment_type "$EXP_TYPE" \
         --base_dir "$BASE_DIR" \
-        --grid_size $grid_size
+        --grid_size "$grid_size"
