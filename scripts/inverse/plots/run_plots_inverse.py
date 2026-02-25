@@ -136,8 +136,8 @@ def main(config: DictConfig):
     ################################################################
     # get condition data and hue values
     data_samples = train_adata_phi.obsm[annotation_dict["protocol_obsm_key"]]
-    data_color_val = ...
-    gen_color_val = ...
+    data_color_val = None
+    gen_color_val = inverse_results["loss_history"][:, -1]
 
     # run plots
     run_level_plots(
@@ -157,11 +157,12 @@ def main(config: DictConfig):
     ################################################################
     ############# COVARIATE LEVEL VISUALIZATIONS
     ################################################################
+    upper_bounds = np.max(data_samples, axis=0)
     covariate_level_plots(
-        target_ct,
-        gen_samples,
-        target_probs,
-        protocol_columns,
+        ct_string,
+        inverse_results["trajectory"][:, -1, :],
+        fwd_results["ct_probs"],
+        annotation_dict["protocol_columns"],
         upper_bounds,
         plots_dir,
         suffix=""
