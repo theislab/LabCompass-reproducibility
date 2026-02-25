@@ -9,6 +9,7 @@ import numpy as np
 from omegaconf import DictConfig
 import pandas as pd
 import scanpy as sc
+from scipy.spatial.distance import cdist
 from sklearn.decomposition import PCA
 from scipy.special import softmax
 from sklearn.neighbors import NearestNeighbors
@@ -388,7 +389,7 @@ def get_dimensionality_reduced_condition_space(
             perturbation_prediction_model.forward_model.train_data.data.perturbation_covariates
         )
     )
-    latent_rep = perturbation_prediction_model.velocity_field.get_condition_embedding(
+    latent_rep = perturbation_prediction_model.forward_model.velocity_field.get_condition_embedding(
         {
             perturbation_reps: torch.from_numpy(
                 original_data).float().to(perturbation_prediction_model.forward_model.device
@@ -487,3 +488,47 @@ def get_shuffled_populations(data, n_pops=5, n_iters=500):
         shuffled_data = shuffle_and_reshape(data, n_pops=n_pops)
         shuffled_data_list.append(shuffled_data)
     return np.stack(shuffled_data_list, axis=0)
+
+
+def get_g_star(ct, classes):
+    # get target probability vector for current cell type
+    ct_idx = classes.index(ct)
+    g_star = np.zeros(len(classes))
+    g_star[ct_idx] = 1.0
+    return g_star[None]
+
+
+def compute_exploitation_score(surr_candidates_vals):
+    max_surr_loss_candidates = surr_candidates_vals.max()
+    min_surr_loss_candidates = surr_candidates_vals.min()
+    return (surr_candidates_vals - min_surr_loss_candidates) / (max_surr_loss_candidates - min_surr_loss_candidates)
+
+
+def compute_exploration_score(Dct):
+    candidates_nn_dist = Dct.min(1)
+    max_nn_dist = candidates_nn_dist.max()
+    min_nn_dist = candidates_nn_dist.min()
+    return (max_nn_dist - candidates_nn_dist)/(max_nn_dist - min_nn_dist)
+ 
+
+def compute_surr_exponential_weight(surr_candidates_vals, gamma=1.0):
+    exploitation_score = compute_exploitation_score(surr_candidates_vals)
+    return gamma*np.exp(-exploitation_score)
+
+
+def compute_weighted_uncertainty_score(
+    surr_candidates_vals, gen_samples, data_samples, gamma=1.0
+):
+    exp_weight = compute_surr_exponential_weight(surr_candidates_vals, gamma=gamma) # N
+    D_data = cdist(gen_samples, data_samples) # N, M
+    D_candidates = cdist(
+        gen_samples, gen_samples
+    ) # N, N
+    U_data = D_data.min(1) # N
+    U_concat_list = []
+    for idx in range(D_candidates.shape[1]):
+        D_concat = np.concatenate((D_data, D_candidates[:, idx][:, None]), axis=1) # N, M + 1
+        U_concat = D_concat.min(1) # N 
+        U_concat_list.append(U_concat)
+    U_concat_arr = np.stack(U_concat_list, axis=0) # N, N
+    return ((U_data[None] - U_concat_arr)*exp_weight[None]).mean(1)
