@@ -151,6 +151,7 @@ def scatter_protocol_covariate_against_prop(
         
         if use_density:
             # Calculate point density for coloring
+            print(f"{x_data.shape=}, {y.shape=}")
             xy = np.vstack([x_data, y])
             z = gaussian_kde(xy)(xy)
             # Sort the points by density so that the densest points are on top

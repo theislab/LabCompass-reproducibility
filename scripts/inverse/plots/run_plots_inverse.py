@@ -50,7 +50,7 @@ def main(config: DictConfig):
     ############# LOAD MODELS AND PREPARE DATA
     ################################################################
     # load forward model
-    _, (
+    forward_model, (
         perturbation_response_prediction_model,
         target_prediction_model,
     ) = get_forward_model(base_cfg, logger=logger)
@@ -141,7 +141,7 @@ def main(config: DictConfig):
 
     # run plots
     run_level_plots(
-        perturbation_response_prediction_model,
+        forward_model,
         data_samples,
         ct_string,
         run_level_plots_dir,
@@ -161,7 +161,7 @@ def main(config: DictConfig):
     covariate_level_plots(
         ct_string,
         inverse_results["trajectory"][:, -1, :],
-        fwd_results["ct_probs"],
+        fwd_results["ct_probs"].mean(1),
         annotation_dict["protocol_columns"],
         upper_bounds,
         plots_dir,
@@ -189,8 +189,8 @@ def parse_args():
     parser.add_argument("--target_cell_type", required=True)
     parser.add_argument("--run", required=True)
     parser.add_argument("--n_noise_samples", required=False, default=10_000)
-    parser.add_argument("--base_config_path", required=False, default=...)
-    parser.add_argument("--base_config_name", required=False, default=...)
+    parser.add_argument("--base_config_path", required=False, default="../../../inverse/loss_guidance/config")
+    parser.add_argument("--base_config_name", required=False, default="run_inverse")
     parser.add_argument("--n_train_cells", required=False, default=70_000)
     parser.add_argument("--n_val_cells", required=False, default=30_000)
     parser.add_argument("--base_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
