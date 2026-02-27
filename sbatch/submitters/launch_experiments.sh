@@ -7,6 +7,7 @@ SWEEP_FLAG=0
 VALIDATE_FLAG=0
 CLASSIFIER_FLAG=0
 NEW_MEASUREMENTS_FLAG=1
+RERUN_EXPERIMENTS_FLAG=1
 # Check for debugging flag
 for arg in "$@"; do
     if [[ "$arg" == "--sweep" ]]; then
@@ -59,6 +60,13 @@ declare -A PROTOCOL_AXES_TO_NUNIQUE=(
 # CONDITIONING_MODE=("protocol_concat", "ohe_protocols_axes")
 CONDITIONING_MODE=("protocol_concat")
 
+RUNS_TO_RERUN=(
+    "neat-wildflower-3"
+    "dark-cloud-16"
+    "solar-pine-15"
+    "fine-gorge-23"
+)
+
 for sample_rep in ${SAMPLE_REPS[@]}; do
   echo "Using sample rep $sample_rep."
   # if [ [$CLASSIFIER_FLAG==1] ]; then
@@ -72,18 +80,27 @@ for sample_rep in ${SAMPLE_REPS[@]}; do
   # else
     for protocol_axis in "${!PROTOCOL_AXES_TO_NUNIQUE[@]}"; do
       nunique=${PROTOCOL_AXES_TO_NUNIQUE[$protocol_axis]}
-        for unique_val in $(seq 0 $((nunique - 1))); do
-          for conditioning_mode in "${CONDITIONING_MODE[@]}"; do
+        for conditioning_mode in "${CONDITIONING_MODE[@]}"; do
+          if [[ $RERUN_EXPERIMENTS_FLAG -eq 1 ]]; then
             echo "Using sample rep $sample_rep and conditioning mode $conditioning_mode"
-            echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_val"
-            if [[ $SWEEP_FLAG -eq 1 ]]; then
-              echo "Running Sweep"
-              sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/sweep/sweep_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode $NEW_MEASUREMENTS_FLAG
+            echo "Rerunning experiment"
+            for run_name in "${RUNS_TO_RERUN[@]}"; do
+              echo "Launching Experiment for ${run_name}"
+              sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/train/train_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode $NEW_MEASUREMENTS_FLAG $RERUN_EXPERIMENTS_FLAG $run_name
+            done
             else
-              echo "Running base training"
-              sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/train/train_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode $NEW_MEASUREMENTS_FLAG
+              for unique_val in $(seq 0 $((nunique - 1))); do
+                echo "Using sample rep $sample_rep and conditioning mode $conditioning_mode"
+                echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_val"
+                if [[ $SWEEP_FLAG -eq 1 ]]; then
+                  echo "Running Sweep"
+                  sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/sweep/sweep_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode $NEW_MEASUREMENTS_FLAG $RERUN_EXPERIMENTS_FLAG
+                else
+                  echo "Running base training"
+                  sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/train/train_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode $NEW_MEASUREMENTS_FLAG $RERUN_EXPERIMENTS_FLAG
+                fi
+              done
             fi
-          done
         done
     done
     echo "pass"

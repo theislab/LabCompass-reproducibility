@@ -10,11 +10,22 @@
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
 
-
 SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
 PROTOCOL_AXIS=${2:-"protocol_id"}
 UNIQUE_VALUE=${3:-0}
 CONDITION_MODE=${4:-"protocol_concat"}
+RERUN_EXP=${5-0}
+RUN_NAME=${6-"no-name"}
+
+if [[ $RERUN_EXP -eq 1 ]]; then
+    vf=$RUN_NAME
+    training=$RUN_NAME
+    echo "Rerunning experiment ${RUN_NAME} -> vf: ${vf}, training: ${training}"
+else
+    vf="default_${CONDITION_MODE}"
+    training="default"
+    echo "Launching default experiment -> vf: ${vf}, training: ${training}"
+fi
 
 echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE"
 
@@ -30,10 +41,11 @@ export HYDRA_FULL_ERROR=1
 wandb_name="train_cfm_${CONDITION_MODE}_${SAMPLE_REP}"
 
 conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
-    vf="default_${CONDITION_MODE}" \
+    vf="${vf}" \
     data="${CONDITION_MODE}" \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
+    training="${training}" \
     ood.obs_column='"'"${PROTOCOL_AXIS}"'"' \
     ood.unique_value_ids="$UNIQUE_VALUE" \
     2>&1 | tee "../../logs/train_cfm-${CONDITION_MODE}_${SAMPLE_REP}-${PROTOCOL_AXIS}-${UNIQUE_VALUE}.out"
