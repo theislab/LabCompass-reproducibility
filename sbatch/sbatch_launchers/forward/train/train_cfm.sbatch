@@ -98,7 +98,7 @@ echo "OOD Unique Value: ${UNIQUE_VALUE}"
 echo "Conditioning Mode: ${CONDITION_MODE}"
 echo "New Measurements Flag: ${NEW_MEASUREMENTS_FLAG}"
 echo "WandB Name: ${wandb_name}"
-echo "Paths Configuration: ${wandb_name}"
+echo "Paths Configuration: ${paths}"
 echo "VF Configuration: ${vf}"
 echo "VF Configuration: ${training}"
 echo "Environment: ${ENV_NAME}"
@@ -113,6 +113,6 @@ conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/trai
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
     training="${training}" \
-    ood.obs_column='"'"${PROTOCOL_AXIS}"'"' \
-    ood.unique_value_ids="$UNIQUE_VALUE" \
+    split.obs_column='"'"${PROTOCOL_AXIS}"'"' \
+    split.unique_value_ids="$UNIQUE_VALUE" \
     2>&1 | tee "../../logs/train_cfm-${CONDITION_MODE}_${SAMPLE_REP}-${PROTOCOL_AXIS}-${UNIQUE_VALUE}.out"
