@@ -12,7 +12,7 @@ perturbation_covariates_not_pooled: null
 perturbation_encoder_output_dim: 128
 perturbation_layers_after_pooling:
   activation_class: selu
-  dropout_rate: 0
+  dropout_rate: 0.0
   final_activation_class: identity
   hidden_dims:
   - 16
@@ -21,7 +21,7 @@ perturbation_layers_after_pooling:
 perturbation_layers_before_pooling:
   feats_condition_concat_condition_concat:
     activation_class: selu
-    dropout_rate: 0
+    dropout_rate: 0.0
     final_activation_class: identity
     hidden_dims:
     - 16

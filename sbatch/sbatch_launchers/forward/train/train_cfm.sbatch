@@ -100,7 +100,7 @@ echo "New Measurements Flag: ${NEW_MEASUREMENTS_FLAG}"
 echo "WandB Name: ${wandb_name}"
 echo "Paths Configuration: ${paths}"
 echo "VF Configuration: ${vf}"
-echo "VF Configuration: ${training}"
+echo "Train Configuration: ${training}"
 echo "Environment: ${ENV_NAME}"
 echo "-------------------------"
 
