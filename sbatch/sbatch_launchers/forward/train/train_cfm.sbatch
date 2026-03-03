@@ -9,6 +9,7 @@
 #SBATCH --mem=500G
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
+#SBATCH --constraint="h100_80gb"
 
 SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
 PROTOCOL_AXIS="protocol_id"
