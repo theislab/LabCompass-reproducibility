@@ -38,5 +38,4 @@ conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/trai
     +launcher=slurm_preentible \
     +hparams_search=default \
     data.sample_rep="$SAMPLE_REP" \
-    callbacks.wandb_project_name="$wandb_name" \
-    2>&1 | tee "../../logs/sweep_classifier-${SAMPLE_REP}.out"
+    callbacks.wandb_project_name="$wandb_name"
