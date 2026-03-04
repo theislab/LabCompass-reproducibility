@@ -142,17 +142,16 @@ def scatter_protocol_covariate_against_prop(
     y,
     ubounds,
     margin=10,
-    use_density=True
+    use_density=False
 ):
     fig, ax = plt.subplots(nrows=1, ncols=len(protocol_columns), figsize=(50, 12))
     
     for cidx, col in enumerate(protocol_columns):
         x_data = X[:, cidx]
-        
+        print(f"{x_data.shape=}, {y.shape=}")
         if use_density:
             # Calculate point density for coloring
-            print(f"{x_data.shape=}, {y.shape=}")
-            xy = np.vstack([x_data, y])
+            xy = np.vstack([x_data[:, None], y])
             z = gaussian_kde(xy)(xy)
             # Sort the points by density so that the densest points are on top
             idx = z.argsort()

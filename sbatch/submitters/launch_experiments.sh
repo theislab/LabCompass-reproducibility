@@ -78,17 +78,23 @@ for sample_rep in ${SAMPLE_REPS[@]}; do
   #     sbatch launchers/train_target_prediction_model.sbatch $sample_rep $NEW_MEASUREMENTS_FLAG
   #   fi
   # else
-    for protocol_axis in "${!PROTOCOL_AXES_TO_NUNIQUE[@]}"; do
-      nunique=${PROTOCOL_AXES_TO_NUNIQUE[$protocol_axis]}
-        for conditioning_mode in "${CONDITIONING_MODE[@]}"; do
-          if [[ $RERUN_EXPERIMENTS_FLAG -eq 1 ]]; then
-            echo "Using sample rep $sample_rep and conditioning mode $conditioning_mode"
-            echo "Rerunning experiment"
-            for run_name in "${RUNS_TO_RERUN[@]}"; do
-              echo "Launching Experiment for ${run_name}"
-              sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/train/train_cfm.sbatch $sample_rep $protocol_axis $unique_val $conditioning_mode $NEW_MEASUREMENTS_FLAG $RERUN_EXPERIMENTS_FLAG $run_name
-            done
-            else
+  for conditioning_mode in "${CONDITIONING_MODE[@]}"; do
+    if [[ $RERUN_EXPERIMENTS_FLAG -eq 1 ]]; then
+      echo "Using sample rep $sample_rep and conditioning mode $conditioning_mode"
+      echo "Rerunning experiment"
+      for run_name in "${RUNS_TO_RERUN[@]}"; do
+        echo "Launching Experiment for ${run_name}"
+        sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/train/train_cfm.sbatch \
+          --sample_rep $sample_rep \
+          --condition-mode $conditioning_mode \
+          --rerun-experiment $RERUN_EXPERIMENTS_FLAG \
+          --run-name $run_name \
+          --new-measurements $NEW_MEASUREMENTS_FLAG
+      done
+    else
+      for protocol_axis in "${!PROTOCOL_AXES_TO_NUNIQUE[@]}"; do
+        nunique=${PROTOCOL_AXES_TO_NUNIQUE[$protocol_axis]}
+          
               for unique_val in $(seq 0 $((nunique - 1))); do
                 echo "Using sample rep $sample_rep and conditioning mode $conditioning_mode"
                 echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_val"
@@ -102,7 +108,7 @@ for sample_rep in ${SAMPLE_REPS[@]}; do
               done
             fi
         done
-    done
-    echo "pass"
-  # fi
+      done
+    fi
+  done
 done

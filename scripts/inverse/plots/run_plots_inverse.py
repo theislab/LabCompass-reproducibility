@@ -158,10 +158,11 @@ def main(config: DictConfig):
     ############# COVARIATE LEVEL VISUALIZATIONS
     ################################################################
     upper_bounds = np.max(data_samples, axis=0)
+    target_ct_index = ct_le.classes_.tolist().index(ct_string)
     covariate_level_plots(
         ct_string,
         inverse_results["trajectory"][:, -1, :],
-        fwd_results["ct_probs"].mean(1),
+        fwd_results["ct_probs"].mean(1)[..., target_ct_index],
         annotation_dict["protocol_columns"],
         upper_bounds,
         plots_dir,
@@ -180,7 +181,7 @@ def main(config: DictConfig):
 
         # get adata
         adata_pred_min = get_adata_from_idx(X_true, adata_g, ct_le, fwd_results, idx)
-        sample_level_plots(adata_pred_min, config.target_ct, classes, sample_dir, "", annotation_dict)
+        sample_level_plots(adata_pred_min, config.target_cell_type, classes, sample_dir, "", annotation_dict)
 
 
 def parse_args():
