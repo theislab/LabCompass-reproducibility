@@ -11,7 +11,7 @@
 
 
 SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
-USE_NEW_MEASUREMENTS=${2:-0}
+USE_NEW_MEASUREMENTS=${2:-1}
 
 echo "Running experiments on sample: $SAMPLE_REP"
 

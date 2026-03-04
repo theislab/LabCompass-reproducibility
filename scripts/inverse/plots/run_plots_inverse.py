@@ -172,16 +172,16 @@ def main(config: DictConfig):
     ################################################################
     ############# SAMPLE LEVEL VISUALIZATIONS
     ################################################################
+    if config.sample_level_plots:
+        # iterate over each sample
+        for idx in tqdm(range(base_cfg.sampling.N)):
+            # create sample plot dir
+            sample_dir = os.path.join(samples_level_plots_dir, str(idx))
+            create_dir(sample_dir)
 
-    # iterate over each sample
-    for idx in tqdm(range(base_cfg.sampling.N)):
-        # create sample plot dir
-        sample_dir = os.path.join(samples_level_plots_dir, str(idx))
-        create_dir(sample_dir)
-
-        # get adata
-        adata_pred_min = get_adata_from_idx(X_true, adata_g, ct_le, fwd_results, idx)
-        sample_level_plots(adata_pred_min, config.target_cell_type, classes, sample_dir, "", annotation_dict)
+            # get adata
+            adata_pred_min = get_adata_from_idx(X_true, adata_g, ct_le, fwd_results, idx)
+            sample_level_plots(adata_pred_min, config.target_cell_type, classes, sample_dir, "", annotation_dict)
 
 
 def parse_args():
@@ -189,6 +189,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--target_cell_type", required=True)
     parser.add_argument("--run", required=True)
+    parser.add_argument("--sample_level_plots", action="store_true")
     parser.add_argument("--n_noise_samples", required=False, default=10_000)
     parser.add_argument("--base_config_path", required=False, default="../../../inverse/loss_guidance/config")
     parser.add_argument("--base_config_name", required=False, default="run_inverse")

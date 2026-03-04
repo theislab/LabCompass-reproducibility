@@ -40,11 +40,11 @@ TARGET_CELL_TYPES=(
 SCHEDULERS=(
     "constant"
     # "exp-decay"
-    # "reciprocal"
+    "reciprocal"
     # "lin-decay"
 )
 OPTIMIZATION_TYPE=(
-    # "unconstrained"
+    "unconstrained"
     "penalized_oxy_days"
     "penalized_all_axes"
 )
