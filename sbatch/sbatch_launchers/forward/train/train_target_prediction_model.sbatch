@@ -15,10 +15,10 @@ SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
-ENV_NAME="sc_exp_design"
+ENV_NAME="sc_exp_design_12"
 echo "Using environment: $ENV_NAME"
 
-WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
+WDIR=../../../..
 cd "$WDIR" || exit 1
 echo "Current Working Directory: $WDIR"
 
@@ -26,7 +26,7 @@ export HYDRA_FULL_ERROR=1
 
 wandb_name="train_classifier_${SAMPLE_REP}"
 
-conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_target_prediction_model.py \
+conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
     2>&1 | tee "../../logs/train_classifier-${SAMPLE_REP}.out"
