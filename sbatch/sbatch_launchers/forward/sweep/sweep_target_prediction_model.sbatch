@@ -15,7 +15,7 @@ USE_NEW_MEASUREMENTS=${2:-1}
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
-ENV_NAME="sc_exp_design"
+ENV_NAME="sc_exp_design_12"
 echo "Using environment: $ENV_NAME"
 
 WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
