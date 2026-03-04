@@ -24,8 +24,7 @@ echo "Current Working Directory: $WDIR"
 
 export HYDRA_FULL_ERROR=1
 
-wandb_name="sweep_classifier_${SAMPLE_REP}"
-wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
+wandb_name="sweep_classifier_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
 paths="hpc_subset"
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
@@ -38,4 +37,5 @@ conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/trai
     +launcher=slurm_preentible \
     +hparams_search=default \
     data.sample_rep="$SAMPLE_REP" \
-    callbacks.wandb_project_name="$wandb_name"
+    callbacks.wandb_project_name="$wandb_name" \
+    paths="${paths}"
