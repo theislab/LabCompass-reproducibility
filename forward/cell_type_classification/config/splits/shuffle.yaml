@@ -4,4 +4,4 @@ kwargs:
   K: 3
   test_size: 0.3
   random_state: 42
-  split_to_retieve: 0
+  split_to_retrieve: 0
