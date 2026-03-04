@@ -33,5 +33,5 @@ RUN=$(echo "$LINE" | awk '{print $2}')
 echo "Running target_ct=$TARGET_CT run=$RUN"
 
 python "${WDIR}/run_plots_inverse.py" \
-    --target_ct "$TARGET_CT" \
+    --target_cell_type "$TARGET_CT" \
     --run "$RUN"
