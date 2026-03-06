@@ -1,4 +1,4 @@
-N: 2500
+N: 20000
 num_time_steps: 1000
 solver_kwargs:
   method: "euler"
