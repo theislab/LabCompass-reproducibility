@@ -1,0 +1,17 @@
+# @package _global_
+
+# default (unconditional)
+defaults:
+  - _self_
+  - annotation: default
+  - callbacks: default
+  - data: protocol_concat
+  - flow_matching: hpc
+  - model: default
+  - paths: hpc_subset
+  - split: default
+  - training: debug
+  - transforms: default
+  - vf: default_protocol_concat
+  - hydra: default
+  - reproducibility: default

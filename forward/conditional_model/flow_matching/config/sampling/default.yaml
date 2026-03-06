@@ -1,0 +1,6 @@
+N: 20000
+num_time_steps: 1000
+solver_kwargs:
+  method: "euler"
+  atol: 1e-5
+  rtol: 1e-5

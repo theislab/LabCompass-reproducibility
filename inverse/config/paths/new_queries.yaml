@@ -1,4 +1,0 @@
-perturbation_prediction_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/dumps/2025-12-14_11-53-04/dainty-fog-107_FlowMatching.pkl"
-ct_classifier_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/dumps/2025-11-14_21-22-45/dashing-frog-1258_TargetPredictionModel.pkl"
-prior_flow_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/prior_flow_FlowMatching.pkl"
-dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/results_new"

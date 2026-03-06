@@ -1,0 +1,4 @@
+run:
+  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/experiments/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/
+sweep:
+  dir: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/experiments/multiruns/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/

@@ -1,2 +1,0 @@
-obs_column: ${annotation.protocol_obs_key_added}
-unique_value_ids: [0, ]

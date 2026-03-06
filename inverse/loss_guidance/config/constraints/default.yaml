@@ -1,0 +1,15 @@
+eps: 1e-15
+use_lstsq: True
+g_tol: 1e-1
+constraints_in_original_space: True
+lbound_dict:
+  o2_[%]: 10.0
+  days_of_culture: 12.0
+ubound_dict:
+  o2_[%]: 20.0
+  days_of_culture: 18.0
+c_scheduler_kwargs:
+  t_warmup: 0.0
+  vmin: 0.0
+  vmax: 1.0
+use_exponential_penalty: False
