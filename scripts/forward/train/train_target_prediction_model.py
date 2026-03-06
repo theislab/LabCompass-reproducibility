@@ -51,6 +51,7 @@ def main(config: DictConfig):
         adata,
         **resolve_omegaconf_to_dictionary(config.splits.kwargs)
     )
+    print(ood_adata)
     set_reproducibility(config.reproducibility.seed)
     # logger.info(f"Data split performed!\n \tTrain data of shape {train_adata.shape}\tValidation data of shape {ood_adata.shape}")
 
