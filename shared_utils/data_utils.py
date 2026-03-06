@@ -1,12 +1,14 @@
 from collections.abc import Callable, Sequence
 import logging
 import sys
+from typing import Literal
 
 from anndata import AnnData
 import numpy as np
 from omegaconf import DictConfig
 import pandas as pd
 import scanpy as sc
+from scipy.linalg import cholesky
 from sklearn.preprocessing import OneHotEncoder
 
 
@@ -183,11 +185,64 @@ def standardize_array_and_write_to_adata(
     return adata
 
 
+
+def get_data_params(X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    # rowvar=False means columns are variables, rows are observations
+    mean = np.mean(X, axis=0)
+    cov = np.cov(X, rowvar=False) 
+    return mean, cov
+
+
+def compute_whitening_matrix(
+    X: np.ndarray,
+    epsilon: float = 1e-5,
+    method: Literal["zca", "pca", "cholesky"] = "zca"
+) -> np.ndarray:
+    # get params
+    mean, cov = get_data_params(X)
+
+    # SVD is generally more numerically stable than np.linalg.eig
+    U, S, VT = np.linalg.svd(cov)
+    
+    # Standard PCA whitening matrix: W_pca = S^{-1/2} * U^T
+    W_pca = np.dot(np.diag(1.0 / np.sqrt(S + epsilon)), U.T)
+
+    if method == "pca":
+        return W_pca, mean
+    
+    elif method == "zca":
+        return np.dot(U, W_pca), mean
+    
+    elif method == "cholesky":
+        L = cholesky(cov, lower=True)
+        return np.linalg.inv(L), mean
+
+    raise ValueError(f"Unknown method: {method}")
+
+
+def whiten_array_and_write_to_adata(
+    adata,
+    X,
+    name: str,
+    params: dict[str, np.ndarray] | None = None,
+    epsilon: float = 1e-5,
+    method: Literal["zca", "pca", "cholesky"] = "zca",
+) -> AnnData:
+    if params is None:
+        W, mean = compute_whitening_matrix(X, epsilon=epsilon, method=method)
+        params = {"mean": mean, "W": W}
+        adata.uns[f"{name}_whitened"] = params
+    adata.obsm[name] = X
+    adata.obsm[f"{name}_whitened"] = (X - params["mean"]) @ params["W"].T
+    return adata
+
+
 def apply_shared_transformations(
     train_adata: AnnData,
     ood_adata_dict: dict[int, AnnData] | None,
     scatter_columns: Sequence[str],
     compute_channel_pcs: bool = True,
+    epsilon: float = 1e-5,
 ):
 
     # channel pca
@@ -205,6 +260,7 @@ def apply_shared_transformations(
                 ood_adata_dict[id] = ood_adata
 
 
+    ### Z SCORE NORMALIZATION
     # Cell State Data 0. writing and standardizing scatter features to obsm
     X_scatter = train_adata.obs[scatter_columns].values
     train_adata = standardize_array_and_write_to_adata(train_adata, X_scatter, "X_scatter")
@@ -237,10 +293,74 @@ def apply_shared_transformations(
                         (ood_adata.obsm[mark_key], ood_adata.obsm[morph_key]), axis=-1
                     )
 
+    # ZCA Whitening the concatenated data
+    X_train_concat = train_adata.obsm["X_channel+X_scatter"]
+    train_adata = whiten_array_and_write_to_adata(
+        train_adata,
+        X_train_concat,
+        "X_channel+X_scatter_zca",
+        epsilon=epsilon,
+        method="zca",
+    )
+    zca_whitening_params = train_adata.uns["X_channel+X_scatter_zca_whitened"]
+    for id, ood_adata in ood_adata_dict.items():
+        X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
+        ood_adata_dict[i] = whiten_array_and_write_to_adata(
+            ood_adata,
+            X_ood_concat,
+            "X_channel+X_scatter_zca",
+            params=zca_whitening_params,
+            epsilon=epsilon,
+            method="zca",
+        )
+    # PCA Whitening the concatenated data
+    X_train_concat = train_adata.obsm["X_channel+X_scatter"]
+    train_adata = whiten_array_and_write_to_adata(
+        train_adata,
+        X_train_concat,
+        "X_channel+X_scatter_pca",
+        epsilon=epsilon,
+        method="pca",
+    )
+    pca_whitening_params = train_adata.uns["X_channel+X_scatter_pca_whitened"]
+    for id, ood_adata in ood_adata_dict.items():
+        X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
+        ood_adata_dict[i] = whiten_array_and_write_to_adata(
+            ood_adata,
+            X_ood_concat,
+            "X_channel+X_scatter_pca",
+            params=pca_whitening_params,
+            epsilon=epsilon,
+            method="pca",
+        )
+    # Cholesky Whitening the concatenated data
+    X_train_concat = train_adata.obsm["X_channel+X_scatter"]
+    train_adata = whiten_array_and_write_to_adata(
+        train_adata,
+        X_train_concat,
+        "X_channel+X_scatter_cholesky",
+        epsilon=epsilon,
+        method="cholesky",
+    )
+    cholesky_whitening_params = train_adata.uns["X_channel+X_scatter_cholesky_whitened"]
+    for id, ood_adata in ood_adata_dict.items():
+        X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
+        ood_adata_dict[id] = whiten_array_and_write_to_adata(
+            ood_adata,
+            X_ood_concat,
+            "X_channel+X_scatter_cholesky",
+            params=cholesky_whitening_params,
+            epsilon=epsilon,
+            method="cholesky",
+        )
     return train_adata, ood_adata_dict
 
 
-def get_adata_splits(config: DictConfig, logger_orig: logging.Logger | None = None):
+def get_adata_splits(
+    config: DictConfig,
+    epsilon: float = 1e-5,
+    logger_orig: logging.Logger | None = None,
+):
 
     # wrap for optional logger
     class logger:
@@ -301,6 +421,7 @@ def get_adata_splits(config: DictConfig, logger_orig: logging.Logger | None = No
         ood_adatas_dict,
         config.transforms.scatter_columns,
         compute_channel_pcs=config.transforms.compute_channel_pcs,
+        epsilon=config.transforms.epsilon,
     )
     logger.info("Shared tranformations applied!")
     return train_adata, ood_adatas_dict
