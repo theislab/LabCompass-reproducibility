@@ -25,7 +25,7 @@ state_transforms = {}
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/forward/cell_type_classification/config/",
+    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/cell_type_classification/config",
     config_name="train_classifier",
 )
 def main(config: DictConfig):
@@ -49,17 +49,18 @@ def main(config: DictConfig):
     split_fn = split_fns.get(config.splits.mode, shuffle_split)
     train_adata, ood_adata = split_fn(
         adata,
-        config.splits.obs_col,
         **resolve_omegaconf_to_dictionary(config.splits.kwargs)
     )
+    print(ood_adata)
     set_reproducibility(config.reproducibility.seed)
-    logger.info(f"Data split performed!\n \tTrain data of shape {train_adata.shape}\tValidation data of shape {ood_adata.shape}")
+    # logger.info(f"Data split performed!\n \tTrain data of shape {train_adata.shape}\tValidation data of shape {ood_adata.shape}")
 
     # Data 2. apply shared transformations
     logger.info("Computing tranformation params on train data and applying to both train and ood data...")
     train_adata, ood_adatas_dict = apply_shared_transformations(
         train_adata,
-        {"test0": ood_adata},
+        # {"test0": ood_adata},
+        ood_adata,
         config.transforms.scatter_columns,
         compute_channel_pcs=config.transforms.compute_channel_pcs,
     )

@@ -15,16 +15,17 @@ USE_NEW_MEASUREMENTS=${2:-1}
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
-ENV_NAME="sc_exp_design"
+ENV_NAME="sc_exp_design_12"
 echo "Using environment: $ENV_NAME"
 
-WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
+WDIR=../../../..
 cd "$WDIR" || exit 1
 echo "Current Working Directory: $WDIR"
 
 export HYDRA_FULL_ERROR=1
 
-wandb_name="sweep_classifier_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
+wandb_name="sweep_classifier_${SAMPLE_REP}"
+wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
 paths="hpc_subset"
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
@@ -32,10 +33,9 @@ if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
 fi
 echo "Wandb project ${wandb_name}"
 
-conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_target_prediction_model.py \
+conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
     --multirun \
     +launcher=slurm_preentible \
     +hparams_search=default \
     data.sample_rep="$SAMPLE_REP" \
-    callbacks.wandb_project_name="$wandb_name" \
-    paths="${paths}"
+    callbacks.wandb_project_name="$wandb_name"
