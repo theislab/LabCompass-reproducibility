@@ -14,7 +14,7 @@ SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
 PROTOCOL_AXIS=${2:-"protocol_id"}
 UNIQUE_VALUE=${3:-0}
 CONDITION_MODE=${4:-"protocol_concat"}
-USE_NEW_MEASUREMENTS=${5:-0}
+USE_NEW_MEASUREMENTS=${5:-1}
 HPARAMSEARCH=${6:-"in_distribution_big"}
 
 
