@@ -7,7 +7,7 @@ SWEEP_FLAG=0
 VALIDATE_FLAG=0
 CLASSIFIER_FLAG=0
 NEW_MEASUREMENTS_FLAG=1
-RERUN_EXPERIMENTS_FLAG=1
+RERUN_EXPERIMENTS_FLAG=0
 # Check for debugging flag
 for arg in "$@"; do
     if [[ "$arg" == "--sweep" ]]; then
@@ -48,7 +48,8 @@ declare -A PROTOCOL_AXES_TO_NUNIQUE=(
   # ["butyzamide_[nm]"]=2
   # ["days_of_culture"]=6
   # ["il3_[ng_ml]"]=5
-  ["retinoic_acid_[µm]"]=3
+  ["dummy_col"]=1
+  # ["retinoic_acid_[µm]"]=3
   # ["gm-csf_[ng_ml]"]=3
   # ["sr1_[nm]"]=4
   # ["ldl_[ng_ml]"]=6
