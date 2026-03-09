@@ -10,3 +10,4 @@ cfg_prob_unconditional: 0.0
 validation_cfg_guidance_strength: 1.0
 num_grad_accumulation_steps: 20
 N: 1_000
+sample_groups: True
