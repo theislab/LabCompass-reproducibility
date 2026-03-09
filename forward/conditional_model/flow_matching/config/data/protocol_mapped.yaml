@@ -3,6 +3,7 @@ control_key: null
 perturbations:
   - protocol_mapped
 perturbation_covariates: null
+perturbations_in_obsm: null
 perturbation_reps:
   protocol_mapped: "protocol_mapped_repr"
 load_target_covariates: False
