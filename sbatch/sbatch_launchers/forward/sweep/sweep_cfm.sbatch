@@ -10,12 +10,43 @@
 #SBATCH --time=1-00:00:00
 
 
-SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
-PROTOCOL_AXIS=${2:-"protocol_id"}
-UNIQUE_VALUE=${3:-0}
-CONDITION_MODE=${4:-"protocol_concat"}
-USE_NEW_MEASUREMENTS=${5:-1}
-HPARAMSEARCH=${6:-"in_distribution_big"}
+SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
+PROTOCOL_AXIS="protocol_id"
+UNIQUE_VALUE=0
+CONDITION_MODE="protocol_concat"
+USE_NEW_MEASUREMENTS=1
+HPARAMSEARCH="in_distribution_big"
+
+
+# Parse Flags
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -sr|--sample_rep)
+      SAMPLE_REP="$2"
+      shift 2
+      ;;
+    -p|--protocol-axis)
+      PROTOCOL_AXIS="$2"
+      shift 2
+      ;;
+    -u|--unique-value)
+      UNIQUE_VALUE="$2"
+      shift 2
+      ;;
+    -c|--condition-mode)
+      CONDITION_MODE="$2"
+      shift 2
+      ;;
+    -nm|--new-measurements)
+      USE_NEW_MEASUREMENTS="$2"
+      shift 2
+      ;;
+    -h|--hparams)
+      HPARAMSEARCH="$2"
+      shift 2
+      ;;
+  esac
+done
 
 
 echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE, hparams: ${HPARAMSEARCH}, use_new_measurements: ${USE_NEW_MEASUREMENTS}"
