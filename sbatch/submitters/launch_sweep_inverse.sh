@@ -1,11 +1,16 @@
 #!/bin/bash
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="sc_exp_design"
+PATHS="new_measurements"
 
 # Parse Flags
 case $1 in
 -e|--env-name)
     ENV_NAME="$2"
+    shift 2
+    ;;
+-p|--paths)
+    PATHS="$2"
     shift 2
     ;;
 esac
@@ -74,7 +79,8 @@ for target_cell_type in ${TARGET_CELL_TYPES[@]}; do
                   --scheduler ${scheduler} \
                   --optimization-type ${optimization_type} \
                   --query-type ${query_type} \
-                  --env-name ${ENV_NAME};
+                  --env-name ${ENV_NAME} \ 
+                  --paths ${PATHS};
             done
         done
     done
