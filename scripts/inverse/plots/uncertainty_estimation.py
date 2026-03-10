@@ -127,6 +127,7 @@ def main(config: DictConfig):
             loss_mean = loss.mean(1).detach().cpu().numpy()
             
             result_csv[f"{cell_type_id}_prop_std"] = y_pred_ct_std
+            result_csv["target_ct_loss_mean"] = loss_mean
             result_csv["target_ct_loss_std"] = loss_std
             
             y_pred_var = y_pred_softmax.var(1).detach().cpu().numpy()  # no_candidates x no_cell_types
@@ -146,7 +147,7 @@ def main(config: DictConfig):
             weights = np.linspace(0, 1, 100)[None, :].repeat(exploitation_score.shape[0], axis=0)
             one_minus_weights = 1. - weights
             # Calcola interpolazioni e media 
-            metric_response_surface = weights * exploitation_score[:, None].repeat(100, axis=1) + one_minus_weights * exploitation_score[:, None].repeat(100, axis=1) 
+            metric_response_surface = (weights * exploitation_score[:, None].repeat(100, axis=1) + one_minus_weights * exploration_score[:, None].repeat(100, axis=1))
             metric_response_surface = metric_response_surface.mean(1)
             
             weighted_uncertainty_score = compute_weighted_uncertainty_score(loss_mean, X_candidates, X_real_concentrations)
