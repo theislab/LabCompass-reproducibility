@@ -1,2 +1,3 @@
 team: "inverse-perturbation-models"
 project: "haematopoiesis_prior"
+random_seed: 42
