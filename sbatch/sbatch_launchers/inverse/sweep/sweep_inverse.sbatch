@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -p|--paths)
-      ENV_NAME="$2"
+      PATHS="$2"
       shift 2
       ;;
     *)
