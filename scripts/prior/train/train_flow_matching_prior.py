@@ -184,3 +184,14 @@ def main(config: DictConfig):
         )
         logger.info("Model dumped and run finished!")
     return 0
+
+
+if __name__ == "__main__":
+
+    # running the experiment
+    try:
+        main()
+    except Exception as e:
+        logger.info(f"An error occurred: {e}")
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)
