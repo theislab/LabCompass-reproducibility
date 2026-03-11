@@ -12,4 +12,4 @@ defaults:
   - reproducibility: default
   - run: default
   - training: default
-  - vf: default_protocol_concat
+  - vf: default
