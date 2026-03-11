@@ -88,7 +88,6 @@ def main(config: DictConfig):
     for k, v in val_adata_dict.items():
         flow_matching.prepare_validation_data(k, v)
     logger.info("OOD data ready!")
-    print(flow_matching.train_data.perturbation_data.keys())
 
     # Model 3. initialize velocity field configurations and prepare additional arguments
     logger.info("Initializing neural configurations...")
