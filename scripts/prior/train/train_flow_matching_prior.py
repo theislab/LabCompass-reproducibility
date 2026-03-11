@@ -48,7 +48,7 @@ def main(config: DictConfig):
 
     # get condition data from model
     val_perturbation_data_dict = {
-        key: next(iter(val.validation_data.values())) for key, val in perturbation_response_prediction_model.validation_data.items()
+        key: next(iter(val.perturbation_data.values())) for key, val in perturbation_response_prediction_model.validation_data.items()
     }
     train_perturbation_data = next(iter(perturbation_response_prediction_model.train_data.perturbation_data.values()))
 
