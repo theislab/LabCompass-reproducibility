@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENV_NAME="sc_exp_design"
+ENV_NAME="sc_exp_design_12"
 
 # Parse Flags
 case $1 in

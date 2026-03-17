@@ -12,7 +12,9 @@
 
 EXPERIMENT=$1
 
-EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data
+# EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data
+EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro
+
 WDIR=/home/icb/alessandro.palma/environment/collab-goettgens-SFC
 
 cd "$WDIR" || exit 1
@@ -21,6 +23,7 @@ source ~/.bashrc
 conda activate sc_exp_design_12
 
 echo "Running experiment: $EXPERIMENT"
+echo "Experiment dir: $EXPERIMENT_DIR"
 
 python scripts/inverse/plots/uncertainty_estimation.py \
     --target_cell_types "CD14-Mono__CyclingProgenitor*__DCs-CD14__Early_Pro-B__EosBasoMastPre__EryPro__GMP-Neutro/CD16-Mono__HSCs__MgkPro__Pro-B" \
@@ -28,5 +31,7 @@ python scripts/inverse/plots/uncertainty_estimation.py \
     --n_populations 10 \
     --base_config_path ../../../inverse/loss_guidance/config/ \
     --base_config_name run_inverse \
+    --result_dir "$EXPERIMENT_DIR" \
     --experiment_type "$EXPERIMENT" \
-    --true_concentration_path /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous/unique_concentrations_adata.h5ad
+    --true_concentration_path /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous/unique_concentrations_adata.h5ad \
+    --paths new_measurements

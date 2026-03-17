@@ -16,6 +16,7 @@ import torch.nn.functional as F
 from sc_exp_design.constants import DataFields
 
 BASE_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
+CONFIG_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config"
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +36,16 @@ def main(config: DictConfig):
     # Sanity check
     assert config.n_noise_samples % config.n_populations == 0, "The number of noise samples must be divisible by the number of populations."
     
-    # Initialize base configuration
     with initialize(config_path=config.base_config_path, version_base=None):
-        base_cfg = compose(config_name=config.base_config_name)
+        base_cfg = compose(
+            config_name=config.base_config_name,
+            overrides=[f"paths={config.paths}"]
+        )
+    
+    print("Using checkpoints", base_cfg.paths.perturbation_prediction_path)
+        
     forward_model, (_, target_prediction_model) = get_forward_model(base_cfg, logger=logger)
+    logger.info("Read model")
     
     # Unique concentration adata 
     adata_unique_concentrations = sc.read_h5ad(config.true_concentration_path)
@@ -74,10 +81,7 @@ def main(config: DictConfig):
             
             # Read the csv file 
             result_csv_path = os.path.join(target_ct_dir, run_dir, "candidates.csv")    
-            try:
-                result_csv = pd.read_csv(result_csv_path)
-            except:
-                continue
+            result_csv = pd.read_csv(result_csv_path)
             
             # Read yaml config 
             logger.info("Initialize configuration and protocol columns")
@@ -171,6 +175,7 @@ def parse_args():
     parser.add_argument("--result_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
     parser.add_argument("--experiment_type", required=False, default="unconstrained-pure_populations-reciprocal")
     parser.add_argument("--true_concentration_path", required=True)
+    parser.add_argument("--paths", required=True, default="default")
     return parser.parse_args()
 
 def run():
