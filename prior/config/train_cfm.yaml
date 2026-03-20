@@ -1,0 +1,15 @@
+# @package _global_
+
+# default (unconditional)
+defaults:
+  - _self_
+  - annotation: default
+  - callbacks: default
+  - flow_matching: hpc
+  - hydra: default
+  - model: default
+  - paths: hpc_full
+  - reproducibility: default
+  - run: default
+  - training: default
+  - vf: default

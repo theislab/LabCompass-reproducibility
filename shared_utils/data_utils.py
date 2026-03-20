@@ -24,23 +24,20 @@ from ood_utils import shuffle_split, split_adata
 
 
 LOG1P_EXP_COL = [
+    "gm-csf_[ng_ml]",
+    "tpo_[ng_ml]",
+    "sr1_[nm]",
     "um171_[nm]",
     "um729_[µm]",
     "scf_[ng_ml]",
     "butyzamide_[nm]",
-    "o2_[%]",
-    "sr1_[nm]",
-    "mtg_[µm]",
-    "rhflt3l_[ng_ml]",
-    "gm-csf_[ng_ml]",
-    "days_of_culture",
-]
-LOG21P_EXP_COL = [
-    "ldl_[ng_ml]", 
-    "il3_[ng_ml]",
     "retinoic_acid_[µm]",
-    "tpo_[ng_ml]",
+    "ldl_[ng_ml]",
+    "il3_[ng_ml]",
+    "o2_[%]",
+    "days_of_culture"
 ]
+LOG21P_EXP_COL = []
 
 
 def get_onehot_dict(
@@ -97,6 +94,53 @@ def get_protocol_tranformations(
     return col2transf
 
 
+def write_unique_protocols_representations(
+    adata: AnnData,
+    protocol_columns: Sequence[str] ,
+    column2tranform: dict[str, Callable | None] = {},
+    suffix: str = "mapped",
+    key_added: str = "protocol",
+    unique_val_sep: str = "@",
+    columns_sep: str = "+",
+    registry_key: str = "col_registry"
+) -> AnnData:
+    # prepare registries for unique values
+    col_registry = {}
+    col_inverse_registry = {}
+    for col in protocol_columns:
+        adata.obs[col] = adata.obs[col].astype(float)
+        col_values = adata.obs[col].values
+        unique_values_registry = {}
+        protocol_vals = np.unique(col_values)
+        for idx, unique_val in enumerate(protocol_vals):
+            unique_values_registry[f"{col}{unique_val_sep}{idx + 1}"] = unique_val.item()
+        uniqe_values_inverse_registry = {v:k for k, v in unique_values_registry.items()}
+        col_registry[col] = unique_values_registry
+        col_inverse_registry[col] = uniqe_values_inverse_registry
+        adata.obs[f"{col}_{suffix}"] = adata.obs[col].map(uniqe_values_inverse_registry)
+    adata.uns[registry_key] = col_registry
+    adata.uns[f"{registry_key}_inverse"] = col_inverse_registry
+
+    # prepare joint column
+    adata.obs[f"{key_added}_{suffix}"] = tuple(map(lambda e: columns_sep.join(e), adata.obs[[f"{col}_{suffix}" for col in protocol_columns]].values))
+    comb_values = np.unique(adata.obs[f"{key_added}_{suffix}"].values)
+    comb_rep_dict = {}
+    for comb_value in comb_values:
+        comb_rep = np.zeros((len(protocol_columns)))
+        combs = comb_value.split(columns_sep)
+        for comb in combs:
+            mol = comb.split(unique_val_sep)[0]
+            mol_transform_fn = column2tranform.get(mol, None)
+            mol_transform_fn = (lambda x: x) if mol_transform_fn is None else mol_transform_fn
+            mol_registry = adata.uns[registry_key][mol]
+            mol_value = mol_registry[comb]
+            mol_idx = protocol_columns.index(mol)
+            comb_rep[mol_idx] = mol_transform_fn(np.array([mol_value]))
+        comb_rep_dict[comb_value] = comb_rep
+    adata.uns[f"{key_added}_{suffix}_repr"] = comb_rep_dict
+    return adata
+
+
 def annotate_perturbations(
     adata: AnnData,
     protocol_columns: Sequence[str],
@@ -107,6 +151,11 @@ def annotate_perturbations(
     protocol_obsm_key="protocol_concat",
     one_hot_reps=True,
     typecast_anyway=False,
+    suffix: str = "mapped",
+    key_added: str = "protocol",
+    unique_val_sep: str = "@",
+    columns_sep: str = "+",
+    registry_key: str = "col_registry"
 ):
 
     # Perturbation data 0. write unique protocol conditions to obs
@@ -145,6 +194,19 @@ def annotate_perturbations(
     adata.obsm[protocol_obsm_key] = np.concatenate(
         [adata.obsm[col] for col in protocol_columns], axis=-1
     )
+
+    # Perturbation data 5. unique protocol representations
+    adata = write_unique_protocols_representations(
+        adata,
+        protocol_columns,
+        column2tranform=column2tranform,
+        suffix=suffix,
+        key_added=key_added,
+        unique_val_sep=unique_val_sep,
+        columns_sep=columns_sep,
+        registry_key=registry_key,
+    )
+
     return adata
 
 
@@ -208,14 +270,18 @@ def compute_whitening_matrix(
     W_pca = np.dot(np.diag(1.0 / np.sqrt(S + epsilon)), U.T)
 
     if method == "pca":
-        return W_pca, mean
+        iW_pca = np.linalg.inv(W_pca)
+        return W_pca, iW_pca, mean
     
     elif method == "zca":
-        return np.dot(U, W_pca), mean
+        W = np.dot(U, W_pca)
+        iW = np.linalg.inv(W)
+        return W, iW, mean
     
     elif method == "cholesky":
         L = cholesky(cov, lower=True)
-        return np.linalg.inv(L), mean
+        W = np.linalg.inv(L)
+        return W, L, mean
 
     raise ValueError(f"Unknown method: {method}")
 
@@ -229,8 +295,8 @@ def whiten_array_and_write_to_adata(
     method: Literal["zca", "pca", "cholesky"] = "zca",
 ) -> AnnData:
     if params is None:
-        W, mean = compute_whitening_matrix(X, epsilon=epsilon, method=method)
-        params = {"mean": mean, "W": W}
+        W, iW, mean = compute_whitening_matrix(X, epsilon=epsilon, method=method)
+        params = {"mean": mean, "W": W, "iW": iW}
         adata.uns[f"{name}_whitened"] = params
     adata.obsm[name] = X
     adata.obsm[f"{name}_whitened"] = (X - params["mean"]) @ params["W"].T
@@ -305,7 +371,7 @@ def apply_shared_transformations(
     zca_whitening_params = train_adata.uns["X_channel+X_scatter_zca_whitened"]
     for id, ood_adata in ood_adata_dict.items():
         X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
-        ood_adata_dict[i] = whiten_array_and_write_to_adata(
+        ood_adata_dict[id] = whiten_array_and_write_to_adata(
             ood_adata,
             X_ood_concat,
             "X_channel+X_scatter_zca",
@@ -325,7 +391,7 @@ def apply_shared_transformations(
     pca_whitening_params = train_adata.uns["X_channel+X_scatter_pca_whitened"]
     for id, ood_adata in ood_adata_dict.items():
         X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
-        ood_adata_dict[i] = whiten_array_and_write_to_adata(
+        ood_adata_dict[id] = whiten_array_and_write_to_adata(
             ood_adata,
             X_ood_concat,
             "X_channel+X_scatter_pca",

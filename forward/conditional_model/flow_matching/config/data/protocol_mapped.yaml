@@ -1,0 +1,12 @@
+sample_rep: "X_channel+X_scatter_standardized"
+control_key: null
+perturbations:
+  - protocol_mapped
+perturbation_covariates: null
+perturbations_in_obsm: null
+perturbation_reps:
+  protocol_mapped: "protocol_mapped_repr"
+load_target_covariates: False
+target_covariates: null
+target_covariates_in_obsm: null
+target_covariates_kwargs: null

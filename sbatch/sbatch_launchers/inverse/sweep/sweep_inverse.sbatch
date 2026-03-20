@@ -15,6 +15,7 @@ SCHEDULER="reciprocal"
 OPT="unconstrained"
 QUERY_TYPE="pure_populations"
 ENV_NAME="sc_exp_design"
+PATHS="default"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -37,6 +38,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -e|--env-name)
       ENV_NAME="$2"
+      shift 2
+      ;;
+    -p|--paths)
+      PATHS="$2"
       shift 2
       ;;
     *)
@@ -78,7 +83,8 @@ case $QUERY_TYPE in
 esac
 
 # define path based on configuration
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 
 # Pring logging messages
 echo "------------------------------------------------"
@@ -88,6 +94,7 @@ echo "Optimization     : ${OPT} -> ${script_name}"
 echo "Query Mode       : ${QUERY_TYPE} (pure=${query_pure}, mask=${mask_gradients})"
 echo "Dump Directory   : ${dump_dir}"
 echo "Environment      : ${ENV_NAME}"
+echo "Path             : ${PATHS}"
 echo "------------------------------------------------"
 
 # handle hydra errors
@@ -100,6 +107,7 @@ conda run -n ${ENV_NAME} --no-capture-output \
     +launcher=slurm \
     +hparam_search="${hparam_search}" \
     constraints="${constraints}" \
+    paths=${PATHS} \
     paths.dump_dir=${dump_dir} \
     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
     sampling.query_pure_cell_types="${query_pure}" \

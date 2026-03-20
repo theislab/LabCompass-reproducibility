@@ -1,0 +1,46 @@
+encode_state: True
+state_encoder_output_dim: 16
+state_encoder_mlp_kwargs:
+  hidden_dims: 256
+encode_time: True
+use_sinusoidal_time_features: True
+time_features_num_freqs: 256
+time_features_max_periods: 100
+time_encoder_output_dim: 8
+time_encoder_mlp_kwargs:
+  hidden_dims: 256
+use_guidance: True
+encode_conditions: True
+perturbation_encoder_output_dim: 4
+perturbation_layers_before_pooling:
+  repr_protocol_mapped_protocol_mapped_repr:
+    input_dim: 12
+    output_dim: 16
+    hidden_dims: [16, ]
+    use_batchnorm: False
+    use_dropout: False
+    dropout_rate: 0.0
+    activation_class: "selu"
+    final_activation_class: "identity"
+perturbation_covariates_not_pooled: null
+perturbation_pooling: "mean"
+perturbation_pooling_kwargs: null
+perturbation_layers_after_pooling:
+  hidden_dims: [16, ]
+  use_batchnorm: False
+  use_dropout: False
+  dropout_rate: 0.0
+  activation_class: "selu"
+  final_activation_class: "identity"
+decoder_mlp_kwargs:
+  hidden_dims: 256
+use_source_as_condition: False
+encode_source: False
+source_encoder_output_dim: 4
+source_encoder_mlp_kwargs: null
+conditioning_type: "resnet"
+n_resnet_blocks: 3
+resnet_dropout_prob: 0.0
+resnet_normalization: null
+use_classifier_free_guidance: False
+cfg_null_condition_token: -1.0

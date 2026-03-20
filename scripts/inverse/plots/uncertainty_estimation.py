@@ -16,7 +16,9 @@ import torch.nn.functional as F
 from sc_exp_design.constants import DataFields
 
 BASE_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
+CONFIG_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config"
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def main(config: DictConfig):
@@ -35,10 +37,16 @@ def main(config: DictConfig):
     # Sanity check
     assert config.n_noise_samples % config.n_populations == 0, "The number of noise samples must be divisible by the number of populations."
     
-    # Initialize base configuration
     with initialize(config_path=config.base_config_path, version_base=None):
-        base_cfg = compose(config_name=config.base_config_name)
+        base_cfg = compose(
+            config_name=config.base_config_name,
+            overrides=[f"paths={config.paths}"]
+        )
+    
+    print("Using checkpoints", base_cfg.paths.perturbation_prediction_path)
+        
     forward_model, (_, target_prediction_model) = get_forward_model(base_cfg, logger=logger)
+    logger.info("Read model")
     
     # Unique concentration adata 
     adata_unique_concentrations = sc.read_h5ad(config.true_concentration_path)
@@ -74,10 +82,7 @@ def main(config: DictConfig):
             
             # Read the csv file 
             result_csv_path = os.path.join(target_ct_dir, run_dir, "candidates.csv")    
-            try:
-                result_csv = pd.read_csv(result_csv_path)
-            except:
-                continue
+            result_csv = pd.read_csv(result_csv_path)
             
             # Read yaml config 
             logger.info("Initialize configuration and protocol columns")
@@ -127,6 +132,7 @@ def main(config: DictConfig):
             loss_mean = loss.mean(1).detach().cpu().numpy()
             
             result_csv[f"{cell_type_id}_prop_std"] = y_pred_ct_std
+            result_csv["target_ct_loss_mean"] = loss_mean
             result_csv["target_ct_loss_std"] = loss_std
             
             y_pred_var = y_pred_softmax.var(1).detach().cpu().numpy()  # no_candidates x no_cell_types
@@ -146,7 +152,7 @@ def main(config: DictConfig):
             weights = np.linspace(0, 1, 100)[None, :].repeat(exploitation_score.shape[0], axis=0)
             one_minus_weights = 1. - weights
             # Calcola interpolazioni e media 
-            metric_response_surface = weights * exploitation_score[:, None].repeat(100, axis=1) + one_minus_weights * exploitation_score[:, None].repeat(100, axis=1) 
+            metric_response_surface = (weights * exploitation_score[:, None].repeat(100, axis=1) + one_minus_weights * exploration_score[:, None].repeat(100, axis=1))
             metric_response_surface = metric_response_surface.mean(1)
             
             weighted_uncertainty_score = compute_weighted_uncertainty_score(loss_mean, X_candidates, X_real_concentrations)
@@ -170,6 +176,7 @@ def parse_args():
     parser.add_argument("--result_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
     parser.add_argument("--experiment_type", required=False, default="unconstrained-pure_populations-reciprocal")
     parser.add_argument("--true_concentration_path", required=True)
+    parser.add_argument("--paths", required=True, default="default")
     return parser.parse_args()
 
 def run():

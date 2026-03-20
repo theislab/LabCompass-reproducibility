@@ -164,6 +164,7 @@ def main(config: DictConfig):
         validation_cfg_guidance_strength=config.training.validation_cfg_guidance_strength,
         num_grad_accumulation_steps=config.training.num_grad_accumulation_steps,
         close_wandb_connection=False,
+        sample_groups=config.training.sample_groups,
     )
     logger.info("Model trained!")
 
