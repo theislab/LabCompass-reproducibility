@@ -72,14 +72,17 @@ RUNS_TO_RERUN=(
 )
 
 for sample_rep in "${SAMPLE_REPS[@]}"; do
-  # I corrected the bash conditional syntax here just in case you uncomment it later.
   if [[ $CLASSIFIER_FLAG -eq 1 ]]; then
     if [[ $SWEEP_FLAG -eq 1 ]]; then
       echo "Running Sweep (Target Prediction Model)"
-      sbatch launchers/sweep_target_prediction_model.sbatch "$sample_rep" "$NEW_MEASUREMENTS_FLAG"
+      sbatch launchers/sweep_target_prediction_model.sbatch \
+        --sample_rep "$sample_rep" \
+        --new-measurements "$NEW_MEASUREMENTS_FLAG"
     else
       echo "Running base training (Target Prediction Model)"
-      sbatch launchers/train_target_prediction_model.sbatch "$sample_rep" "$NEW_MEASUREMENTS_FLAG"
+      sbatch launchers/train_target_prediction_model.sbatch \
+        --sample_rep "$sample_rep" \
+        --new-measurements "$NEW_MEASUREMENTS_FLAG"
     fi
   else
     for conditioning_mode in "${CONDITIONING_MODE[@]}"; do
@@ -102,12 +105,25 @@ for sample_rep in "${SAMPLE_REPS[@]}"; do
           for unique_val in $(seq 0 $((nunique - 1))); do
             echo "Using sample rep $sample_rep and conditioning mode $conditioning_mode"
             echo "Running for protocol axis: $protocol_axis with unique IDs: $unique_val"
+            
             if [[ $SWEEP_FLAG -eq 1 ]]; then
               echo "Running Sweep"
-              sbatch "${BASE_SBATCH_DIR}/sbatch_launchers/forward/sweep/sweep_cfm.sbatch" "$sample_rep" "$protocol_axis" "$unique_val" "$conditioning_mode" "$NEW_MEASUREMENTS_FLAG" "$RERUN_EXPERIMENTS_FLAG"
+              sbatch "${BASE_SBATCH_DIR}/sbatch_launchers/forward/sweep/sweep_cfm.sbatch" \
+                --sample_rep "$sample_rep" \
+                --protocol-axis "$protocol_axis" \
+                --unique-value "$unique_val" \
+                --condition-mode "$conditioning_mode" \
+                --new-measurements "$NEW_MEASUREMENTS_FLAG" \
+                --rerun-experiment "$RERUN_EXPERIMENTS_FLAG"
             else
               echo "Running base training"
-              sbatch "${BASE_SBATCH_DIR}/sbatch_launchers/forward/train/train_cfm.sbatch" "$sample_rep" "$protocol_axis" "$unique_val" "$conditioning_mode" "$NEW_MEASUREMENTS_FLAG" "$RERUN_EXPERIMENTS_FLAG"
+              sbatch "${BASE_SBATCH_DIR}/sbatch_launchers/forward/train/train_cfm.sbatch" \
+                --sample_rep "$sample_rep" \
+                --protocol-axis "$protocol_axis" \
+                --unique-value "$unique_val" \
+                --condition-mode "$conditioning_mode" \
+                --new-measurements "$NEW_MEASUREMENTS_FLAG" \
+                --rerun-experiment "$RERUN_EXPERIMENTS_FLAG"
             fi
           done
         done
