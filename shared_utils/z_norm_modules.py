@@ -36,6 +36,30 @@ class BaseZNorm(torch.nn.Module):
         return self.params[ParamsFields.COVARIANCE]
 
 
+class BaseWhitening(torch.nn.Module):
+    def __init__(self, params: TensorParams):
+        super().__init__()
+        self.params = torch.nn.ModuleDict(
+            {
+                "mean": ModelParam(params["mean"]),
+                "W": ModelParam(params["W"]),
+                "iW": ModelParam(params["iW"]),
+            }
+        )
+
+    @property
+    def mean(self) -> torch.nn.Parameter:
+        return self.params["mean"]
+
+    @property
+    def W(self) -> torch.nn.Parameter:
+        return self.params["W"]
+
+    @property
+    def iW(self) -> torch.nn.Parameter:
+        return self.params["iW"]
+
+
 class ZNorm(BaseZNorm):
     def __init__(self, params: TensorParams):
         super().__init__(params)
@@ -52,6 +76,24 @@ class IZNorm(BaseZNorm):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """"""
         return x*self.params[ParamsFields.COVARIANCE].data + self.params[ParamsFields.MEAN].data
+
+
+class Whitening(BaseWhitening):
+    def __init__(self, params: TensorParams):
+        super().__init__(params=params)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """"""
+        return torch.einsum("...n,mn->...m", (x - self.mean), self.W)
+
+
+class IWhitening(BaseWhitening):
+    def __init__(self, params: TensorParams):
+        super().__init__(params=params)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """"""
+        return torch.einsum("...n,mn->...m", x, self.W) +  self.mean
 
 
 class RescaledTargetPredictionModel(torch.nn.Module):
