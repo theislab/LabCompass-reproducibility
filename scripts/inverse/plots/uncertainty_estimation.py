@@ -31,7 +31,8 @@ def main(config: DictConfig):
         get_loss_fn, 
         compute_exploitation_score, 
         compute_exploration_score, 
-        compute_weighted_uncertainty_score
+        compute_weighted_uncertainty_score, 
+        compute_sequential_local_penalization
     )
     
     # Sanity check
@@ -105,7 +106,7 @@ def main(config: DictConfig):
                 batch_dict,
                 no_grad=True,
                 fix_noise=False,
-                num_time_steps=30
+                num_time_steps=100
             )
             # Collect predictions 
             y_pred = forward_out["target_prediction_data"]["cell_type"].view(X_candidates_add.shape[0],
@@ -119,7 +120,7 @@ def main(config: DictConfig):
             y_pred_softmax = y_pred_softmax.mean(2)  # no_candidates x no_populations x no_cell_types 
 
             # Collect cell type of interest 
-            y_pred_ct_std = y_pred_softmax[..., cell_type_index].std(1).detach().cpu().numpy()
+            y_pred_ct_std = y_pred_softmax[..., cell_type_index].std(1).detach().cpu().numpy()  # standard deviation prob cell type of interest 
             # Calculate loss
             y_target_ct = get_target_dict(config_run, classes, "cuda")["cell_type"]  # 1 x no_cell_type
             y_target_ct = y_target_ct.unsqueeze(0)  # 1 x 1 x no_cell_types
@@ -128,8 +129,8 @@ def main(config: DictConfig):
             loss_fn = get_loss_fn(config_run)["cell_type"]
             with torch.no_grad():
                 loss = loss_fn(y_pred_mean, y_target_ct)  # no_candidates x no_populations
-            loss_std = loss.std(1).detach().cpu().numpy()
-            loss_mean = loss.mean(1).detach().cpu().numpy()
+            loss_std = loss.std(1).detach().cpu().numpy()  # no_candidates
+            loss_mean = loss.mean(1).detach().cpu().numpy()  # no_candidates
             
             result_csv[f"{cell_type_id}_prop_std"] = y_pred_ct_std
             result_csv["target_ct_loss_mean"] = loss_mean
@@ -157,10 +158,20 @@ def main(config: DictConfig):
             
             weighted_uncertainty_score = compute_weighted_uncertainty_score(loss_mean, X_candidates, X_real_concentrations)
             
+            # Compute sequential local penalization score 
+            sequential_local_penalization_score_dict = compute_sequential_local_penalization(X_candidates=X_candidates,
+                                                                                             mean_candidates_loss=loss_mean,
+                                                                                             std_candidates_loss=loss_std,
+                                                                                             gamma=1.0,
+                                                                                             kappa=1.0)
+            
             result_csv["exploitation_score"] = exploitation_score
             result_csv["exploration_score"] = exploration_score
             result_csv["weighted_uncertainty_score"] = weighted_uncertainty_score
             result_csv["metric_response_surface"] = metric_response_surface
+            result_csv["indices"] = sequential_local_penalization_score_dict["indices"]
+            result_csv["losses"] = sequential_local_penalization_score_dict["losses"]
+            result_csv["acq_values"] = sequential_local_penalization_score_dict["acq_values"]
             
             # Save updated results 
             result_csv.to_csv(uncertainty_annotation_folder / "candidates_with_uncertainties.csv")
