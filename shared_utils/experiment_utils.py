@@ -532,3 +532,84 @@ def compute_weighted_uncertainty_score(
         U_concat_list.append(U_concat)
     U_concat_arr = np.stack(U_concat_list, axis=0) # N, N
     return ((U_data[None] - U_concat_arr)*exp_weight[None]).mean(1)
+
+
+def compute_ucb_like_acq_fn(mean_loss, std_loss, kappa=1.0):
+    return -mean_loss + kappa * std_loss
+
+
+def compute_phi(X_rest, X_max, gamma=1.0):
+    dists_sq = np.sum((X_rest - X_max)**2, axis=1)
+    return 1.0 - np.exp(-gamma * dists_sq)
+
+
+def update_step_with_tracking(acq_fn, X, indices, mean_loss, gamma=1.0):
+    # 1. Identify the best point in the current (penalized) acquisition landscape
+    max_idx = acq_fn.argmax()
+    
+    # 2. Extract values for the selected point
+    X_max = X[max_idx][None]
+    orig_idx = indices[max_idx]
+    loss_val = mean_loss[max_idx]
+    acq_val = acq_fn[max_idx]
+
+    # 3. Remove the selected point from the pool
+    mask = np.ones(X.shape[0], dtype=bool)
+    mask[max_idx] = False
+
+    X_rest = X[mask]
+    indices_rest = indices[mask]
+    acq_fn_rest = acq_fn[mask]
+    mean_loss_rest = mean_loss[mask]
+
+    # 4. Apply distance penalty to the remaining points
+    phi_val = compute_phi(X_rest, X_max, gamma=gamma)
+    penalized_acq = acq_fn_rest * phi_val
+    
+    return X_max, X_rest, indices_rest, penalized_acq, mean_loss_rest, loss_val, acq_val, orig_idx
+
+
+def compute_sequential_local_penalization(
+    X_candidates,
+    mean_candidates_loss,
+    std_candidates_loss,
+    gamma=1.0,
+    kappa=1.0,
+):
+    # 1. Initial Acquisition calculation
+    raw_acq_fn = compute_ucb_like_acq_fn(mean_candidates_loss, std_candidates_loss, kappa=kappa)
+    
+    # Shift to positive to ensure the local penalizer (0, 1] works as intended
+    current_acq = raw_acq_fn - raw_acq_fn.min() 
+    
+    # 2. Setup tracking
+    num_particles = X_candidates.shape[0]
+    current_X = X_candidates.copy()
+    current_loss = mean_candidates_loss.copy()
+    current_indices = np.arange(num_particles) # Track original indices
+
+    results = {
+        "indices": [],
+        "losses": [],
+        "acq_values": []
+    }
+
+    # 3. Iteratively pick and penalize until all particles are ranked
+    for _ in range(num_particles):
+        (
+            X_max, 
+            current_X, 
+            current_indices,
+            current_acq, 
+            current_loss, 
+            loss_val, 
+            acq_val,
+            orig_idx
+        ) = update_step_with_tracking(current_acq, current_X, current_indices, current_loss, gamma=gamma)
+        
+        results["indices"].append(orig_idx)
+        results["losses"].append(loss_val)
+        results["acq_values"].append(acq_val)
+
+    # Convert to arrays for easier downstream handling
+    return {k: np.array(v) for k, v in results.items()}
