@@ -187,7 +187,7 @@ def parse_args():
     parser.add_argument("--result_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
     parser.add_argument("--experiment_type", required=False, default="unconstrained-pure_populations-reciprocal")
     parser.add_argument("--true_concentration_path", required=True)
-    parser.add_argument("--paths", required=True, default="default")
+    parser.add_argument("--paths", default="default")
     return parser.parse_args()
 
 def run():

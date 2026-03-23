@@ -12,8 +12,8 @@
 
 EXPERIMENT=$1
 
-EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data
-# EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro
+# EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data
+EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro
 
 WDIR=/home/icb/alessandro.palma/environment/collab-goettgens-SFC
 
@@ -34,4 +34,4 @@ python scripts/inverse/plots/uncertainty_estimation.py \
     --result_dir "$EXPERIMENT_DIR" \
     --experiment_type "$EXPERIMENT" \
     --true_concentration_path /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous/unique_concentrations_adata.h5ad \
-    # --paths new_measurements
+    --paths new_measurements
