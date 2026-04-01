@@ -613,3 +613,55 @@ def compute_sequential_local_penalization(
 
     # Convert to arrays for easier downstream handling
     return {k: np.array(v) for k, v in results.items()}
+def manual_filtering(df_dict, 
+                     bounds, 
+                     columns_to_keep, 
+                     celltype_fraction, 
+                     margin_frac_bounds, 
+                     protocol_cols):
+    
+    # Filtered data frame 
+    df_dict_filtered = {}
+    df_dict_annotated = {}
+    
+    # Iterate over cell types 
+    for cell_type in df_dict:
+        # Collect cell type dictionary and sort by proportion 
+        cell_type_revert_safe_string = cell_type.replace(":", "/")
+        df_ct = df_dict[cell_type].copy()
+        df_ct = df_ct.sort_values(by=f"{cell_type_revert_safe_string}_prop", ascending=False)
+        
+        # Subset data frame 
+        columns_to_keep_ct = columns_to_keep + [f"{cell_type_revert_safe_string}_prop"]
+        df_ct = df_ct.loc[:, columns_to_keep_ct]
+        df_ct["filtering_step"] = "pass" 
+
+        # Filter by fraction
+        idx_lower = df_ct[f"{cell_type_revert_safe_string}_prop"] < celltype_fraction[cell_type_revert_safe_string] 
+        df_ct.loc[idx_lower & (df_ct["filtering_step"] == "pass"), 
+                  "filtering_step"] = "proportion_filter"
+
+        # Oxygen and days filtering 
+        idx_pass_oxygen_days = np.logical_and(df_ct["o2_[%]"] > 5, 
+                                             df_ct["o2_[%]"] < 25)
+        idx_pass_oxygen_days = np.logical_and(idx_pass_oxygen_days, 
+                                             df_ct["days_of_culture"] > 12)
+        idx_pass_oxygen_days = np.logical_and(idx_pass_oxygen_days, 
+                                             df_ct["days_of_culture"] < 20)
+        df_ct.loc[~idx_pass_oxygen_days & (df_ct["filtering_step"] == "pass"), 
+                  "filtering_step"] = "oxygen_days"
+
+        # Bounds 
+        for param in protocol_cols:
+            idx_bounds = np.logical_and(
+                df_ct[param] >= (bounds[param][0] - bounds[param][0] * margin_frac_bounds), 
+                df_ct[param] <= (bounds[param][1] + bounds[param][1] * margin_frac_bounds)
+            )
+            df_ct.loc[~idx_bounds & (df_ct["filtering_step"] == "pass"), 
+                      "filtering_step"] = f"bounds_{param}"
+
+        # Filtered dataset
+        df_dict_filtered[cell_type] = df_ct[df_ct.filtering_step == "pass"]
+        df_dict_annotated[cell_type] = df_ct[df_ct.filtering_step != "proportion_filter"]
+        
+    return df_dict_filtered, df_dict_annotated 
