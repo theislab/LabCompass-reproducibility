@@ -1,3 +1,4 @@
+learn_score: True
 flow_type: "rectified"
 flow_kwargs: null
 coupling_type: "independent"
