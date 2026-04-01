@@ -914,3 +914,33 @@ def plot_sensitivity_analysis_results(
 
     fig.tight_layout()
     return fig
+
+
+def plot_wucb_ranking_results(
+    results_dict, # output of compute_sequential_local_penalization
+    figsize = (7, 4)
+):
+    # parse results dictionary
+    tracked_acqs = results_dict["acq_values"]
+    tracked_losses = results_dict["losses"]
+
+    # --- Plotting the Results ---
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+    epochs = np.arange(1, len(tracked_acqs) + 1)
+
+    # Plot 1: Acquisition Function Decay
+    ax1.plot(epochs, tracked_acqs, marker='o', color='b', linestyle='-', linewidth=2)
+    ax1.set_title("Acquisition Value over Batch Selection", fontsize=10)
+    ax1.set_xlabel("Selection Step (Batch Index)", fontsize=8)
+    ax1.set_ylabel("Penalized Acquisition Value", fontsize=8)
+    ax1.grid(True, linestyle='--', alpha=0.7)
+
+    # Plot 2: Surrogate Loss Trajectory
+    ax2.plot(epochs, tracked_losses, marker='s', color='r', linestyle='-', linewidth=2)
+    ax2.set_title("Predicted Loss of Selected Candidates", fontsize=10)
+    ax2.set_xlabel("Selection Step (Batch Index)", fontsize=8)
+    ax2.set_ylabel("Mean Predicted Loss (Lower is Better)", fontsize=8)
+    ax2.grid(True, linestyle='--', alpha=0.7)
+
+    fig.tight_layout()
+    return fig
