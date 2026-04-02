@@ -41,6 +41,7 @@ SAMPLE_REPS=(
 echo "${SAMPLE_REPS[@]}"
 
 declare -A PROTOCOL_AXES_TO_NUNIQUE=(
+  ["tpo_[ng_ml]"]=1
   # ["tpo_[ng_ml]"]=5
   # ["um171_[nm]"]=6
   # ["um729_[µm]"]=4
@@ -48,7 +49,7 @@ declare -A PROTOCOL_AXES_TO_NUNIQUE=(
   # ["butyzamide_[nm]"]=2
   # ["days_of_culture"]=6
   # ["il3_[ng_ml]"]=5
-  ["dummy_col"]=1
+  # ["dummy_col"]=1
   # ["retinoic_acid_[µm]"]=3
   # ["gm-csf_[ng_ml]"]=3
   # ["sr1_[nm]"]=4
@@ -75,7 +76,7 @@ for sample_rep in "${SAMPLE_REPS[@]}"; do
   if [[ $CLASSIFIER_FLAG -eq 1 ]]; then
     if [[ $SWEEP_FLAG -eq 1 ]]; then
       echo "Running Sweep (Target Prediction Model)"
-      sbatch launchers/sweep_target_prediction_model.sbatch \
+      sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/forward/sweep/sweep_target_prediction_model.sbatch \
         --sample_rep "$sample_rep" \
         --new-measurements "$NEW_MEASUREMENTS_FLAG"
     else

@@ -14,7 +14,7 @@ SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
 PROTOCOL_AXIS="protocol_id"
 UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
-USE_NEW_MEASUREMENTS=1
+USE_NEW_MEASUREMENTS=2
 HPARAMSEARCH="in_distribution_big"
 
 
@@ -66,6 +66,10 @@ paths="hpc_full"
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
+  
+elif [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
+    paths="${paths}_bloodplus"
+    wandb_name="${wandb_name}_bloodplus"
 fi
 
 

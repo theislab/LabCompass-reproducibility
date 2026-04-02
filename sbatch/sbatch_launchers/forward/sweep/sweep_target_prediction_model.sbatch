@@ -15,10 +15,11 @@ USE_NEW_MEASUREMENTS=${2:-1}
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="sc_exp_design"
 echo "Using environment: $ENV_NAME"
 
-WDIR=../../../..
+WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
+
 cd "$WDIR" || exit 1
 echo "Current Working Directory: $WDIR"
 
@@ -30,6 +31,11 @@ if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
 fi
+if [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
+    paths="${paths}_bloodplus"
+    wandb_name="${wandb_name}_bloodplus"
+fi
+
 echo "Wandb project ${wandb_name}"
 
 conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
