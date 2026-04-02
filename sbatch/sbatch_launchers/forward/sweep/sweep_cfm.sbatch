@@ -15,7 +15,8 @@ PROTOCOL_AXIS="protocol_id"
 UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
 USE_NEW_MEASUREMENTS=2
-HPARAMSEARCH="in_distribution_big"
+HPARAMSEARCH="in_distribution"
+OOD_EXPERIMENT=0
 
 
 # Parse Flags
@@ -45,6 +46,10 @@ while [[ $# -gt 0 ]]; do
       HPARAMSEARCH="$2"
       shift 2
       ;;
+    -o|--ood)
+      OOD_EXPERIMENT="$2"
+      shift 2
+      ;;
   esac
 done
 
@@ -64,6 +69,7 @@ export HYDRA_FULL_ERROR=1
 wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
 paths="hpc_full"
 annotation="default"
+tranforms="default"
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
@@ -72,18 +78,25 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
     paths="${paths}_bloodplus"
     wandb_name="${wandb_name}_bloodplus"
     annotation="bloodplus"
+    tranforms="bloodplus"
 fi
 
+split_mode="in-distribution"
+if [[ $OOD_EXPERIMENT -eq 1 ]]; then
+  split_mode="ood"
+fi
 
 conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
     --multirun \
     +launcher=slurm \
     +hparams_search="${HPARAMSEARCH}" \
     annotation=${annotation} \
+    tranforms=${tranforms} \
     paths=${paths} \
     vf="default_${CONDITION_MODE}" \
     data="${CONDITION_MODE}" \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
+    split.mode=${split_mode} \
     split.obs_column='"'"${PROTOCOL_AXIS}"'"' \
     split.unique_value_ids="$UNIQUE_VALUE"
