@@ -15,7 +15,7 @@ PROTOCOL_AXIS="protocol_id"
 UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
 USE_NEW_MEASUREMENTS=2
-HPARAMSEARCH="in_distribution"
+HPARAMSEARCH="in_distribution_big"
 OOD_EXPERIMENT=0
 
 
@@ -69,7 +69,7 @@ export HYDRA_FULL_ERROR=1
 wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
 paths="hpc_full"
 annotation="default"
-tranforms="default"
+transforms="default"
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
@@ -78,7 +78,7 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
     paths="${paths}_bloodplus"
     wandb_name="${wandb_name}_bloodplus"
     annotation="bloodplus"
-    tranforms="bloodplus"
+    transforms="bloodplus"
 fi
 
 split_mode="in-distribution"
@@ -91,7 +91,7 @@ conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/trai
     +launcher=slurm \
     +hparams_search="${HPARAMSEARCH}" \
     annotation=${annotation} \
-    tranforms=${tranforms} \
+    transforms=${transforms} \
     paths=${paths} \
     vf="default_${CONDITION_MODE}" \
     data="${CONDITION_MODE}" \
