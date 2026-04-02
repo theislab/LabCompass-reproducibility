@@ -158,7 +158,7 @@ def annotate_perturbations(
     one_hot_uns_key_added: str = "one_hot",
     column2tranform: dict[str, Callable | None] = {},
     protocol_obsm_key="protocol_concat",
-    one_hot_reps=True,
+    one_hot_reps=False,
     typecast_anyway=False,
     suffix: str = "mapped",
     key_added: str = "protocol",
@@ -173,10 +173,11 @@ def annotate_perturbations(
     logger = safe_logger(logger_orig)
 
     # Perturbation data 0. write unique protocol conditions to obs
-    logger.info("Writing unique protocol conditions to obs.")
-    if isinstance(protocol_columns, str):
-        protocol_columns = [protocol_columns,]
-    adata.obs[protocol_obs_key_added] = adata.obs[protocol_columns].astype(str).apply(lambda x: protocol_sep.join(x), axis=1)
+    if one_hot_reps:
+        logger.info("Writing unique protocol conditions to obs.")
+        if isinstance(protocol_columns, str):
+            protocol_columns = [protocol_columns,]
+        adata.obs[protocol_obs_key_added] = adata.obs[protocol_columns].astype(str).apply(lambda x: protocol_sep.join(x), axis=1)
     logger.info("Unique protocol condition added.")
 
     # Perturbation data 1. adding one hot encoded lookup dictionary for protocol id column
@@ -205,7 +206,7 @@ def annotate_perturbations(
 
         # 3.2 optionally applying transformations
         tranform_fn = column2tranform.get(column, None)
-        logger.info(column, tranform_fn, col_values, col_values.dtype)
+        logger.info(f"{column}, {tranform_fn}, {col_values}, {col_values.dtype}")
         col_values = col_values if tranform_fn is None else tranform_fn(col_values)
 
         # 3.3 store transformed medium condition data back in obsm
