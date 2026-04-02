@@ -15,7 +15,7 @@ PROTOCOL_AXIS="protocol_id"
 UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
 USE_NEW_MEASUREMENTS=2
-HPARAMSEARCH="in_distribution_big"
+HPARAMSEARCH="in_distribution"
 OOD_EXPERIMENT=0
 
 
