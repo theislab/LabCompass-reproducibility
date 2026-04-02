@@ -63,6 +63,7 @@ export HYDRA_FULL_ERROR=1
 
 wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
 paths="hpc_full"
+annotation="default"
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
@@ -70,6 +71,7 @@ if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
 elif [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
     paths="${paths}_bloodplus"
     wandb_name="${wandb_name}_bloodplus"
+    annotation="bloodplus"
 fi
 
 
@@ -77,6 +79,7 @@ conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/trai
     --multirun \
     +launcher=slurm \
     +hparams_search="${HPARAMSEARCH}" \
+    annotation=${annotation} \
     paths=${paths} \
     vf="default_${CONDITION_MODE}" \
     data="${CONDITION_MODE}" \

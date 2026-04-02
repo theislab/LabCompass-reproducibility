@@ -13,6 +13,14 @@ from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] - %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 logger = logging.getLogger(__name__)
 
 DO_VALIDATION = False
@@ -40,7 +48,7 @@ def main(config: DictConfig):
     )
 
     # 0. retrieving adata and ensuring reproducibility
-    train_adata, ood_adatas_dict = get_adata_splits(config)
+    train_adata, ood_adatas_dict = get_adata_splits(config, logger_orig=logger)
     set_reproducibility(config.reproducibility.seed)
 
     # Model 1. initialize flow matching model

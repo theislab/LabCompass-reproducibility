@@ -27,6 +27,7 @@ export HYDRA_FULL_ERROR=1
 
 wandb_name="sweep_classifier_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
 paths="hpc_subset"
+annotation="default"
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
@@ -34,6 +35,7 @@ fi
 if [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
     paths="${paths}_bloodplus"
     wandb_name="${wandb_name}_bloodplus"
+    annotation="bloodplus"
 fi
 
 echo "Wandb project ${wandb_name}"
@@ -42,6 +44,7 @@ conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/trai
     --multirun \
     +launcher=slurm_preentible \
     +hparams_search=default \
+    annotation=${annotation} \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
     paths="${paths}"

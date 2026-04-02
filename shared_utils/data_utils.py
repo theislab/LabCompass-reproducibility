@@ -10,6 +10,7 @@ import pandas as pd
 import scanpy as sc
 from scipy.linalg import cholesky
 from sklearn.preprocessing import OneHotEncoder
+from tqdm import tqdm
 
 
 # try import to rapids for faster pcas
@@ -38,6 +39,14 @@ LOG1P_EXP_COL = [
     "days_of_culture"
 ]
 LOG21P_EXP_COL = []
+
+
+class safe_logger:
+    def __init__(self, logger_orig):
+        self.logger = logger_orig
+    def info(self, msg):
+        if self.logger is not None:
+            self.logger.info(msg)
 
 
 def get_onehot_dict(
@@ -155,26 +164,38 @@ def annotate_perturbations(
     key_added: str = "protocol",
     unique_val_sep: str = "@",
     columns_sep: str = "+",
-    registry_key: str = "col_registry"
+    registry_key: str = "col_registry",
+    logger_orig: logging.Logger | None = None,
+    unique_reps=False
 ):
 
+    # wrap for optional logger
+    logger = safe_logger(logger_orig)
+
     # Perturbation data 0. write unique protocol conditions to obs
+    logger.info("Writing unique protocol conditions to obs.")
     if isinstance(protocol_columns, str):
         protocol_columns = [protocol_columns,]
     adata.obs[protocol_obs_key_added] = adata.obs[protocol_columns].astype(str).apply(lambda x: protocol_sep.join(x), axis=1)
+    logger.info("Unique protocol condition added.")
 
     # Perturbation data 1. adding one hot encoded lookup dictionary for protocol id column
+    logger.info("Adding one hot encoder lookup dictionary for unique protocol id.")
     if one_hot_reps:
         adata.uns[one_hot_uns_key_added] = get_onehot_dict(adata.obs[protocol_obs_key_added].unique())
+    logger.info("Unique one hot protocol id read.")
 
     # Perturbation data 2. adding one hot encoded lookup dictionary for protocol column
     if one_hot_reps:
-        for column in protocol_columns:
+        logger.info("Writing the unique one hot representation for each condition column.")
+        for column in tqdm(protocol_columns):
             key = f"{column}{protocol_sep}{one_hot_uns_key_added}"
             adata.uns[key] = get_onehot_dict(adata.obs[column].unique())
+        logger.info("One hot representation written.")
     
     # Perturbation data 3. adding protocol features to obsm
-    for column in protocol_columns:
+    logger.info("Adding protocol features to obsm.")
+    for column in tqdm(protocol_columns):
         # 3.1 retrieving column values and handling type
         col_values = adata.obs[column]
         if pd.api.types.is_categorical_dtype(col_values) or typecast_anyway:
@@ -184,49 +205,34 @@ def annotate_perturbations(
 
         # 3.2 optionally applying transformations
         tranform_fn = column2tranform.get(column, None)
-        print(column, tranform_fn, col_values, col_values.dtype)
+        logger.info(column, tranform_fn, col_values, col_values.dtype)
         col_values = col_values if tranform_fn is None else tranform_fn(col_values)
 
         # 3.3 store transformed medium condition data back in obsm
         adata.obsm[column] = col_values
+    logger.info("All protocol features added.")
 
     # Perturbation data 4. adding concatenated protocol features
+    logger.info("Concatenating protocol features.")
     adata.obsm[protocol_obsm_key] = np.concatenate(
         [adata.obsm[col] for col in protocol_columns], axis=-1
     )
+    logger.info("Concatenated protocol features ready.")
 
     # Perturbation data 5. unique protocol representations
-    adata = write_unique_protocols_representations(
-        adata,
-        protocol_columns,
-        column2tranform=column2tranform,
-        suffix=suffix,
-        key_added=key_added,
-        unique_val_sep=unique_val_sep,
-        columns_sep=columns_sep,
-        registry_key=registry_key,
-    )
-
-    return adata
-
-
-def annotate_cell_state_data(
-    adata: AnnData,
-    scatter_obsm_key: str = "X_scatter",
-    channel_feats_obsm_key: str = "X_channel",
-    channel_concat_obsm_key: str = "X_joint_channel",
-    pca_obsm_key: str = "X_pca",
-    pca_concat_obsm_key: str = "X_joint_pca",
-):
-    # Cell State Data 1. concatenate with channel features
-    X_repr = adata.obsm[channel_feats_obsm_key]
-    X_scatter = adata.obsm[scatter_obsm_key]
-    adata.obsm[channel_concat_obsm_key] = np.concatenate((X_repr, X_scatter), axis=1)
-    
-    # Cell State Data 1. concatenate with pcs
-    X_repr = adata.obsm[pca_obsm_key]
-    X_scatter = adata.obsm[scatter_obsm_key]
-    adata.obsm[pca_concat_obsm_key] = np.concatenate((X_repr, X_scatter), axis=1)
+    logger.info("Writing unique value representations.")
+    if unique_reps:
+        adata = write_unique_protocols_representations(
+            adata,
+            protocol_columns,
+            column2tranform=column2tranform,
+            suffix=suffix,
+            key_added=key_added,
+            unique_val_sep=unique_val_sep,
+            columns_sep=columns_sep,
+            registry_key=registry_key,
+        )
+    logger.info("Unique value representation ready. All condition data was annotated")
     return adata
 
 
@@ -309,43 +315,60 @@ def apply_shared_transformations(
     scatter_columns: Sequence[str],
     compute_channel_pcs: bool = True,
     epsilon: float = 1e-5,
+    logger_orig: logging.Logger | None = None
 ):
+
+    # wrap for optional logger
+    logger = safe_logger(logger_orig)
 
     # channel pca
     if compute_channel_pcs:
+        logger.info("Computing PCs of channel features")
         # computing pcs on train data
         if RAPIDS_IMPORT_OKAY:
             rsc.pp.pca(train_adata, zero_center=False)
         else:
             sc.pp.pca(train_adata, zero_center=False)
+        logger.info("PCs ready.")
 
         # applying transformation to validation data
         if ood_adata_dict is not None:
+            logger.info("Projecting validation data with PCs.")
             for id, ood_adata in ood_adata_dict.items():
                 ood_adata.obsm["X_pca"] = np.einsum("...d,dk -> ...k", ood_adata.X, train_adata.varm["PCs"])
                 ood_adata_dict[id] = ood_adata
+            logger.info("All validation data transformed.")
 
 
     ### Z SCORE NORMALIZATION
     # Cell State Data 0. writing and standardizing scatter features to obsm
+    logger.info("Standardizing scatter features with Zscore .")
     X_scatter = train_adata.obs[scatter_columns].values
     train_adata = standardize_array_and_write_to_adata(train_adata, X_scatter, "X_scatter")
+    logger.info("Scatter features standardized.")
     if ood_adata_dict is not None:
+        logger.info("Applying standardization to validation data.")
         for id, ood_adata in ood_adata_dict.items():
             X_scatter = ood_adata.obs[scatter_columns].values
             ood_adata = standardize_array_and_write_to_adata(ood_adata, X_scatter, "X_scatter", params=train_adata.uns["X_scatter_params"])
-            ood_adata_dict[id] = ood_adata
-    
+            ood_adata_dict[id] = ood_adata    
+        logger.info("All validation data transformed.")
+
     # Cell state Data 1. writing and standardizing channel features
+    logger.info("Standardizing channel features with Zscore .")
     X_channel = train_adata.X
     train_adata = standardize_array_and_write_to_adata(train_adata, X_channel, "X_channel")
+    logger.info("Channel features standardized.")
     if ood_adata_dict is not None:
+        logger.info("Applying standardization to validation data.")
         for id, ood_adata in ood_adata_dict.items():
             X_scatter = ood_adata.X
             ood_adata = standardize_array_and_write_to_adata(ood_adata, X_scatter, "X_channel", params=train_adata.uns["X_channel_params"])
             ood_adata_dict[id] = ood_adata
+        logger.info("All validation data transformed.")
 
     # Cell state Data 2. concatenate pairs
+    logger.info("Creating joint representations.")
     morphology_obsm_keys = ["X_scatter", "X_scatter_standardized"]
     marker_expression_obsm_keys = ["X_channel", "X_channel_standardized", "X_pca"]
     for morph_key in morphology_obsm_keys:
@@ -358,8 +381,10 @@ def apply_shared_transformations(
                     ood_adata.obsm[f"{mark_key}+{morph_key}"] = np.concatenate(
                         (ood_adata.obsm[mark_key], ood_adata.obsm[morph_key]), axis=-1
                     )
+    logger.info("All joint representations ready.")
 
     # ZCA Whitening the concatenated data
+    logger.info("Standardizing joint features with ZCA whitening .")
     X_train_concat = train_adata.obsm["X_channel+X_scatter"]
     train_adata = whiten_array_and_write_to_adata(
         train_adata,
@@ -368,18 +393,23 @@ def apply_shared_transformations(
         epsilon=epsilon,
         method="zca",
     )
+    logger.info("Joint features standardized.")
     zca_whitening_params = train_adata.uns["X_channel+X_scatter_zca_whitened"]
-    for id, ood_adata in ood_adata_dict.items():
-        X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
-        ood_adata_dict[id] = whiten_array_and_write_to_adata(
-            ood_adata,
-            X_ood_concat,
-            "X_channel+X_scatter_zca",
-            params=zca_whitening_params,
-            epsilon=epsilon,
-            method="zca",
-        )
+    if ood_adata_dict is not None:
+        logger.info("Whitening ood data.")
+        for id, ood_adata in ood_adata_dict.items():
+            X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
+            ood_adata_dict[id] = whiten_array_and_write_to_adata(
+                ood_adata,
+                X_ood_concat,
+                "X_channel+X_scatter_zca",
+                params=zca_whitening_params,
+                epsilon=epsilon,
+                method="zca",
+            )
+        logger.info("All ood data whitened.")
     # PCA Whitening the concatenated data
+    logger.info("Standardizing joint features with PCA whitening .")
     X_train_concat = train_adata.obsm["X_channel+X_scatter"]
     train_adata = whiten_array_and_write_to_adata(
         train_adata,
@@ -388,18 +418,23 @@ def apply_shared_transformations(
         epsilon=epsilon,
         method="pca",
     )
+    logger.info("Joint features standardized.")
     pca_whitening_params = train_adata.uns["X_channel+X_scatter_pca_whitened"]
-    for id, ood_adata in ood_adata_dict.items():
-        X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
-        ood_adata_dict[id] = whiten_array_and_write_to_adata(
-            ood_adata,
-            X_ood_concat,
-            "X_channel+X_scatter_pca",
-            params=pca_whitening_params,
-            epsilon=epsilon,
-            method="pca",
-        )
+    if ood_adata_dict is not None:
+        logger.info("Whitening ood data.")
+        for id, ood_adata in ood_adata_dict.items():
+            X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
+            ood_adata_dict[id] = whiten_array_and_write_to_adata(
+                ood_adata,
+                X_ood_concat,
+                "X_channel+X_scatter_pca",
+                params=pca_whitening_params,
+                epsilon=epsilon,
+                method="pca",
+            )
+        logger.info("All ood data whitened.")
     # Cholesky Whitening the concatenated data
+    logger.info("Standardizing joint features with Cholensky whitening .")
     X_train_concat = train_adata.obsm["X_channel+X_scatter"]
     train_adata = whiten_array_and_write_to_adata(
         train_adata,
@@ -408,17 +443,21 @@ def apply_shared_transformations(
         epsilon=epsilon,
         method="cholesky",
     )
+    logger.info("Joint features standardized.")
     cholesky_whitening_params = train_adata.uns["X_channel+X_scatter_cholesky_whitened"]
-    for id, ood_adata in ood_adata_dict.items():
-        X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
-        ood_adata_dict[id] = whiten_array_and_write_to_adata(
-            ood_adata,
-            X_ood_concat,
-            "X_channel+X_scatter_cholesky",
-            params=cholesky_whitening_params,
-            epsilon=epsilon,
-            method="cholesky",
-        )
+    if ood_adata_dict is not None:
+        logger.info("Whitening ood data.")
+        for id, ood_adata in ood_adata_dict.items():
+            X_ood_concat = ood_adata.obsm["X_channel+X_scatter"]
+            ood_adata_dict[id] = whiten_array_and_write_to_adata(
+                ood_adata,
+                X_ood_concat,
+                "X_channel+X_scatter_cholesky",
+                params=cholesky_whitening_params,
+                epsilon=epsilon,
+                method="cholesky",
+            )
+        logger.info("All ood data whitened.")
     return train_adata, ood_adata_dict
 
 
@@ -429,13 +468,7 @@ def get_adata_splits(
 ):
 
     # wrap for optional logger
-    class logger:
-        def __init__(self):
-            self.logger = logger_orig
-        def info(self, msg):
-            if self.logger is not None:
-                self.logger.info(msg)
-    logger = logger()
+    logger = safe_logger(logger_orig)
 
     # Data 0. read data
     logger.info("Reading data...")
