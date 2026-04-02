@@ -490,6 +490,7 @@ def get_adata_splits(
         one_hot_uns_key_added=config.annotation.one_hot_uns_key_added,
         column2tranform=column2tranform,
         protocol_obsm_key=config.annotation.protocol_obsm_key,
+        logger_orig=logger
     )
     logger.info(f"Perturbation data annotated! {adata}")
 
@@ -521,6 +522,7 @@ def get_adata_splits(
         config.transforms.scatter_columns,
         compute_channel_pcs=config.transforms.compute_channel_pcs,
         epsilon=config.transforms.epsilon,
+        logger_orig=logger,
     )
     logger.info("Shared tranformations applied!")
     return train_adata, ood_adatas_dict
