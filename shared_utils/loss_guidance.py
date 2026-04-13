@@ -18,6 +18,7 @@ class LossGuidedFlow:
         prior_flow,
         forward_model,
         loss_fn,
+        prior_flow_map=None,
         fix_noise=True,
         num_forward_pass_per_sample=1_000,
         regularization=None,
@@ -29,6 +30,7 @@ class LossGuidedFlow:
         self.prior_flow = prior_flow
         self.forward_model = forward_model
         self.loss_fn = loss_fn
+        self.prior_flow_map = prior_flow_map
         self.fix_noise = fix_noise
         self.num_forward_pass_per_sample=num_forward_pass_per_sample
         self.regularization = regularization
@@ -54,12 +56,29 @@ class LossGuidedFlow:
                     dim = 0)
                 , dim=0)
 
-    def compute_one_step_prediction(self, t, xt):
+    def compute_one_step_prediction(
+        self,
+        t,
+        xt,
+        cond=None,
+        source=None,
+        cfg_guidance_strength=1.0
+    ):
         # computing velocity field
+        if self.prior_flow_map is not None:
+            t_input = t[..., 0]
+            return self.prior_flow_map.flow_map(
+                t_input,
+                torch.ones_like(t_input),
+                xt
+            )
         t = match_shapes(t, xt)
-        vf_fn = self.prior_flow.velocity_field.get_vf_fn()
+        vf_fn = self.prior_vf.get_vf_fn(
+            cond=cond,
+            source=source,
+            cfg_guidance_strength=cfg_guidance_strength,
+        )
         vt = vf_fn(t[:, 0], xt)
-        # handling time shape
         return xt + (1 - t)*vt
 
     def compute_loss_gradients(self, t, xt, optimal_condition, non_linearity, noise):
