@@ -24,37 +24,32 @@ BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_camb
 
 # define experimental grid
 TARGET_CELL_TYPES=(
-    "CD14-Mono"
-    # "CD49c-Myeloid"
-    # "CyclingProgenitor*"
-    # "DCs-CD14"
-    # "EarlyGMP"
-    # "Early_Pro-B"
-    # "EosBasoMastPre"
-    # "EosBasoMastPre_2"
-    # "EryPro"
-    # "GMP-Cycle"
-    # "GMP-Neutro"
-    # "GMP-Neutro/CD16-Mono"
+    "CD14Mono"
+    "CD16Mono"
+    "CyclingPro1"
+    "CyclingPro2"
+    "EosBasMast1"
+    "EosBasMast2"
+    "EosBasMast3"
+    "EryPro"
     "HSCs"
-    # "MEP"
-    # "MLP"
-    # "MPP"
-    # "MgkPro
-    # "Pro-B"
-    # "pDCs/cDCs"
+    "ProB"
+    "late_MgkPro"
+    'GMP-Neutro'
+    'preProB'
+    'pre_cDC1'
 )
 
 SCHEDULERS=(
     "constant"
     # "exp-decay"
-    # "reciprocal"
+    "reciprocal"
     # "lin-decay"
 )
 OPTIMIZATION_TYPE=(
     "unconstrained"
-    # "penalized_oxy_days"
-    # "penalized_all_axes"
+    "penalized_oxy_days"
+    "penalized_all_axes"
 )
 QUERY_TYPE=(
     "pure_populations"

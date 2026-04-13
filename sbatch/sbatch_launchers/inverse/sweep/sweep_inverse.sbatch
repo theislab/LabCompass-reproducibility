@@ -9,6 +9,7 @@
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
 
+
 # define defaults
 TARGET_CELL_TYPE="HSCs"
 SCHEDULER="reciprocal"
@@ -84,7 +85,8 @@ esac
 
 # define path based on configuration
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 
 # Pring logging messages
 echo "------------------------------------------------"
@@ -99,8 +101,7 @@ echo "------------------------------------------------"
 
 # handle hydra errors
 export HYDRA_FULL_ERROR=1
-
-# run python script
+    
 conda run -n ${ENV_NAME} --no-capture-output \
     python scripts/inverse/experiment/${script_name}.py \
     --multirun \

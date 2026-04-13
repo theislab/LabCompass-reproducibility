@@ -1,0 +1,14 @@
+# @package _global_
+
+# default
+defaults:
+  - _self_
+  - callbacks: "default"
+  - data: "cell_type_default"
+  - hydra: "default"
+  - model: "cell_type_default"
+  - paths: "hpc_subset_clean_data"
+  - reproducibility: "default"
+  - splits: "shuffle"
+  - training: "default"
+  - transforms: "default"
