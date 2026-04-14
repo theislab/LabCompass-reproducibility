@@ -1,0 +1,4 @@
+scheduler_id: "cnv"
+scheduler_kwargs:
+  power: 2.0
+  horizon: 1.0

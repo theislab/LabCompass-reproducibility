@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="sc_exp_design"
 PATHS="bloodplus_fm"
 USE_FM=0 
 # PATHS="new_measurements"
@@ -52,15 +52,14 @@ TARGET_CELL_TYPES=(
 )
 
 SCHEDULERS=(
-    "constant"
-    # "exp-decay"
-    # "reciprocal"
-    # "lin-decay"
+    "cnv"
+    "cos"
+    "cvx"
+    "exp"
+    "lin"
 )
 OPTIMIZATION_TYPE=(
     "unconstrained"
-    "penalized_oxy_days"
-    "penalized_all_axes"
 )
 QUERY_TYPE=(
     "pure_populations"
@@ -83,7 +82,7 @@ for target_cell_type in ${TARGET_CELL_TYPES[@]}; do
                 echo "query_type=${query_type}"
 
                 # submit job
-                sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/inverse/sweep/sweep_inverse.sbatch \
+                sbatch ${BASE_SBATCH_DIR}/sbatch_launchers/inverse/sweep/sweep_inverse_wgf.sbatch \
                   --target-ct ${target_cell_type} \
                   --scheduler ${scheduler} \
                   --optimization-type ${optimization_type} \

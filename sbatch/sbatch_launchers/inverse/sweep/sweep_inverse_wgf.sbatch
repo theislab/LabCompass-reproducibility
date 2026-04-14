@@ -54,25 +54,13 @@ done
 
 # Map scheduler to configurations
 case $SCHEDULER in
-    "constant")    hparam_search="sweep_constant" ;;
-    "exp-decay")   hparam_search="sweep_exp_decay" ;;
-    "reciprocal")  hparam_search="sweep_reciprocal" ;;
-    "lin-decay")   hparam_search="sweep_lin_decay" ;;
+    "cnv")   hparam_search="sweep_cnv" ;;
+    "cos")   hparam_search="sweep_cos" ;;
+    "cvx")   hparam_search="sweep_cvx" ;;
+    "exp")   hparam_search="sweep_exp" ;;
+    "lin")   hparam_search="sweep_lin" ;;
     *) echo "❌ Unknown scheduler: $SCHEDULER"; exit 1 ;;
 esac
-
-if [[ "$OPT" == "unconstrained" ]]; then
-    script_name="run_inverse_experiment"
-else
-    script_name="run_inverse_experiment_penalized"
-    hparam_search="${hparam_search}_penalized"
-fi
-
-if [[ "$OPT" == "penalized_all_axes" ]]; then
-    constraints="default_all_cols"
-else
-    constraints="default"
-fi
 
 
 # Map scheduler to configurations
@@ -87,13 +75,12 @@ esac
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/wgf_guidance/bloodplus_inverse_fm/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 
 # Pring logging messages
 echo "------------------------------------------------"
 echo "Target Cell Type : ${TARGET_CELL_TYPE}"
 echo "Scheduler        : ${SCHEDULER} -> ${hparam_search}"
-echo "Optimization     : ${OPT} -> ${script_name}"
 echo "Query Mode       : ${QUERY_TYPE} (pure=${query_pure}, mask=${mask_gradients})"
 echo "Dump Directory   : ${dump_dir}"
 echo "Environment      : ${ENV_NAME}"
@@ -104,7 +91,7 @@ echo "------------------------------------------------"
 export HYDRA_FULL_ERROR=1
     
 conda run -n ${ENV_NAME} --no-capture-output \
-    python scripts/inverse/experiment/${script_name}.py \
+    python scripts/inverse/experiment/inverse_experiment_wgf.py \
     --multirun \
     +launcher=slurm \
     +hparam_search="${hparam_search}" \

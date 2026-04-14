@@ -1,0 +1,4 @@
+scheduler_id: "exp"
+scheduler_kwargs:
+  horizon: 1.0
+  beta: 1.0

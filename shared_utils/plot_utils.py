@@ -222,11 +222,12 @@ def plot_heatmap(
     plot_pheno=False
 ):
     trajectory = inverse_results["trajectory"]
-    loss_history = inverse_results["loss_history"]
+    loss_history = inverse_results.get("loss_history", None)
     ct_probs = fwd_results["ct_probs"].mean(1)
 
     samples = np.maximum(trajectory[:, -1, :], 0)
-    loss = loss_history[:, -1]
+    if loss_history is not None:
+        loss = loss_history[:, -1]
 
     clustering_ok = True
     try:
@@ -260,25 +261,28 @@ def plot_heatmap(
 
     if clustering_ok:
         row_order = cg.dendrogram_row.reordered_ind
-        loss = loss[row_order]
-    heatmap_pos = cg.ax_heatmap.get_position()
-    loss_ax = cg.figure.add_axes([
-        heatmap_pos.x1 + 0.01,  # small gap to the right
-        heatmap_pos.y0,         # align bottom
-        0.02,                   # width
-        heatmap_pos.height      # same height as heatmap
-    ])
-    sns.heatmap(
-        loss[:, None],
-        ax=loss_ax,
-        cbar=True,
-        yticklabels=False,
-        xticklabels=["loss"],
-        vmin=loss_vmin,
-        vmax=loss_vmax
-    )
+        if loss_history is not None:
+            loss = loss[row_order]
+    if loss_history is not None:
+        heatmap_pos = cg.ax_heatmap.get_position()
+        loss_ax = cg.figure.add_axes([
+            heatmap_pos.x1 + 0.01,  # small gap to the right
+            heatmap_pos.y0,         # align bottom
+            0.02,                   # width
+            heatmap_pos.height      # same height as heatmap
+        ])
+        sns.heatmap(
+            loss[:, None],
+            ax=loss_ax,
+            cbar=True,
+            yticklabels=False,
+            xticklabels=["loss"],
+            vmin=loss_vmin,
+            vmax=loss_vmax
+        )
 
-    min_loss_idx = np.argmin(loss)
+    if loss_history is not None:
+        min_loss_idx = np.argmin(loss)
     ax = cg.ax_heatmap
     xmin, xmax = ax.get_xlim()  # full heatmap width
 
@@ -293,16 +297,17 @@ def plot_heatmap(
     rect_height = 1  # one row
 
     # Draw rectangle over the sample with minimum loss
-    hrect = Rectangle(
-        (xmin, min_loss_idx),    # left-bottom corner
-        xmax - xmin,             # full width
-        rect_height,             # one row
-        fill=False,
-        edgecolor="red",        # color of the rectangle
-        linewidth=2.5,
-        zorder=10
-    )
-    ax.add_patch(hrect)
+    if loss_history is not None:
+        hrect = Rectangle(
+            (xmin, min_loss_idx),    # left-bottom corner
+            xmax - xmin,             # full width
+            rect_height,             # one row
+            fill=False,
+            edgecolor="red",        # color of the rectangle
+            linewidth=2.5,
+            zorder=10
+        )
+        ax.add_patch(hrect)
 
     heatmap_path = os.path.join(base_dir,  "induced_pheno.png" if plot_pheno else "posterior_samples.png")
 
