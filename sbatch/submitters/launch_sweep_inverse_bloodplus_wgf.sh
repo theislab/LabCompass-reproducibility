@@ -2,7 +2,7 @@
 
 ENV_NAME="sc_exp_design"
 PATHS="bloodplus_fm"
-USE_FM=0 
+USE_FM=0
 # PATHS="new_measurements"
 
 # Parse Flags
@@ -52,10 +52,10 @@ TARGET_CELL_TYPES=(
 )
 
 SCHEDULERS=(
-    "cnv"
-    "cos"
-    "cvx"
-    "exp"
+    # "cnv"
+    # "cos"
+    # "cvx"
+    # "exp"
     "lin"
 )
 OPTIMIZATION_TYPE=(

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="sc_exp_design"
 PATHS="bloodplus_fm"
 USE_FM=0 
 # PATHS="new_measurements"
@@ -52,15 +52,15 @@ TARGET_CELL_TYPES=(
 )
 
 SCHEDULERS=(
-    "constant"
+    # "constant"
     # "exp-decay"
-    # "reciprocal"
+    "reciprocal"
     # "lin-decay"
 )
 OPTIMIZATION_TYPE=(
     "unconstrained"
-    "penalized_oxy_days"
-    "penalized_all_axes"
+    # "penalized_oxy_days"
+    # "penalized_all_axes"
 )
 QUERY_TYPE=(
     "pure_populations"
