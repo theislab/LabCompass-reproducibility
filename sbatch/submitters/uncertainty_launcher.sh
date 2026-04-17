@@ -11,5 +11,5 @@ EXPERIMENTS=(
 
 for exp in "${EXPERIMENTS[@]}"; do
     echo "Submitting $exp"
-    sbatch ../sbatch_launchers/inverse/plot/launch_uncertainty_annotation.sbatch "$exp"
+    sbatch ../sbatch_launchers/inverse/plot/launch_uncertainty_annotation_bloodplus.sbatch "$exp"
 done
