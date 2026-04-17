@@ -1,7 +1,8 @@
 #!/bin/bash
 
-ENV_NAME="sc_exp_design"
-PATHS="new_measurements"
+ENV_NAME="sc_exp_design_12"
+PATHS="bloodplus"
+# PATHS="new_measurements"
 
 # Parse Flags
 case $1 in
@@ -23,28 +24,28 @@ BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_camb
 
 # define experimental grid
 TARGET_CELL_TYPES=(
-    # "CD14-Mono"
+    "CD14-Mono"
     # "CD49c-Myeloid"
-    # "CyclingProgenitor*"
-    # "DCs-CD14"
+    "CyclingProgenitor*"
+    "DCs-CD14"
     # "EarlyGMP"
-    # "Early_Pro-B"
-    # "EosBasoMastPre"
+    "Early_Pro-B"
+    "EosBasoMastPre"
     # "EosBasoMastPre_2"
-    # "EryPro"
+    "EryPro"
     # "GMP-Cycle"
     # "GMP-Neutro"
-    # "GMP-Neutro/CD16-Mono"
-    # "HSCs"
+    "GMP-Neutro/CD16-Mono"
+    "HSCs"
     # "MEP"
     # "MLP"
     # "MPP"
     "MgkPro"
-    # "Pro-B"
+    "Pro-B"
     # "pDCs/cDCs"
 )
 SCHEDULERS=(
-    # "constant"
+    "constant"
     # "exp-decay"
     "reciprocal"
     # "lin-decay"

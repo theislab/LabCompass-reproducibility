@@ -10,7 +10,7 @@ from omegaconf import DictConfig
 import torch
 
 from sc_exp_design.config import NeuralFlowMapConfig
-from sc_exp_design.models import FlowMatching, FlowMap
+from sc_exp_design.models import FlowMatching, FlowMatchingWithScore, FlowMap
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
@@ -48,7 +48,7 @@ def main(config: DictConfig):
 
     # Get teacher model
     logger.info(f"Preparing teacher model...")
-    teacher_model = FlowMatching.load(config.paths.teacher_checkpoint_path)
+    teacher_model = FlowMatchingWithScore.load(config.paths.teacher_checkpoint_path)
 
     # get condition data from model
     val_perturbation_data_dict = {
