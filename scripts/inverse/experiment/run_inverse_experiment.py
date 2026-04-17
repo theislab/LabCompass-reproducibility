@@ -13,7 +13,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_exp_design.models import FlowMatching
+from sc_exp_design.models import FlowMatching, FlowMatchingWithScore, FlowMap
 from sc_exp_design.utils import set_reproducibility
 
 
@@ -76,8 +76,16 @@ def main(config: DictConfig) -> float:
 
     # Get prior flow
     logger.info(f"Loading Prior Flow Model from {config.paths.prior_flow_path}...")
-    prior_flow = FlowMatching.load(config.paths.prior_flow_path)
+    prior_flow = FlowMatchingWithScore.load(config.paths.prior_flow_path)
     logger.info(f"Prior Flow ready!\n{prior_flow.velocity_field}")
+
+    # Optional (Load Prior Flow Map)
+    if hasattr(config.paths, "prior_flow_map_path") and config.paths.prior_flow_map_path:
+        logger.info(f"Loading Prior Flow Map Model from {config.paths.prior_flow_map_path}")
+        prior_fm = FlowMap.load(config.paths.prior_flow_map_path)
+        logger.info(f"Prior Flow Map!\n{prior_fm.flow_map}")
+    else:
+        prior_fm = None
 
     # Define loss function
     logger.info(f"Preparing loss function (Cross-Entropy)...")
@@ -105,6 +113,7 @@ def main(config: DictConfig) -> float:
         prior_flow,
         forward_model,
         loss_fns,
+        prior_flow_map=prior_fm,
         fix_noise=config.loss_guidance.fix_noise,
         num_forward_pass_per_sample=config.loss_guidance.num_forward_pass_per_sample,
         regularization=config.loss_guidance.regularization,

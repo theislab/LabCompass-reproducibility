@@ -35,25 +35,26 @@ TARGET_CELL_TYPES=(
     "EryPro"
     # "GMP-Cycle"
     # "GMP-Neutro"
-    "GMP-Neutro/CD16-Mono"
+    # "GMP-Neutro/CD16-Mono"
     "HSCs"
     # "MEP"
     # "MLP"
     # "MPP"
-    "MgkPro"
-    "Pro-B"
+    # "MgkPro
+    # "Pro-B"
     # "pDCs/cDCs"
 )
+
 SCHEDULERS=(
     "constant"
     # "exp-decay"
-    "reciprocal"
+    # "reciprocal"
     # "lin-decay"
 )
 OPTIMIZATION_TYPE=(
     "unconstrained"
-    "penalized_oxy_days"
-    "penalized_all_axes"
+    # "penalized_oxy_days"
+    # "penalized_all_axes"
 )
 QUERY_TYPE=(
     "pure_populations"

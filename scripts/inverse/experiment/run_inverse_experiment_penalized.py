@@ -14,7 +14,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_exp_design.models import FlowMatching
+from sc_exp_design.models import FlowMatching, FlowMatchingWithScore, FlowMap
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.inverse import LossGuidedFlow
 
@@ -87,8 +87,16 @@ def main(config: DictConfig) -> float:
 
     # Get prior flow
     logger.info(f"Loading Prior Flow Model from {config.paths.prior_flow_path}...")
-    prior_flow = FlowMatching.load(config.paths.prior_flow_path)
+    prior_flow = FlowMatchingWithScore.load(config.paths.prior_flow_path)
     logger.info(f"Prior Flow ready!\n{prior_flow.velocity_field}")
+
+    # Optional (Load Prior Flow Map)
+    if hasattr(config.paths, "prior_flow_map_path") and config.paths.prior_flow_map_path:
+        logger.info(f"Loading Prior Flow Map Model from {config.paths.prior_flow_map_path}")
+        prior_fm = FlowMap.load(config.paths.prior_flow_map_path)
+        logger.info(f"Prior Flow Map!\n{prior_fm.flow_map}")
+    else:
+        prior_fm = None
 
     # Define loss function
     logger.info(f"Preparing loss function (Cross-Entropy)...")
@@ -131,7 +139,7 @@ def main(config: DictConfig) -> float:
 
     # inizialize dual flow
     logger.info(f"Initializing implicit guided flow...")
-    guided_flow = LossGuidedFlow(prior_flow)
+    guided_flow = LossGuidedFlow(prior_flow, prior_flow_map=prior_fm)
     torch.cuda.empty_cache()
     logger.info(f"Implicit dual guided flow initialized {guided_flow}")
 

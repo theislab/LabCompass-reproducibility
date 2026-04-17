@@ -93,7 +93,7 @@ class IWhitening(BaseWhitening):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """"""
-        return torch.einsum("...n,mn->...m", x, self.W) +  self.mean
+        return torch.einsum("...n,mn->...m", x, self.iW) +  self.mean
 
 
 class RescaledTargetPredictionModel(torch.nn.Module):

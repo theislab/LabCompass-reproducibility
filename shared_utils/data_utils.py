@@ -514,6 +514,8 @@ def get_adata_splits(
             random_state=config.split.random_state,
             split_to_retrieve=config.split.split_to_retrieve,
         )
+    else:
+        ValueError(f"Invalid split mode {config.split.mode}")
 
     # Data 3. apply shared transformations
     logger.info("Computing tranformation params on train data and applying to both train and ood data...")

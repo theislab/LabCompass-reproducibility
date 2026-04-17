@@ -155,3 +155,16 @@ def linear_scheduler_with_warmup(
     c = t_shifted*slope + vmin
     return c[..., 0]
 
+
+# 2. Define the recursive patch function
+def replace_silu_with_safe_silu(model: torch.nn.Module) -> None:
+    # 1. Define the AD-safe SiLU
+    class SafeSiLU(torch.nn.Module):
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return x * torch.sigmoid(x)
+    for name, module in model.named_children():
+        if isinstance(module, torch.nn.SiLU):
+            setattr(model, name, SafeSiLU())
+        else:
+            # Recursively apply to sub-modules
+            replace_silu_with_safe_silu(module)
