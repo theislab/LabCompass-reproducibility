@@ -1,8 +1,8 @@
 #!/bin/bash
 
-ENV_NAME="sc_exp_design"
+ENV_NAME="sc_exp_design_12"
 PATHS="bloodplus_fm"
-USE_FM=0 
+USE_FM=0
 # PATHS="new_measurements"
 
 # Parse Flags
@@ -26,29 +26,27 @@ if [[ $USE_FM -eq 1 ]]; then
     PATHS="${PATHS}_fm"
 fi
 
-
 echo "Conda environment set to ${ENV_NAME}"
 echo "Paths set to ${PATHS}"
-
 
 BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch"
 
 # define experimental grid
 TARGET_CELL_TYPES=(
-    "CD14Mono"
-    "CD16Mono"
-    "CyclingPro1"
-    "CyclingPro2"
-    "EosBasMast1"
-    "EosBasMast2"
-    "EosBasMast3"
+    # "CD14Mono"
+    # "CD16Mono"
+    # "CyclingPro1"
+    # "CyclingPro2"
+    # "EosBasMast1"
+    # "EosBasMast2"
+    # "EosBasMast3"
     "EryPro"
     "HSCs"
     "ProB"
     "late_MgkPro"
-    'GMP-Neutro'
+    # 'GMP-Neutro'
     'preProB'
-    'pre_cDC1'
+    # 'pre_cDC1'
 )
 
 SCHEDULERS=(
@@ -59,8 +57,8 @@ SCHEDULERS=(
 )
 OPTIMIZATION_TYPE=(
     "unconstrained"
-    # "penalized_oxy_days"
-    # "penalized_all_axes"
+    "penalized_oxy_days"
+    "penalized_all_axes"
 )
 QUERY_TYPE=(
     "pure_populations"

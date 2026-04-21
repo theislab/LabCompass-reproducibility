@@ -3,12 +3,13 @@
 #SBATCH --job-name=sweep_loss_guidance
 #SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/sweep_loss_guidance_%j.out
 #SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/sweep_loss_guidance_%j.err
-#SBATCH --partition=cpu_p
-#SBATCH --qos=cpu_normal
-#SBATCH --mem=20G
+#SBATCH --partition=gpu_p
+#SBATCH --qos=gpu_normal
+#SBATCH --gres=gpu:1
+#SBATCH --mem=500G
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
-
+#SBATCH --constraint=h100_80gb|a100_80gb
 
 # define defaults
 TARGET_CELL_TYPE="HSCs"
@@ -106,9 +107,6 @@ export HYDRA_FULL_ERROR=1
     
 conda run -n ${ENV_NAME} --no-capture-output \
     python scripts/inverse/experiment/${script_name}.py \
-    --multirun \
-    +launcher=slurm \
-    +hparam_search="${hparam_search}" \
     constraints="${constraints}" \
     paths=${PATHS} \
     paths.dump_dir=${dump_dir} \
