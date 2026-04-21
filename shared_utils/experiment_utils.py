@@ -618,7 +618,10 @@ def manual_filtering(df_dict,
                      columns_to_keep, 
                      celltype_fraction, 
                      margin_frac_bounds, 
-                     protocol_cols):
+                     protocol_cols,
+                     use_fraction_filter=True, 
+                     use_oxygen_days_filter=True,
+                     use_bounds_filter=True):
     
     # Filtered data frame 
     df_dict_filtered = {}
@@ -637,28 +640,31 @@ def manual_filtering(df_dict,
         df_ct["filtering_step"] = "pass" 
 
         # Filter by fraction
-        idx_lower = df_ct[f"{cell_type_revert_safe_string}_prop"] < celltype_fraction[cell_type_revert_safe_string] 
-        df_ct.loc[idx_lower & (df_ct["filtering_step"] == "pass"), 
-                  "filtering_step"] = "proportion_filter"
+        if use_fraction_filter:
+            idx_lower = df_ct[f"{cell_type_revert_safe_string}_prop"] < celltype_fraction[cell_type_revert_safe_string] 
+            df_ct.loc[idx_lower & (df_ct["filtering_step"] == "pass"), 
+                    "filtering_step"] = "proportion_filter"
 
         # Oxygen and days filtering 
-        idx_pass_oxygen_days = np.logical_and(df_ct["o2_[%]"] > 5, 
-                                             df_ct["o2_[%]"] < 25)
-        idx_pass_oxygen_days = np.logical_and(idx_pass_oxygen_days, 
-                                             df_ct["days_of_culture"] > 12)
-        idx_pass_oxygen_days = np.logical_and(idx_pass_oxygen_days, 
-                                             df_ct["days_of_culture"] < 20)
-        df_ct.loc[~idx_pass_oxygen_days & (df_ct["filtering_step"] == "pass"), 
-                  "filtering_step"] = "oxygen_days"
+        if use_oxygen_days_filter:
+            idx_pass_oxygen_days = np.logical_and(df_ct["o2_[%]"] > 5, 
+                                                df_ct["o2_[%]"] < 25)
+            idx_pass_oxygen_days = np.logical_and(idx_pass_oxygen_days, 
+                                                df_ct["days_of_culture"] > 12)
+            idx_pass_oxygen_days = np.logical_and(idx_pass_oxygen_days, 
+                                                df_ct["days_of_culture"] < 20)
+            df_ct.loc[~idx_pass_oxygen_days & (df_ct["filtering_step"] == "pass"), 
+                    "filtering_step"] = "oxygen_days"
 
         # Bounds 
-        for param in protocol_cols:
-            idx_bounds = np.logical_and(
-                df_ct[param] >= (bounds[param][0] - bounds[param][0] * margin_frac_bounds), 
-                df_ct[param] <= (bounds[param][1] + bounds[param][1] * margin_frac_bounds)
-            )
-            df_ct.loc[~idx_bounds & (df_ct["filtering_step"] == "pass"), 
-                      "filtering_step"] = f"bounds_{param}"
+        if use_bounds_filter:
+            for param in protocol_cols:
+                idx_bounds = np.logical_and(
+                    df_ct[param] >= (bounds[param][0] - bounds[param][0] * margin_frac_bounds), 
+                    df_ct[param] <= (bounds[param][1] + bounds[param][1] * margin_frac_bounds)
+                )
+                df_ct.loc[~idx_bounds & (df_ct["filtering_step"] == "pass"), 
+                        "filtering_step"] = f"bounds_{param}"
 
         # Filtered dataset
         df_dict_filtered[cell_type] = df_ct[df_ct.filtering_step == "pass"]

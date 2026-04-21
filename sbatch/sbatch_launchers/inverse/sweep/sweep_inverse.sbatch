@@ -103,15 +103,24 @@ echo "------------------------------------------------"
 
 # handle hydra errors
 export HYDRA_FULL_ERROR=1
-    
+
 conda run -n ${ENV_NAME} --no-capture-output \
     python scripts/inverse/experiment/${script_name}.py \
-    --multirun \
-    +launcher=slurm \
-    +hparam_search="${hparam_search}" \
     constraints="${constraints}" \
     paths=${PATHS} \
     paths.dump_dir=${dump_dir} \
     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
     sampling.query_pure_cell_types="${query_pure}" \
     sampling.mask_gradients="${mask_gradients}"
+    
+# conda run -n ${ENV_NAME} --no-capture-output \
+#     python scripts/inverse/experiment/${script_name}.py \
+#     --multirun \
+#     +launcher=slurm \
+#     +hparam_search="${hparam_search}" \
+#     constraints="${constraints}" \
+#     paths=${PATHS} \
+#     paths.dump_dir=${dump_dir} \
+#     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
+#     sampling.query_pure_cell_types="${query_pure}" \
+#     sampling.mask_gradients="${mask_gradients}"
