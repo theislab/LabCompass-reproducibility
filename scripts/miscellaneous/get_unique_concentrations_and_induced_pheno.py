@@ -20,77 +20,82 @@ OUT_ADATA_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cam
 BATCH_SIZE = 500_000
 
 
-def predict_on_conc(
-    X,
-    concentrations,
-    unique_concs,
-    izn_phi,
-    zn_g,
+def compute_condition_means(
+    X,                      # (n_cells, features) numpy array
+    cond_ids,               # (n_cells,) integer array of condition IDs
+    unique_cond_ids,        # list of condition IDs to process (usually range(n_conditions))
+    rescale_func,           # callable that applies (izn_phi + zn_g) if needed, else None
     target_prediction_model,
     classes,
-    rescale=True,
 ):
-    # list of mean probabilities
-    mean_probs_df = defaultdict(list)
-
-    # iterate over unique values to compute mean probs
-    pbar = tqdm(range(unique_concs.shape[0]))
-    for conc in range(unique_concs.shape[0]):
-        # rescaling state data
-        conc_idxs = np.all(concentrations == unique_concs[conc], axis=1)
-        X_conc = X[conc_idxs]
-
-        # updating progress bar
-        pbar.set_description(f"{X_conc.shape=}")
-        pbar.update()
-
-        # compute predicted mean probabilities
+    """
+    For each condition ID, compute mean predicted probabilities across its cells.
+    Returns a DataFrame (n_conditions x n_classes) with rows in order of unique_cond_ids.
+    """
+    mean_probs = {clean_name(ct): [] for ct in classes}
+    
+    for cond_id in tqdm(unique_cond_ids, desc="Computing condition means"):
+        idx = np.where(cond_ids == cond_id)[0]
+        if len(idx) == 0:
+            # No cells for this condition – fill with zeros
+            for ct in classes:
+                mean_probs[clean_name(ct)].append(np.zeros(len(classes)))
+            continue
+        
+        X_cond = X[idx]
         all_probs = []
         with torch.no_grad():
-            for i in range(0, X_conc.shape[0], BATCH_SIZE):
-                batch = torch.from_numpy(X_conc[i:i + BATCH_SIZE]).cuda()
-                if rescale:
-                    batch = izn_phi(batch)
-                    batch = zn_g(batch)
+            for i in range(0, X_cond.shape[0], BATCH_SIZE):
+                batch = torch.from_numpy(X_cond[i:i+BATCH_SIZE]).cuda()
+                if rescale_func is not None:
+                    batch = rescale_func(batch)
                 logits = target_prediction_model.target_prediction_model(batch)["cell_type"]
                 probs = torch.nn.functional.softmax(logits, dim=1)
                 all_probs.append(probs)
-
         g_probs = torch.cat(all_probs, dim=0)
-        g_mean_probs = g_probs.mean(0).cpu().numpy()
+        g_mean = g_probs.mean(0).cpu().numpy()
+        
+        for idx_ct, ct in enumerate(classes):
+            mean_probs[clean_name(ct)].append(g_mean[idx_ct])
+    
+    return pd.DataFrame(mean_probs)
 
-        for idx, ct in enumerate(classes):
-            mean_probs_df[ct.replace("/", "_").replace("*", "").replace(" ", "_")].append(g_mean_probs[idx])
-    return pd.DataFrame(mean_probs_df)
+
+def clean_name(ct):
+    return ct.replace("/", "_").replace("*", "").replace(" ", "_")
 
 
-def get_observed_proportions(adata, concentrations, unique_concs, classes):
-    """Return DataFrame of observed cell type proportions for each unique concentration."""
-    obs_props = defaultdict(list)
+def get_observed_proportions_aligned(adata, cond_ids, unique_cond_ids, classes):
+    """Return DataFrame of observed proportions for each condition (aligned by cond_id)."""
+    obs_props = {clean_name(ct) + "_observed": [] for ct in classes}
     cell_types = adata.obs["cell_type"].values
     
-    for conc in range(unique_concs.shape[0]):
-        conc_idxs = np.all(concentrations == unique_concs[conc], axis=1)
-        conc_cell_types = cell_types[conc_idxs]
-        # Count occurrences of each class
+    for cond_id in unique_cond_ids:
+        idx = np.where(cond_ids == cond_id)[0]
+        if len(idx) == 0:
+            for ct in classes:
+                obs_props[clean_name(ct) + "_observed"].append(0.0)
+            continue
+        conc_cell_types = cell_types[idx]
         counts = {ct: np.sum(conc_cell_types == ct) for ct in classes}
-        total = len(conc_cell_types)
-        proportions = {ct: counts[ct] / total if total > 0 else 0 for ct in classes}
+        total = len(idx)
         for ct in classes:
-            col_name = ct.replace("/", "_").replace("*", "").replace(" ", "_") + "_observed"
-            obs_props[col_name].append(proportions[ct])
+            obs_props[clean_name(ct) + "_observed"].append(counts[ct] / total if total > 0 else 0.0)
     return pd.DataFrame(obs_props)
 
 
 @hydra.main(
     config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config",
-    config_name="run_inverse"
+    config_name="run_inverse",
+    version_base=None
 )
 def main(config):
     # lazily import modules
     sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
     from experiment_utils import get_forward_model
     from z_norm_modules import get_rescaling
+    from data_utils import get_protocol_tranformations
+    from inverse_utils import map_df
 
     # open data config dict
     with open(DATA_CONFIG_PATH, "r") as fb:
@@ -98,116 +103,129 @@ def main(config):
     annotation_dict = config.annotation
 
     # Get forward model
-    logger.info(f"Preparing forward model...")
-    forward_model, (
-        phi_model,
-        target_prediction_model
-    ) = get_forward_model(config, logger=logger)
+    logger.info("Preparing forward model...")
+    forward_model, (phi_model, target_prediction_model) = get_forward_model(config, logger=logger)
     target_prediction_model.target_prediction_model.eval()
-    logger.info(f"Forward model ready!\n{forward_model}")
+    logger.info("Forward model ready!")
 
-    # data for cellular response prediction model
+    # data for cellular response prediction model (full)
     train_adata_phi = phi_model.train_data.adata
     val_adata_phi = phi_model.validation_data[0].adata
     adata_phi = sc.concat((train_adata_phi, val_adata_phi), uns_merge="same")
-    logger.info(f"{train_adata_phi=}\n{val_adata_phi=}")
+    logger.info(f"Full data shape: {adata_phi.shape}")
 
-    # data for classifier model
+    # data for classifier model (subset)
     train_adata_g = target_prediction_model.train_data.adata
     val_adata_g = target_prediction_model.validation_data.adata
     adata_g = sc.concat((train_adata_g, val_adata_g), uns_merge="same")
-    logger.info(f"{train_adata_g=}\n{val_adata_g=}")
+    logger.info(f"Subset data shape: {adata_g.shape}")
 
-    # Prepare label encoder
+    # Prepare label encoder for cell types
     ct_le = LabelEncoder()
     ct_values = train_adata_g.obs["cell_type"].values
     ct_le.fit(ct_values)
     classes = ct_le.classes_.tolist()
+    logger.info(f"Cell types: {classes}")
 
-    # rescale features back from g to phi
+    # Rescaling modules
     zn_g = get_rescaling(train_adata_g)
     izn_phi = get_rescaling(train_adata_phi, inverse=True)
+    def rescale_full(batch):
+        batch = izn_phi(batch)
+        batch = zn_g(batch)
+        return batch
 
-    # get unique perturbation values
-    logger.info("Getting unique concentrations")
-    concentrations = adata_phi.obsm[annotation_dict["protocol_obsm_key"]]
-    concentrations_g = adata_g.obsm[annotation_dict["protocol_obsm_key"]]
-    unique_concs, idx = np.unique(concentrations, axis=0, return_index=True)
-    protocol_df = adata_phi.obs[annotation_dict.protocol_columns].iloc[idx]
-    logger.info(f"Found unique concentrations of shape {unique_concs.shape}, {protocol_df.shape}")
+    # -------- 1. Build condition IDs from raw protocol values (full data) --------
+    protocol_cols = annotation_dict["protocol_columns"]
+    for col in protocol_cols:
+        adata_phi.obs[col] = adata_phi.obs[col].astype(float)
+    raw_full = adata_phi.obs[protocol_cols].values  # shape (n_cells_full, n_protocols)
+    unique_raw, cond_id_full = np.unique(raw_full, axis=0, return_inverse=True)
+    n_conditions = unique_raw.shape[0]
+    logger.info(f"Found {n_conditions} unique raw conditions")
 
-    # extract data
-    X = adata_phi.obsm[data_cfg_dict["sample_rep"]] if \
-        data_cfg_dict["sample_rep"] is not None else adata_phi.X
-    logger.info(f"{X.shape=}")
+    # Create mapping from raw tuple -> condition ID
+    raw_to_cond = {tuple(row): i for i, row in enumerate(unique_raw)}
 
-    # extract data
-    X_g = adata_g.obsm[data_cfg_dict["sample_rep"]] if \
-        data_cfg_dict["sample_rep"] is not None else adata_g.X
-    logger.info(f"{X_g.shape=}")   # fixed log
+    # -------- 2. Get transformed concentrations for each condition (for output) --------
+    # These are already stored in adata_phi.obsm[protocol_obsm_key] for each cell.
+    # We'll take the first cell of each condition as representative.
+    concentrations_full = adata_phi.obsm[annotation_dict["protocol_obsm_key"]]  # (n_cells_full, n_protocols)
+    unique_concs_transformed = np.zeros((n_conditions, concentrations_full.shape[1]))
+    for cond_id in range(n_conditions):
+        first_idx = np.where(cond_id_full == cond_id)[0][0]
+        unique_concs_transformed[cond_id] = concentrations_full[first_idx]
+    logger.info(f"Unique transformed concentrations shape: {unique_concs_transformed.shape}")
 
-    # predict on phi data
-    mean_probs_df_full = predict_on_conc(
-        X,
-        concentrations,
-        unique_concs,
-        izn_phi,
-        zn_g,
-        target_prediction_model,
-        classes,
-        rescale=True,
-    )
-    logger.info(f"{mean_probs_df_full.head()=}")
+    # -------- 3. Map subset data to the same condition IDs --------
+    for col in protocol_cols:
+        adata_g.obs[col] = adata_g.obs[col].astype(float)
+    raw_subset = adata_g.obs[protocol_cols].values
+    cond_id_subset = np.full(raw_subset.shape[0], -1, dtype=int)
+    for i, row in enumerate(raw_subset):
+        key = tuple(row)
+        if key in raw_to_cond:
+            cond_id_subset[i] = raw_to_cond[key]
+    # Remove cells that don't match any full condition (should be none if data is consistent)
+    valid_subset = cond_id_subset != -1
+    if not np.all(valid_subset):
+        logger.warning(f"Dropping {np.sum(~valid_subset)} subset cells with unknown raw combos")
+        adata_g = adata_g[valid_subset].copy()
+        cond_id_subset = cond_id_subset[valid_subset]
+        raw_subset = raw_subset[valid_subset]
+    logger.info(f"Subset after alignment: {adata_g.shape}")
 
-    # predict on g data (using concentrations_g)
-    mean_probs_df_subset = predict_on_conc(
-        X_g,
-        concentrations_g,
-        unique_concs,
-        None,
-        None,
-        target_prediction_model,
-        classes,
-        rescale=False,
-    )
-    mean_probs_df_subset.columns = [f"{e}_subset" for e in mean_probs_df_subset.columns]
-    logger.info(f"{mean_probs_df_subset.head()=}")
+    # -------- 4. Extract feature matrices --------
+    sample_rep = data_cfg_dict["sample_rep"]
+    X_full = adata_phi.obsm[sample_rep] if sample_rep is not None else adata_phi.X
+    X_subset = adata_g.obsm[sample_rep] if sample_rep is not None else adata_g.X
+    logger.info(f"X_full shape: {X_full.shape}, X_subset shape: {X_subset.shape}")
 
-    # Compute observed proportions
-    observed_props_df = get_observed_proportions(adata_g, concentrations_g, unique_concs, classes)
-    logger.info(f"Observed proportions shape: {observed_props_df.shape}")
-
-    # Compute cell counts per condition in full and subset
-    n_cells_full = []
-    n_cells_subset = []
-    for conc in range(unique_concs.shape[0]):
-        conc_idxs_full = np.all(concentrations == unique_concs[conc], axis=1)
-        conc_idxs_subset = np.all(concentrations_g == unique_concs[conc], axis=1)
-        n_cells_full.append(np.sum(conc_idxs_full))
-        n_cells_subset.append(np.sum(conc_idxs_subset))
+    # -------- 5. Compute mean predicted probabilities for full and subset --------
+    unique_cond_list = list(range(n_conditions))
     
-    counts_df = pd.DataFrame({
-        "n_cells_full": n_cells_full,
-        "n_cells_subset": n_cells_subset
-    })
-    logger.info(f"Counts DF shape: {counts_df.shape}")
-
-    # Combine all DataFrames
-    obs_df = pd.concat([mean_probs_df_full, mean_probs_df_subset, observed_props_df, counts_df], axis=1)
-    logger.info(f"Final DF of shape: {obs_df.shape}")
-    logger.info(f"Final columns: {obs_df.columns.tolist()}")
-
-    # constructing unique concentrations adata
-    unique_concs_adata = sc.AnnData(
-        X=protocol_df.values,
-        obs=obs_df,
-        obsm={"log_conc": unique_concs},
-        var=pd.DataFrame(index=annotation_dict["protocol_columns"])
+    logger.info("Computing full data predictions (with rescaling)...")
+    mean_probs_full = compute_condition_means(
+        X_full, cond_id_full, unique_cond_list,
+        rescale_func=rescale_full,
+        target_prediction_model=target_prediction_model,
+        classes=classes
     )
-    logger.info(f"{unique_concs_adata=}, writing to {OUT_ADATA_PATH}")
+    
+    logger.info("Computing subset data predictions (no rescaling)...")
+    mean_probs_subset = compute_condition_means(
+        X_subset, cond_id_subset, unique_cond_list,
+        rescale_func=None,
+        target_prediction_model=target_prediction_model,
+        classes=classes
+    )
+    # Rename columns to indicate they come from subset
+    mean_probs_subset.columns = [f"{col}_subset" for col in mean_probs_subset.columns]
+    
+    # -------- 6. Observed proportions from subset --------
+    logger.info("Computing observed proportions from subset...")
+    obs_props = get_observed_proportions_aligned(adata_g, cond_id_subset, unique_cond_list, classes)
+    
+    # -------- 7. Cell counts per condition --------
+    n_cells_full = [np.sum(cond_id_full == i) for i in unique_cond_list]
+    n_cells_subset = [np.sum(cond_id_subset == i) for i in unique_cond_list]
+    counts_df = pd.DataFrame({"n_cells_full": n_cells_full, "n_cells_subset": n_cells_subset})
+    
+    # -------- 8. Combine all results --------
+    obs_df = pd.concat([mean_probs_full, mean_probs_subset, obs_props, counts_df], axis=1)
+    logger.info(f"Final aligned DataFrame shape: {obs_df.shape}")
+    
+    # -------- 9. Build output AnnData (one row per unique condition) --------
+    # Store raw values as X, transformed as obsm, and results in obs
+    unique_concs_adata = sc.AnnData(
+        X=unique_raw,   # raw concentration values
+        obs=obs_df,
+        obsm={"log_conc": unique_concs_transformed},
+        var=pd.DataFrame(index=protocol_cols)
+    )
+    logger.info(f"Writing output to {OUT_ADATA_PATH}")
     unique_concs_adata.write_h5ad(OUT_ADATA_PATH)
 
 
 if __name__ == "__main__":
-
     main()

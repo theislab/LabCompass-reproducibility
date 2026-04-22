@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="sc_exp_design"
 PATHS="bloodplus_fm"
 USE_FM=0
 ENV_MANAGER="micromamba"
@@ -20,10 +20,10 @@ case $1 in
     USE_FM="$2"
     shift 2
     ;;
--em|env-manager)
-    ENV_MANAGER="$2"
-    shift 2
-    ;;
+# -em|env-manager)
+#     ENV_MANAGER="$2"
+#     shift 2
+#     ;;
 esac
 
 # set paths for flow map
@@ -45,17 +45,17 @@ TARGET_CELL_TYPES=(
     # "EosBasMast1"
     # "EosBasMast2"
     # "EosBasMast3"
-    "EryPro"
+    # "EryPro"
     "HSCs"
-    "ProB"
-    "late_MgkPro"
+    # "ProB"
+    # "late_MgkPro"
     # 'GMP-Neutro'
-    'preProB'
+    # 'preProB'
     # 'pre_cDC1'
 )
 
 SCHEDULERS=(
-    # "constant"
+    "constant"
     # "exp-decay"
     "reciprocal"
     # "lin-decay"
