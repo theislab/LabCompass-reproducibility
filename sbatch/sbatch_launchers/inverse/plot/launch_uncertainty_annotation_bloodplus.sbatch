@@ -12,7 +12,7 @@
 
 EXPERIMENT=$1
 
-EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm/
+EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_official/
 
 WDIR=/home/icb/alessandro.palma/environment/collab-goettgens-SFC
 
@@ -25,7 +25,7 @@ echo "Running experiment: $EXPERIMENT"
 echo "Experiment dir: $EXPERIMENT_DIR"
 
 python scripts/inverse/plots/uncertainty_estimation.py \
-    --target_cell_types "CD14Mono__CD16Mono__CyclingPro1__CyclingPro2__EosBasMast1__EosBasMast2__EosBasMast3__EryPro__HSCs__ProB__late_MgkPro__GMP-Neutro__preProB__pre_cDC1" \
+    --target_cell_types "EryPro__HSCs__late_MgkPro__preProB__ProB" \
     --n_noise_samples 5000 \
     --n_populations 10 \
     --base_config_path ../../../inverse/loss_guidance/config/ \
@@ -33,4 +33,6 @@ python scripts/inverse/plots/uncertainty_estimation.py \
     --result_dir "$EXPERIMENT_DIR" \
     --experiment_type "$EXPERIMENT" \
     --true_concentration_path /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous/unique_concentrations_adata_bloodplus.h5ad \
-    --paths bloodplus
+    --paths bloodplus_fm
+
+# --target_cell_types "CD14Mono__CD16Mono__CyclingPro1__CyclingPro2__EosBasMast1__EosBasMast2__EosBasMast3__EryPro__HSCs__ProB__late_MgkPro__GMP-Neutro__preProB__pre_cDC1" \
