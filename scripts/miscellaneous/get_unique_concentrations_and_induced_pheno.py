@@ -61,7 +61,6 @@ def predict_on_conc(
 
         for idx, ct in enumerate(classes):
             mean_probs_df[ct.replace("/", "_").replace("*", "").replace(" ", "_")].append(g_mean_probs[idx])
-    logger.info(f"{mean_probs_df.head()=}")
     return pd.DataFrame(mean_probs_df)
 
 
@@ -145,7 +144,7 @@ def main(config):
     # extract data
     X_g = adata_g.obsm[data_cfg_dict["sample_rep"]] if \
         data_cfg_dict["sample_rep"] is not None else adata_g.X
-    logger.info(f"{X.shape=}")
+    logger.info(f"{X_g.shape=}")   # fixed log
 
     # predict on phi data
     mean_probs_df_full = predict_on_conc(
@@ -160,7 +159,7 @@ def main(config):
     )
     logger.info(f"{mean_probs_df_full.head()=}")
 
-    # predict on phi data
+    # predict on g data (using concentrations_g)
     mean_probs_df_subset = predict_on_conc(
         X_g,
         concentrations_g,
@@ -177,13 +176,31 @@ def main(config):
     # Compute observed proportions
     observed_props_df = get_observed_proportions(adata_g, concentrations_g, unique_concs, classes)
     logger.info(f"Observed proportions shape: {observed_props_df.shape}")
-    mean_probs_df = pd.concat([mean_probs_df_full, mean_probs_df_subset, observed_props_df], axis=1)
-    logger.info(f"Final DF of shape: {mean_probs_df.shape}")
+
+    # Compute cell counts per condition in full and subset
+    n_cells_full = []
+    n_cells_subset = []
+    for conc in range(unique_concs.shape[0]):
+        conc_idxs_full = np.all(concentrations == unique_concs[conc], axis=1)
+        conc_idxs_subset = np.all(concentrations_g == unique_concs[conc], axis=1)
+        n_cells_full.append(np.sum(conc_idxs_full))
+        n_cells_subset.append(np.sum(conc_idxs_subset))
+    
+    counts_df = pd.DataFrame({
+        "n_cells_full": n_cells_full,
+        "n_cells_subset": n_cells_subset
+    })
+    logger.info(f"Counts DF shape: {counts_df.shape}")
+
+    # Combine all DataFrames
+    obs_df = pd.concat([mean_probs_df_full, mean_probs_df_subset, observed_props_df, counts_df], axis=1)
+    logger.info(f"Final DF of shape: {obs_df.shape}")
+    logger.info(f"Final columns: {obs_df.columns.tolist()}")
 
     # constructing unique concentrations adata
     unique_concs_adata = sc.AnnData(
         X=protocol_df.values,
-        obs=mean_probs_df,
+        obs=obs_df,
         obsm={"log_conc": unique_concs},
         var=pd.DataFrame(index=annotation_dict["protocol_columns"])
     )
