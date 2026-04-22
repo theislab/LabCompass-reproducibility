@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ENV_NAME="sc_exp_design_new"
+ENV_NAME="sc_exp_design"
 PATHS="bloodplus_fm"
 USE_FM=0
 # PATHS="new_measurements"

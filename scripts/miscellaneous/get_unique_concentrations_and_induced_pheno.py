@@ -16,30 +16,21 @@ logger = logging.getLogger(__name__)
 
 ANNOTATION_CONFIG_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/conditional_model/flow_matching/config/annotation/default.yaml"
 DATA_CONFIG_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/conditional_model/flow_matching/config/data/protocol_concat.yaml"
-OUT_ADATA_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous/unique_concentrations_adata.h5ad"
+OUT_ADATA_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous_new/unique_concentrations_adata_logicle.h5ad"
 BATCH_SIZE = 500_000
 
-
 def compute_condition_means(
-    X,                      # (n_cells, features) numpy array
-    cond_ids,               # (n_cells,) integer array of condition IDs
-    unique_cond_ids,        # list of condition IDs to process (usually range(n_conditions))
-    rescale_func,           # callable that applies (izn_phi + zn_g) if needed, else None
-    target_prediction_model,
-    classes,
+    X, cond_ids, unique_cond_ids, rescale_func,
+    target_prediction_model, classes,
 ):
-    """
-    For each condition ID, compute mean predicted probabilities across its cells.
-    Returns a DataFrame (n_conditions x n_classes) with rows in order of unique_cond_ids.
-    """
     mean_probs = {clean_name(ct): [] for ct in classes}
     
     for cond_id in tqdm(unique_cond_ids, desc="Computing condition means"):
         idx = np.where(cond_ids == cond_id)[0]
         if len(idx) == 0:
-            # No cells for this condition – fill with zeros
+            # No cells – fill with zeros (scalar)
             for ct in classes:
-                mean_probs[clean_name(ct)].append(np.zeros(len(classes)))
+                mean_probs[clean_name(ct)].append(0.0)
             continue
         
         X_cond = X[idx]

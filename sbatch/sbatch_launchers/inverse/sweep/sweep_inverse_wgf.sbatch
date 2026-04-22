@@ -80,15 +80,16 @@ esac
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/lwgf_guidance/bloodplus_inverse_wgf/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/wgf_guidance/bloodplus_inverse_wgf/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 
 # prepare command
 if [[ "${ENV_MANAGER}" == "conda" ]]; then
-  CMD="${ENV_MANAGER} run -n ${ENV_NAME} --no-capture-output";
+  CMD="${ENV_MANAGER} run -n ${ENV_NAME} --no-capture-output"
 elif [[ "${ENV_MANAGER}" == "micromamba" ]]; then
-  CMD="${ENV_MANAGER} run -n ${ENV_NAME}";
+  CMD="${ENV_MANAGER} run -n ${ENV_NAME}"
 else
-  echo "❌ Unknown env manager: $ENV_MANAGER"; exit 1 ;;
+  echo "❌ Unknown env manager: $ENV_MANAGER"
+  exit 1
 fi
 
 # Pring logging messages

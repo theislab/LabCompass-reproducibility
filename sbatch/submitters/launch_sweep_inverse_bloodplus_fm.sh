@@ -20,10 +20,6 @@ case $1 in
     USE_FM="$2"
     shift 2
     ;;
-# -em|env-manager)
-#     ENV_MANAGER="$2"
-#     shift 2
-#     ;;
 esac
 
 # set paths for flow map
