@@ -17,6 +17,7 @@ OPT="unconstrained"
 QUERY_TYPE="pure_populations"
 ENV_NAME="sc_exp_design"
 PATHS="default"
+ENV_MANAGER="micromamba"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -43,6 +44,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -p|--paths)
       PATHS="$2"
+      shift 2
+      ;;
+    -em|--env-manager)
+      ENV_MANAGER="$2"
       shift 2
       ;;
     *)
@@ -88,7 +93,16 @@ esac
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_best/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_official/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_more_samples/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+
+# prepare command
+if [[ "${ENV_MANAGER}" == "conda" ]]; then
+  CMD="${ENV_MANAGER} run -n ${ENV_NAME} --no-capture-output";
+elif [[ "${ENV_MANAGER}" == "micromamba" ]]; then
+  CMD="${ENV_MANAGER} run -n ${ENV_NAME}";
+else
+  echo "❌ Unknown env manager: $ENV_MANAGER"; exit 1 ;;
+fi
 
 # Pring logging messages
 echo "------------------------------------------------"
@@ -99,13 +113,14 @@ echo "Query Mode       : ${QUERY_TYPE} (pure=${query_pure}, mask=${mask_gradient
 echo "Dump Directory   : ${dump_dir}"
 echo "Environment      : ${ENV_NAME}"
 echo "Path             : ${PATHS}"
+echo "Env Manager      : ${ENV_MANAGER}"
+echo "Command          : ${CMD}"
 echo "------------------------------------------------"
 
 # handle hydra errors
 export HYDRA_FULL_ERROR=1
     
-conda run -n ${ENV_NAME} --no-capture-output \
-    python scripts/inverse/experiment/${script_name}.py \
+$CMD python scripts/inverse/experiment/${script_name}.py \
     --multirun \
     +launcher=slurm \
     +hparam_search="${hparam_search}" \

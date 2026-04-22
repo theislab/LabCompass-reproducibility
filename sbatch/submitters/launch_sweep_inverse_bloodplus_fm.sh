@@ -3,6 +3,7 @@
 ENV_NAME="sc_exp_design_12"
 PATHS="bloodplus_fm"
 USE_FM=0
+ENV_MANAGER="micromamba"
 # PATHS="new_measurements"
 
 # Parse Flags
@@ -17,6 +18,10 @@ case $1 in
     ;;
 -f|--use-fm)
     USE_FM="$2"
+    shift 2
+    ;;
+-em|env-manager)
+    ENV_MANAGER="$2"
     shift 2
     ;;
 esac
