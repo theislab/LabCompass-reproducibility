@@ -20,6 +20,69 @@ OUT_ADATA_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cam
 BATCH_SIZE = 500_000
 
 
+def predict_on_conc(
+    X,
+    concentrations,
+    unique_concs,
+    izn_phi,
+    zn_g,
+    target_prediction_model,
+    classes,
+    rescale=True,
+):
+    # list of mean probabilities
+    mean_probs_df = defaultdict(list)
+
+    # iterate over unique values to compute mean probs
+    pbar = tqdm(range(unique_concs.shape[0]))
+    for conc in range(unique_concs.shape[0]):
+        # rescaling state data
+        conc_idxs = np.all(concentrations == unique_concs[conc], axis=1)
+        X_conc = X[conc_idxs]
+
+        # updating progress bar
+        pbar.set_description(f"{X_conc.shape=}")
+        pbar.update()
+
+        # compute predicted mean probabilities
+        all_probs = []
+        with torch.no_grad():
+            for i in range(0, X_conc.shape[0], BATCH_SIZE):
+                batch = torch.from_numpy(X_conc[i:i + BATCH_SIZE]).cuda()
+                if rescale:
+                    batch = izn_phi(batch)
+                    batch = zn_g(batch)
+                logits = target_prediction_model.target_prediction_model(batch)["cell_type"]
+                probs = torch.nn.functional.softmax(logits, dim=1)
+                all_probs.append(probs)
+
+        g_probs = torch.cat(all_probs, dim=0)
+        g_mean_probs = g_probs.mean(0).cpu().numpy()
+
+        for idx, ct in enumerate(classes):
+            mean_probs_df[ct.replace("/", "_").replace("*", "").replace(" ", "_")].append(g_mean_probs[idx])
+    logger.info(f"{mean_probs_df.head()=}")
+    return pd.DataFrame(mean_probs_df)
+
+
+def get_observed_proportions(adata, concentrations, unique_concs, classes):
+    """Return DataFrame of observed cell type proportions for each unique concentration."""
+    obs_props = defaultdict(list)
+    cell_types = adata.obs["cell_type"].values
+    
+    for conc in range(unique_concs.shape[0]):
+        conc_idxs = np.all(concentrations == unique_concs[conc], axis=1)
+        conc_cell_types = cell_types[conc_idxs]
+        # Count occurrences of each class
+        counts = {ct: np.sum(conc_cell_types == ct) for ct in classes}
+        total = len(conc_cell_types)
+        proportions = {ct: counts[ct] / total if total > 0 else 0 for ct in classes}
+        for ct in classes:
+            col_name = ct.replace("/", "_").replace("*", "").replace(" ", "_") + "_observed"
+            obs_props[col_name].append(proportions[ct])
+    return pd.DataFrame(obs_props)
+
+
 @hydra.main(
     config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config",
     config_name="run_inverse"
@@ -53,6 +116,7 @@ def main(config):
     # data for classifier model
     train_adata_g = target_prediction_model.train_data.adata
     val_adata_g = target_prediction_model.validation_data.adata
+    adata_g = sc.concat((train_adata_g, val_adata_g), uns_merge="same")
     logger.info(f"{train_adata_g=}\n{val_adata_g=}")
 
     # Prepare label encoder
@@ -68,8 +132,9 @@ def main(config):
     # get unique perturbation values
     logger.info("Getting unique concentrations")
     concentrations = adata_phi.obsm[annotation_dict["protocol_obsm_key"]]
-    unique_concs = np.unique(concentrations, axis=0)
-    protocol_df = adata_phi.obs[annotation_dict.protocol_columns].drop_duplicates()
+    concentrations_g = adata_g.obsm[annotation_dict["protocol_obsm_key"]]
+    unique_concs, idx = np.unique(concentrations, axis=0, return_index=True)
+    protocol_df = adata_phi.obs[annotation_dict.protocol_columns].iloc[idx]
     logger.info(f"Found unique concentrations of shape {unique_concs.shape}, {protocol_df.shape}")
 
     # extract data
@@ -77,38 +142,43 @@ def main(config):
         data_cfg_dict["sample_rep"] is not None else adata_phi.X
     logger.info(f"{X.shape=}")
 
-    # list of mean probabilities
-    mean_probs_df = defaultdict(list)
+    # extract data
+    X_g = adata_g.obsm[data_cfg_dict["sample_rep"]] if \
+        data_cfg_dict["sample_rep"] is not None else adata_g.X
+    logger.info(f"{X.shape=}")
 
-    # iterate over unique values to compute mean probs
-    pbar = tqdm(range(unique_concs.shape[0]))
-    for conc in pbar:
-        # rescaling state data
-        conc_idxs = np.all(concentrations == unique_concs[conc], axis=1)
-        X_conc = X[conc_idxs]
+    # predict on phi data
+    mean_probs_df_full = predict_on_conc(
+        X,
+        concentrations,
+        unique_concs,
+        izn_phi,
+        zn_g,
+        target_prediction_model,
+        classes,
+        rescale=True,
+    )
+    logger.info(f"{mean_probs_df_full.head()=}")
 
-        # updating progress bar
-        pbar.set_description(f"{X_conc.shape=}")
-        pbar.update()
+    # predict on phi data
+    mean_probs_df_subset = predict_on_conc(
+        X_g,
+        concentrations_g,
+        unique_concs,
+        None,
+        None,
+        target_prediction_model,
+        classes,
+        rescale=False,
+    )
+    mean_probs_df_subset.columns = [f"{e}_subset" for e in mean_probs_df_subset.columns]
+    logger.info(f"{mean_probs_df_subset.head()=}")
 
-        # compute predicted mean probabilities
-        all_probs = []
-        with torch.no_grad():
-            for i in range(0, X_conc.shape[0], BATCH_SIZE):
-                batch = torch.from_numpy(X_conc[i:i + BATCH_SIZE]).cuda()
-                batch = izn_phi(batch)
-                batch = zn_g(batch)
-                logits = target_prediction_model.target_prediction_model(batch)["cell_type"]
-                probs = torch.nn.functional.softmax(logits, dim=1)
-                all_probs.append(probs)
-
-        g_probs = torch.cat(all_probs, dim=0)
-        g_mean_probs = g_probs.mean(0).cpu().numpy()
-
-        for idx, ct in enumerate(classes):
-            mean_probs_df[ct.replace("/", "_").replace("*", "").replace(" ", "_")].append(g_mean_probs[idx])
-    mean_probs_df = pd.DataFrame(mean_probs_df)
-    logger.info(f"{mean_probs_df.head()=}")
+    # Compute observed proportions
+    observed_props_df = get_observed_proportions(adata_g, concentrations_g, unique_concs, classes)
+    logger.info(f"Observed proportions shape: {observed_props_df.shape}")
+    mean_probs_df = pd.concat([mean_probs_df_full, mean_probs_df_subset, observed_props_df], axis=1)
+    logger.info(f"Final DF of shape: {mean_probs_df.shape}")
 
     # constructing unique concentrations adata
     unique_concs_adata = sc.AnnData(
