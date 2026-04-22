@@ -69,7 +69,8 @@ def main(config):
     logger.info("Getting unique concentrations")
     concentrations = adata_phi.obsm[annotation_dict["protocol_obsm_key"]]
     unique_concs = np.unique(concentrations, axis=0)
-    logger.info(f"Found unique concentrations of shape {unique_concs.shape}")
+    protocol_df = adata_phi.obs[annotation_dict.protocol_columns].drop_duplicates()
+    logger.info(f"Found unique concentrations of shape {unique_concs.shape}, {protocol_df.shape}")
 
     # extract data
     X = adata_phi.obsm[data_cfg_dict["sample_rep"]] if \
@@ -111,8 +112,9 @@ def main(config):
 
     # constructing unique concentrations adata
     unique_concs_adata = sc.AnnData(
-        X=unique_concs,
+        X=protocol_df.values,
         obs=mean_probs_df,
+        obsm={"log_conc": unique_concs},
         var=pd.DataFrame(index=annotation_dict["protocol_columns"])
     )
     logger.info(f"{unique_concs_adata=}, writing to {OUT_ADATA_PATH}")
