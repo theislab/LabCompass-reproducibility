@@ -14,7 +14,7 @@ SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
 PROTOCOL_AXIS="protocol_id"
 UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
-USE_NEW_MEASUREMENTS=2
+USE_NEW_MEASUREMENTS=3
 HPARAMSEARCH="in_distribution_big"
 OOD_EXPERIMENT=0
 
@@ -56,7 +56,7 @@ done
 
 echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE, hparams: ${HPARAMSEARCH}, use_new_measurements: ${USE_NEW_MEASUREMENTS}"
 
-ENV_NAME="sc_exp_design"
+ENV_NAME="sc_exp_design_12"
 echo "Using environment: $ENV_NAME"
 
 WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
@@ -79,6 +79,13 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
     wandb_name="${wandb_name}_bloodplus"
     annotation="bloodplus"
     transforms="bloodplus"
+
+elif [[ $USE_NEW_MEASUREMENTS -eq 3 ]]; then
+    paths="${paths}_bloodplus_old_measurements"
+    wandb_name="${wandb_name}_bloodplus_old"
+    annotation="bloodplus"
+    transforms="bloodplus"
+
 fi
 
 split_mode="in-distribution"

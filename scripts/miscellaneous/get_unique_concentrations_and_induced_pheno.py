@@ -14,9 +14,7 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-ANNOTATION_CONFIG_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/conditional_model/flow_matching/config/annotation/default.yaml"
-DATA_CONFIG_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/conditional_model/flow_matching/config/data/protocol_concat.yaml"
-OUT_ADATA_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous_new/unique_concentrations_adata_logicle.h5ad"
+OUT_ADATA_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous_new/unique_concentrations_adata_bloodplus.h5ad"
 BATCH_SIZE = 500_000
 
 def compute_condition_means(
@@ -89,8 +87,6 @@ def main(config):
     from inverse_utils import map_df
 
     # open data config dict
-    with open(DATA_CONFIG_PATH, "r") as fb:
-        data_cfg_dict = yaml.safe_load(fb)
     annotation_dict = config.annotation
 
     # Get forward model
@@ -167,7 +163,7 @@ def main(config):
     logger.info(f"Subset after alignment: {adata_g.shape}")
 
     # -------- 4. Extract feature matrices --------
-    sample_rep = data_cfg_dict["sample_rep"]
+    sample_rep = config.data.sample_rep
     X_full = adata_phi.obsm[sample_rep] if sample_rep is not None else adata_phi.X
     X_subset = adata_g.obsm[sample_rep] if sample_rep is not None else adata_g.X
     logger.info(f"X_full shape: {X_full.shape}, X_subset shape: {X_subset.shape}")

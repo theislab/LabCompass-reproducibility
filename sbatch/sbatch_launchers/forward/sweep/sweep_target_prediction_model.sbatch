@@ -11,7 +11,7 @@
 
 
 SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
-USE_NEW_MEASUREMENTS=${2:-2} # 0: no new measurements, 1: use new measurements, 2: use bloodplus
+USE_NEW_MEASUREMENTS=${2:-3} # 0: no new measurements, 1: use new measurements, 2: use bloodplus
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
@@ -40,6 +40,12 @@ if [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
     transforms="bloodplus"
     model="cell_type_bloodplus"
 fi
+if [[ $USE_NEW_MEASUREMENTS -eq 3 ]]; then
+    paths="${paths}_bloodplus_old_measurements"
+    wandb_name="${wandb_name}_bloodplus_old"
+    transforms="bloodplus"
+    model="cell_type_bloodplus"
+fi
 
 echo "Wandb project ${wandb_name}"
 echo "paths ${paths}"
@@ -48,7 +54,7 @@ echo "paths ${paths}"
 conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
     --multirun \
     +launcher=slurm_preentible \
-    +hparams_search=default \
+    +hparams_search=small \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
     paths="${paths}" \
