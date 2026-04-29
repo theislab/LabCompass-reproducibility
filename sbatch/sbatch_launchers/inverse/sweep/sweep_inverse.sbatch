@@ -1,4 +1,4 @@
-#!/bin/bash
+ #!/bin/bash
 
 #SBATCH --job-name=sweep_loss_guidance
 #SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/sweep_loss_guidance_%j.out
