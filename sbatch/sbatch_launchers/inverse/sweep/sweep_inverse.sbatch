@@ -17,8 +17,8 @@ QUERY_TYPE="pure_populations"
 ENV_NAME="sc_exp_design"
 PATHS="default"
 ENV_MANAGER="conda"
-N_SAMPLES=10
-N_FWD_SAMPLES=1000
+N_SAMPLES=50
+N_FWD_SAMPLES=350
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -98,7 +98,7 @@ esac
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_best/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_old_measurements/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_old_measurements_official/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 
 # prepare command
 if [[ "${ENV_MANAGER}" == "conda" ]]; then

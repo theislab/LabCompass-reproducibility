@@ -11,7 +11,7 @@
 
 
 SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
-USE_NEW_MEASUREMENTS=${2:-3} # 0: no new measurements, 1: use new measurements, 2: use bloodplus
+USE_NEW_MEASUREMENTS=${2:-3} 
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
@@ -53,7 +53,7 @@ echo "paths ${paths}"
 
 conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
     --multirun \
-    +launcher=slurm_preentible \
+    +launcher=slurm \
     +hparams_search=small \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \

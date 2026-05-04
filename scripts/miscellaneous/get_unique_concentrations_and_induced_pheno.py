@@ -17,61 +17,6 @@ logger = logging.getLogger(__name__)
 OUT_ADATA_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous_new/unique_concentrations_adata_bloodplus.h5ad"
 BATCH_SIZE = 500_000
 
-def compute_condition_means(
-    X, cond_ids, unique_cond_ids, rescale_func,
-    target_prediction_model, classes,
-):
-    mean_probs = {clean_name(ct): [] for ct in classes}
-    
-    for cond_id in tqdm(unique_cond_ids, desc="Computing condition means"):
-        idx = np.where(cond_ids == cond_id)[0]
-        if len(idx) == 0:
-            # No cells – fill with zeros (scalar)
-            for ct in classes:
-                mean_probs[clean_name(ct)].append(0.0)
-            continue
-        
-        X_cond = X[idx]
-        all_probs = []
-        with torch.no_grad():
-            for i in range(0, X_cond.shape[0], BATCH_SIZE):
-                batch = torch.from_numpy(X_cond[i:i+BATCH_SIZE]).cuda()
-                if rescale_func is not None:
-                    batch = rescale_func(batch)
-                logits = target_prediction_model.target_prediction_model(batch)["cell_type"]
-                probs = torch.nn.functional.softmax(logits, dim=1)
-                all_probs.append(probs)
-        g_probs = torch.cat(all_probs, dim=0)
-        g_mean = g_probs.mean(0).cpu().numpy()
-        
-        for idx_ct, ct in enumerate(classes):
-            mean_probs[clean_name(ct)].append(g_mean[idx_ct])
-    
-    return pd.DataFrame(mean_probs)
-
-
-def clean_name(ct):
-    return ct.replace("/", "_").replace("*", "").replace(" ", "_")
-
-
-def get_observed_proportions_aligned(adata, cond_ids, unique_cond_ids, classes):
-    """Return DataFrame of observed proportions for each condition (aligned by cond_id)."""
-    obs_props = {clean_name(ct) + "_observed": [] for ct in classes}
-    cell_types = adata.obs["cell_type"].values
-    
-    for cond_id in unique_cond_ids:
-        idx = np.where(cond_ids == cond_id)[0]
-        if len(idx) == 0:
-            for ct in classes:
-                obs_props[clean_name(ct) + "_observed"].append(0.0)
-            continue
-        conc_cell_types = cell_types[idx]
-        counts = {ct: np.sum(conc_cell_types == ct) for ct in classes}
-        total = len(idx)
-        for ct in classes:
-            obs_props[clean_name(ct) + "_observed"].append(counts[ct] / total if total > 0 else 0.0)
-    return pd.DataFrame(obs_props)
-
 
 @hydra.main(
     config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config",
@@ -81,7 +26,12 @@ def get_observed_proportions_aligned(adata, cond_ids, unique_cond_ids, classes):
 def main(config):
     # lazily import modules
     sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
-    from experiment_utils import get_forward_model
+    from experiment_utils import (
+        get_forward_model,
+        compute_condition_means,
+        clean_name,
+        get_observed_proportions_aligned,
+    )
     from z_norm_modules import get_rescaling
     from data_utils import get_protocol_tranformations
     from inverse_utils import map_df
@@ -97,13 +47,13 @@ def main(config):
 
     # data for cellular response prediction model (full)
     train_adata_phi = phi_model.train_data.adata
-    val_adata_phi = phi_model.validation_data[0].adata
+    val_adata_phi = next(iter(phi_model.validation_data.values())).adata
     adata_phi = sc.concat((train_adata_phi, val_adata_phi), uns_merge="same")
     logger.info(f"Full data shape: {adata_phi.shape}")
 
     # data for classifier model (subset)
     train_adata_g = target_prediction_model.train_data.adata
-    val_adata_g = target_prediction_model.validation_data.adata
+    val_adata_g = next(iter(phi_model.validation_data.values())).adata
     adata_g = sc.concat((train_adata_g, val_adata_g), uns_merge="same")
     logger.info(f"Subset data shape: {adata_g.shape}")
 
