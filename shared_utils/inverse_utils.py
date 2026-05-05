@@ -1,3 +1,5 @@
+from functools import partial
+
 import numpy as np
 import pandas as pd
 import torch
@@ -168,3 +170,113 @@ def replace_silu_with_safe_silu(model: torch.nn.Module) -> None:
         else:
             # Recursively apply to sub-modules
             replace_silu_with_safe_silu(module)
+
+
+# ---- MARKER BASED LOSS FUNCTIONS ----
+def l2_loss(pred, target, feature_mask, sigma=0.25):
+    """
+    pred: (N, M, D)
+    target: (1, D)
+    """
+    pred = pred.mean(-2)
+    err = pred - target
+    err = err[..., feature_mask]
+    return torch.sum(err**2, dim=-1)/(2*(sigma**2))
+
+
+def l1_loss(pred, target, feature_mask):
+    """
+    pred: (N, M, D)
+    target: (1, D)
+    """
+    pred = pred.mean(-2)
+    err = pred - target
+    err = err[..., feature_mask]
+    return torch.sum(torch.abs(err), dim=-1)  # (N,)
+
+
+def cauchy_loss(pred, target, feature_mask, gamma=1.0):
+    """
+    pred: (N, M, D)
+    target: (1, D)
+    """
+    pred = pred.mean(-2)
+    err = pred - target
+    err = err[..., feature_mask]
+    err = torch.sum((err/gamma)**2, dim=-1)
+    return 0.5*(gamma**2)*torch.log(1 + err)
+
+
+def hinge_loss(pred, target, feature_mask):
+    """
+    pred: (N, M, D)
+    target: (1, D)
+    """
+    pred = pred.mean(-2)
+    err = target - pred
+    err = err[..., feature_mask]
+    err = torch.nn.functional.relu(err)
+    return torch.sum(err**2, dim=-1)
+
+
+#--- Factory for Loss Functions ---
+def loss_fn_factory_marker_opt(
+    config,
+    loss_fn,
+    target, # (1, D)
+    non_linearity,
+    cellular_response_model,
+    target_feats_mask,
+    agg_type="pop", # "mean", "pop"
+    loss_kwargs=None,
+):
+    """
+    Returns (loss_fn, noise)
+    """
+    # Fixed noise if required
+    if config.loss_guidance.fix_noise:
+        noise = cellular_response_model.noise_distribution(
+            (config.sampling.N,
+             config.loss_guidance.num_forward_pass_per_sample,
+             cellular_response_model.velocity_field.config.flow_dim)
+        ).squeeze(dim=0).to(cellular_response_model.device)
+    else:
+        noise = None
+
+    # prepare loss fn
+    loss_kwargs = {} if loss_kwargs is None else loss_kwargs
+    loss_fn = partial(loss_fn, **loss_kwargs)
+
+    def _compute_loss(x1):
+        if non_linearity is not None:
+            x1 = non_linearity(x1)
+
+        batch_dict = {}
+        x1_fwd = x1
+        if noise is not None:
+            batch_dict[DataFields.SOURCE_STATE] = noise
+            if config.loss_guidance.fix_noise:
+                x1_fwd = x1.unsqueeze(1).repeat(1, noise.shape[1], 1)
+
+        condition_repr = next(iter(cellular_response_model.train_data.data.perturbation_covariates))
+        batch_dict[DataFields.PERTURBATION_DATA] = {
+            condition_repr: x1_fwd
+        }
+
+        pred = cellular_response_model.predict(
+            batch_dict,
+            no_grad=False,
+            fix_noise=config.loss_guidance.fix_noise,
+            num_time_steps=config.loss_guidance.n_time_steps_forward_model,
+            solver_kwargs=config.loss_guidance.solver_kwargs_forward_model
+        )   # shape (N, M, D)
+
+        # Dispatch
+        if agg_type == "pop":
+            pred = pred.mean(-2)
+        loss = loss_fn(pred, target, target_feats_mask)
+        if agg_type == "cell":
+            loss = loss.mean(-1)
+        return loss
+
+    return _compute_loss, noise
