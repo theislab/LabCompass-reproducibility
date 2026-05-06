@@ -223,7 +223,7 @@ def loss_fn_factory_marker_opt(
     non_linearity,
     cellular_response_model,
     target_feats_mask,
-    agg_type="pop", # "cell", "pop"
+    agg_type, # "cell", "pop"
     loss_kwargs=None,
 ):
     """
@@ -271,6 +271,8 @@ def loss_fn_factory_marker_opt(
         if agg_type == "pop":
             pred = pred.mean(-2)
         loss = loss_fn(pred, target, target_feats_mask)
+        if agg_type == "cell":
+            loss = loss.mean(-1)
         return loss
 
     return _compute_loss, noise
