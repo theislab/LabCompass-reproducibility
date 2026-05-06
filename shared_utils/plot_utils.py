@@ -958,7 +958,7 @@ def plot_all_markers_overlay(gen_markers_list, target_info, target_type,
     target_info: 
         - for point targets: (target_values, None) where target_values is (n_markers,) array
         - for population targets: (None, ref_markers) where ref_markers is (n_cells_ref, n_markers)
-    condition_ids: optional labels for legend
+    condition_ids: optional labels for legend (without mean info; means will be appended)
     loss_name: string to use as figure title (overrides target_type)
     """
     n_markers = len(feat_names)
@@ -972,12 +972,15 @@ def plot_all_markers_overlay(gen_markers_list, target_info, target_type,
     for i, marker in enumerate(feat_names):
         ax = axes[i]
         for j, gen_markers in enumerate(gen_markers_list):
-            label = f'Cond {j+1}' if condition_ids is None else condition_ids[j]
-            # KDE
+            # Compute per‑marker mean and build label including it
+            mean_val = np.mean(gen_markers[:, i])
+            base_label = f'Cond {j+1}' if condition_ids is None else str(condition_ids[j])
+            label = f"{base_label} (μ={mean_val:.2f})"
+            
+            # KDE with the new label
             sns.kdeplot(gen_markers[:, i], ax=ax, label=label, 
                         color=colors[j], alpha=0.5, linewidth=1.5)
-            # Mean line for this condition (same color, dotted, no extra legend label)
-            mean_val = np.mean(gen_markers[:, i])
+            # Optional: keep mean line without extra legend entry
             ax.axvline(mean_val, color=colors[j], linestyle=':', linewidth=1.5, label=None)
         
         # Reference or target line

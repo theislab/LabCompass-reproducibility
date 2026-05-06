@@ -227,7 +227,7 @@ def loss_fn_factory_marker_opt(
     non_linearity,
     cellular_response_model,
     target_feats_mask,
-    agg_type="pop", # "mean", "pop"
+    agg_type="pop", # "cell", "pop"
     loss_kwargs=None,
 ):
     """
