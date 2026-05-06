@@ -178,7 +178,6 @@ def l2_loss(pred, target, feature_mask, sigma=0.25):
     pred: (N, M, D)
     target: (1, D)
     """
-    pred = pred.mean(-2)
     err = pred - target
     err = err[..., feature_mask]
     return torch.sum(err**2, dim=-1)/(2*(sigma**2))
@@ -189,7 +188,6 @@ def l1_loss(pred, target, feature_mask):
     pred: (N, M, D)
     target: (1, D)
     """
-    pred = pred.mean(-2)
     err = pred - target
     err = err[..., feature_mask]
     return torch.sum(torch.abs(err), dim=-1)  # (N,)
@@ -200,7 +198,6 @@ def cauchy_loss(pred, target, feature_mask, gamma=1.0):
     pred: (N, M, D)
     target: (1, D)
     """
-    pred = pred.mean(-2)
     err = pred - target
     err = err[..., feature_mask]
     err = torch.sum((err/gamma)**2, dim=-1)
@@ -212,7 +209,6 @@ def hinge_loss(pred, target, feature_mask):
     pred: (N, M, D)
     target: (1, D)
     """
-    pred = pred.mean(-2)
     err = target - pred
     err = err[..., feature_mask]
     err = torch.nn.functional.relu(err)
@@ -275,8 +271,6 @@ def loss_fn_factory_marker_opt(
         if agg_type == "pop":
             pred = pred.mean(-2)
         loss = loss_fn(pred, target, target_feats_mask)
-        if agg_type == "cell":
-            loss = loss.mean(-1)
         return loss
 
     return _compute_loss, noise
