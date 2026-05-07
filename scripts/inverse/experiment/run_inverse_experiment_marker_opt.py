@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from omegaconf import DictConfig, OmegaConf
 import pandas as pd
+import scanpy as sc
 from sklearn.preprocessing import LabelEncoder
 import torch
 
@@ -61,9 +62,9 @@ def main(config: DictConfig) -> float:
         get_target_dict,
         get_loss_fn,
     )
-    from data_utils import get_protocol_tranformations
+    from data_utils import get_protocol_tranformations, get_target_adata_marker_opt
     from plot_utils import plot_loss_history, plot_heatmap
-    from inverse_utils import loss_fn_factory, constraint_fn_factory, linear_scheduler_with_warmup
+    from inverse_utils import loss_fn_factory, constraint_fn_factory, linear_scheduler_with_warmup, loss_fn_factory_marker_opt, LOSS_FN_REGISTRY
 
     # Create run id 
     run_id = uuid.uuid4().hex[:8]
@@ -84,16 +85,17 @@ def main(config: DictConfig) -> float:
     forward_model.forward_model.velocity_field.eval()
 
     # initialize prior models
-    prior_cfm = sc_exp_design.models.FlowMatchingWithScore.load(
+    prior_cfm = FlowMatchingWithScore.load(
         config.paths.prior_flow_path
     )
-    prior_fm = sc_exp_design.models.FlowMap.load(
+    prior_fm = FlowMap.load(
         config.paths.prior_flow_map_path
     )
     prior_cfm.velocity_field.eval()
     prior_fm.flow_map.eval()
 
     # data for classifier model (subset)
+    train_adata_phi = phi_model.train_data.adata
     train_adata_g = target_prediction_model.train_data.adata
     val_adata_g = target_prediction_model.validation_data.adata
     adata_g = sc.concat((train_adata_g, val_adata_g), uns_merge="same")
@@ -106,7 +108,9 @@ def main(config: DictConfig) -> float:
     classes = ct_le.classes_.tolist()
 
     # get target data and define optimal features
-    agg_fn = AGG_FN_REGISTRY[config.loss.agg_id]
+    cell_state_rep = "X_channel_standardized+X_scatter_standardized"
+    agg_fn = AGG_FN_REGISTRY[config.loss.agg_type]
+    filter_dict = {} if config.loss.filter_dict is None else config.loss.filter_dict
     target_adata, query_adata = get_target_adata_marker_opt(
         train_adata_phi,
         adata_g,
@@ -114,7 +118,7 @@ def main(config: DictConfig) -> float:
         config.loss.target_marker_names,
         config.loss.target_morph_feat_names,
         config.annotation.scatter_columns,
-        config.loss.filter_dict,
+        filter_dict,
         config.loss.target_quantile,
         agg_fn_kwargs=config.loss.agg_fn_kwargs,
     )
@@ -122,10 +126,22 @@ def main(config: DictConfig) -> float:
     xstar = torch.from_numpy(target_adata.obsm[cell_state_rep]).\
         to(torch.float32).to(prior_cfm.device)
 
+    # Initialize non linearity
+    logger.info(f"Initializing non linearity {config.non_linearity.non_linearity_id}...")
+    non_linearity_class = NON_LINEARITIES_REGISTRY.get(config.non_linearity.non_linearity_id, None)
+    if non_linearity_class is None:
+        msg = f"Non linearity {config.non_linearity.non_linearity_id} not valid"
+        raise ValueError(msg)
+    non_linearity = non_linearity_class(**resolve_omegaconf_to_dictionary(config.non_linearity.non_linearity_kwargs))
+    logger.info(f"Non linearity initialized!\n{non_linearity}")
+
     # prepare loss function and noise
+    loss_fn = LOSS_FN_REGISTRY[config.loss.loss_name]
+    loss_kwargs = {} if config.loss.loss_kwargs is None else config.loss.loss_kwargs
+    loss_fn = partial(loss_fn, **loss_kwargs)  
     loss_fn_comp, noise = loss_fn_factory_marker_opt(
         config, loss_fn, xstar, non_linearity, phi_model,
-        target_feats_mask, config.loss.agg_type
+        target_feats_mask, config.loss.obj_type
     )
 
     # prepare constraints and scheduler
@@ -139,7 +155,7 @@ def main(config: DictConfig) -> float:
 
     # inizialize dual flow
     logger.info(f"Initializing implicit guided flow...")
-    guided_flow = LossGuidedFlow(prior_flow, prior_flow_map=prior_fm)
+    guided_flow = LossGuidedFlow(prior_cfm, prior_flow_map=prior_fm)
     torch.cuda.empty_cache()
     logger.info(f"Implicit dual guided flow initialized {guided_flow}")
 
@@ -167,10 +183,10 @@ def main(config: DictConfig) -> float:
     torch.cuda.empty_cache()
     trajectory, loss_history, lambda_history = guided_flow.sample_posterior(
         config.sampling.N,
-        compute_loss,
-        reg_fn_lists=compute_constraints,
+        loss_fn_comp,
         lambda_scheduler=lambda_scheduler,
-        c_scheduler=c_scheduler,
+        reg_fn_lists=compute_constraints if config.loss.use_penalization else [],
+        c_scheduler=c_scheduler if config.loss.use_penalization else lambda t: torch.zeros_like(t),
         num_time_steps=config.sampling.num_time_steps,
         solver_kwargs=resolve_omegaconf_to_dictionary(config.sampling.solver_kwargs),
     )

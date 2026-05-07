@@ -215,6 +215,12 @@ def hinge_loss(pred, target, feature_mask):
     return torch.sum(err**2, dim=-1)
 
 
+LOSS_FN_REGISTRY = {
+    "l2": l2_loss,
+    "l1": l1_loss,
+    "hinge": hinge_loss,
+    "cauchy": cauchy_loss,
+}
 #--- Factory for Loss Functions ---
 def loss_fn_factory_marker_opt(
     config,
