@@ -85,6 +85,7 @@ def main(config: DictConfig) -> float:
     forward_model.forward_model.velocity_field.eval()
 
     # initialize prior models
+    logger.info("Loading Prior Models...")
     prior_cfm = FlowMatchingWithScore.load(
         config.paths.prior_flow_path
     )
@@ -93,8 +94,10 @@ def main(config: DictConfig) -> float:
     )
     prior_cfm.velocity_field.eval()
     prior_fm.flow_map.eval()
+    logger.info(f"Prior Models Loaded: {prior_cfm=}, {prior_fm=}")
 
     # data for classifier model (subset)
+    logger.info(f"Retrieving annotated data")
     train_adata_phi = phi_model.train_data.adata
     train_adata_g = target_prediction_model.train_data.adata
     val_adata_g = target_prediction_model.validation_data.adata
@@ -102,15 +105,20 @@ def main(config: DictConfig) -> float:
     logger.info(f"Subset data shape: {adata_g.shape}")
 
     # Prepare label encoder
+    logger.info(f"Fitting Label Encoder for Target Response")
     ct_le = LabelEncoder()
     ct_values = target_prediction_model.train_data.adata.obs["cell_type"].values
     ct_le.fit(ct_values)
     classes = ct_le.classes_.tolist()
+    logger.info(f"Label Encoder fitted: {len(classes)} classes found.")
 
     # get target data and define optimal features
     cell_state_rep = "X_channel_standardized+X_scatter_standardized"
     agg_fn = AGG_FN_REGISTRY[config.loss.agg_type]
     filter_dict = {} if config.loss.filter_dict is None else config.loss.filter_dict
+    logger.info(f"Retrieving Target expression from group.")
+    logger.info(f"Using aggregation {config.loss.agg_type}.")
+    logger.info(f"Using filter {filter_dict}.")
     target_adata, query_adata = get_target_adata_marker_opt(
         train_adata_phi,
         adata_g,
@@ -122,6 +130,7 @@ def main(config: DictConfig) -> float:
         config.loss.target_quantile,
         agg_fn_kwargs=config.loss.agg_fn_kwargs,
     )
+    logger.info(f"Target group retrieved. Query data contains {query_adata.shape[0]} cells.")
     target_feats_mask = query_adata.uns["target_feats_mask"]
     xstar = torch.from_numpy(target_adata.obsm[cell_state_rep]).\
         to(torch.float32).to(prior_cfm.device)
@@ -137,15 +146,26 @@ def main(config: DictConfig) -> float:
 
     # prepare loss function and noise
     loss_fn = LOSS_FN_REGISTRY[config.loss.loss_name]
-    loss_kwargs = {} if config.loss.loss_kwargs is None else config.loss.loss_kwargs
+    loss_kwargs = {"axis": 0, "keepdims": True} if config.loss.loss_kwargs is None else config.loss.loss_kwargs
     loss_fn = partial(loss_fn, **loss_kwargs)  
+    logger.info(f"Preparing Loss function {config.loss.loss_name} with arguments {loss_kwargs=}.")
+    logger.info(f"Objective type {config.loss.obj_type}.")
     loss_fn_comp, noise = loss_fn_factory_marker_opt(
         config, loss_fn, xstar, non_linearity, phi_model,
         target_feats_mask, config.loss.obj_type
     )
+    logger.info(f"Loss Function Ready.")
 
     # prepare constraints and scheduler
+    logger.info(f"Retrieving constraints.")
+    logger.info(f"Upper Bounds: {config.constraints.ubound_dict}")
+    logger.info(f"Lower Bounds: {config.constraints.lbound_dict}")
     compute_constraints = constraint_fn_factory(config, forward_model.forward_model.device, get_protocol_tranformations)
+
+    logger.info(f"Preparing penalization stength scheduer.")
+    logger.info(f"Warmup: {config.constraints.c_scheduler_kwargs.t_warmup}")
+    logger.info(f"Vmin: {config.constraints.c_scheduler_kwargs.vmin}")
+    logger.info(f"Vmax: {config.constraints.c_scheduler_kwargs.vmax}")
     c_scheduler = partial(
         linear_scheduler_with_warmup,
         t_warmup=config.constraints.c_scheduler_kwargs.t_warmup,
@@ -175,6 +195,7 @@ def main(config: DictConfig) -> float:
     # sampling from guided flow
     logger.info(
         "Sampling from guided flow with configurations:\n"
+        f"Penalization={config.loss.use_penalization}\n"
         f"N={config.sampling.N}\n"
         f"num_time_steps={config.sampling.num_time_steps}\n"
         f"solver_kwargs={config.sampling.solver_kwargs}\n"
@@ -256,7 +277,8 @@ def main(config: DictConfig) -> float:
         "trajectory": trajectory if isinstance(trajectory, np.ndarray) else trajectory.detach().cpu().numpy(),
         "loss_history": loss_history if isinstance(loss_history, np.ndarray) else loss_history.detach().cpu().numpy(),
         "lambda_history": lambda_history if isinstance(lambda_history, np.ndarray) else lambda_history.detach().cpu().numpy(),
-        "noise": noise if isinstance(noise, np.ndarray) else noise.detach().cpu().numpy()
+        "noise": noise if isinstance(noise, np.ndarray) else noise.detach().cpu().numpy(),
+        "xstar": xstar is isinstance(xstar, np.ndarray) else xstar.detach().cpu().numpy()
     }
     np.savez(inverse_results_path, **inverse_res_dict)
     logger.info(f"Inverse model results saved!")
