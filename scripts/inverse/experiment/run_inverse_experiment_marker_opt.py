@@ -234,11 +234,12 @@ def main(config: DictConfig) -> float:
     )
     torch.cuda.empty_cache()
 
-    # Define paths directories
-    ct_string = config.sampling.target_cell_type
-    ct_safe_string = ct_string.replace("/", ":") # cell type dir
-    ct_dir = os.path.join(config.paths.dump_dir, ct_safe_string) # cell type dir
-    run_dir = os.path.join(ct_dir, run_id) # run dir
+    # create string identifier for target markers
+    target_feats = config.loss.target_marker_names + config.loss.target_morph_feat_names
+    target_feats_safe = [feat_name.replace("/", ":") for feat_name in target_feats]
+    target_feats_string = "-".join(target_feats_safe)
+    marker_dir = os.path.join(config.paths.dump_dir, target_feats_string) # cell type dir
+    run_dir = os.path.join(marker_dir, run_id) # run dir
     plots_dir = os.path.join(run_dir, "plots") # plots dir
     config_path = os.path.join(run_dir, "config.yaml")
     inverse_results_path = os.path.join(run_dir, "inverse_results.npz")
@@ -248,7 +249,7 @@ def main(config: DictConfig) -> float:
     logger.info(
         f"Creating dump directories for: \n"
         f"\t Note: Cell type indentifier changed from \"{ct_string}\" to {ct_safe_string}.\n"
-        f"\t Dump directory for cell type will be created at {ct_dir}.\n"
+        f"\t Dump directory for cell type will be created at {marker_dir}.\n"
         f"\t Dump directory for run will be created at {run_dir}.\n"
         f"\t Dump directory for run plots will be created at {plots_dir}.\n"
         f"\t Configuration will be dumped at {config_path}.\n"
@@ -259,7 +260,7 @@ def main(config: DictConfig) -> float:
 
     # Create directories
     create_dir(config.paths.dump_dir, logger=logger) # base dir
-    create_dir(ct_dir, logger=logger) # cell type dir
+    create_dir(marker_dir, logger=logger) # cell type dir
     create_dir(run_dir, logger=logger) # run dir
     create_dir(plots_dir, logger=logger) # plots dir
     logger.info("All the directories have been successfully created!")
