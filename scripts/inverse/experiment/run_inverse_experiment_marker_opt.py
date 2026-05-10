@@ -146,7 +146,7 @@ def main(config: DictConfig) -> float:
 
     # prepare loss function and noise
     loss_fn = LOSS_FN_REGISTRY[config.loss.loss_name]
-    loss_kwargs = {"axis": 0, "keepdims": True} if config.loss.loss_kwargs is None else config.loss.loss_kwargs
+    loss_kwargs = {} if config.loss.loss_kwargs is None else config.loss.loss_kwargs
     loss_fn = partial(loss_fn, **loss_kwargs)  
     logger.info(f"Preparing Loss function {config.loss.loss_name} with arguments {loss_kwargs=}.")
     logger.info(f"Objective type {config.loss.obj_type}.")
@@ -248,7 +248,7 @@ def main(config: DictConfig) -> float:
     loss_history_plot_path = os.path.join(plots_dir, "loss_history.svg")
     logger.info(
         f"Creating dump directories for: \n"
-        f"\t Note: Cell type indentifier changed from \"{ct_string}\" to {ct_safe_string}.\n"
+        f"\t Note: Marker Directory Identifier: \"{target_feats_string}\"\n"
         f"\t Dump directory for cell type will be created at {marker_dir}.\n"
         f"\t Dump directory for run will be created at {run_dir}.\n"
         f"\t Dump directory for run plots will be created at {plots_dir}.\n"
@@ -279,7 +279,7 @@ def main(config: DictConfig) -> float:
         "loss_history": loss_history if isinstance(loss_history, np.ndarray) else loss_history.detach().cpu().numpy(),
         "lambda_history": lambda_history if isinstance(lambda_history, np.ndarray) else lambda_history.detach().cpu().numpy(),
         "noise": noise if isinstance(noise, np.ndarray) else noise.detach().cpu().numpy(),
-        "xstar": xstar is isinstance(xstar, np.ndarray) else xstar.detach().cpu().numpy()
+        "xstar": xstar if isinstance(xstar, np.ndarray) else xstar.detach().cpu().numpy()
     }
     np.savez(inverse_results_path, **inverse_res_dict)
     logger.info(f"Inverse model results saved!")
@@ -366,7 +366,7 @@ def main(config: DictConfig) -> float:
     samples_df["fwd_results_path"] = fwd_results_path
     
     # handle index
-    samples_df.index = samples_df.index.map(lambda e: f"{ct_string}:{run_id}:{e}")
+    samples_df.index = samples_df.index.map(lambda e: f"{target_feats_string}:{run_id}:{e}")
     samples_df.index.name = "sample_id"
     logger.info(
         f"Post-processed data frame ready:\n"
@@ -380,7 +380,7 @@ def main(config: DictConfig) -> float:
 
     # plot loss history
     logger.info("Plotting loss history...")
-    loss_history_fig = plot_loss_history(ct_string, loss_history.detach().cpu().numpy())
+    loss_history_fig = plot_loss_history(target_feats_string, loss_history.detach().cpu().numpy())
     loss_history_fig.savefig(
         loss_history_plot_path,
         dpi=300,
@@ -393,7 +393,7 @@ def main(config: DictConfig) -> float:
     plot_heatmap(
         plots_dir,
         classes,
-        ct_string,
+        target_feats_string,
         {k: v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else v for k, v in fwd_query_res_dict.items()},
         {k: v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else v for k, v in inverse_res_dict.items()},
         config_container["annotation"],
@@ -410,7 +410,7 @@ def main(config: DictConfig) -> float:
     plot_heatmap(
         plots_dir,
         classes,
-        ct_string,
+        target_feats_string,
         {k: v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else v for k, v in fwd_query_res_dict.items()},
         {k: v.detach().cpu().numpy() if isinstance(v, torch.Tensor) else v for k, v in inverse_res_dict.items()},
         config_container["annotation"],
