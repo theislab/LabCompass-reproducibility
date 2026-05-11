@@ -31,6 +31,7 @@ ENV_NAME="sc_exp_design"
 PATHS="bloodplus_fm"
 ENV_MANAGER="micromamba"
 N_OPT_SAMPLES=10
+TARGET_QUANTILE=99.9
 
 # ----------------------------------------------------------------------
 # 4. Parse command line arguments
@@ -45,6 +46,7 @@ while [[ $# -gt 0 ]]; do
     -p|--paths)             PATHS="$2"; shift 2 ;;
     -em|--env-manager)      ENV_MANAGER="$2"; shift 2 ;;
     -n|--n-opt-samples)     N_OPT_SAMPLES="$2"; shift 2 ;;
+    -tq|--target-quantile)  TARGET_QUANTILE="$2"; shift 2 ;;
     *) echo "❌ Unknown parameter: $1"; exit 1 ;;
   esac
 done
@@ -73,7 +75,8 @@ fi
 # ----------------------------------------------------------------------
 # 6. Define dump directory and create it
 # ----------------------------------------------------------------------
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_marker_opt/${OPT}-${SCHEDULER}"
+# dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_marker_opt/${OPT}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_marker_opt_0999threshold/${OPT}-${SCHEDULER}"
 mkdir -p "$dump_dir"
 
 # ----------------------------------------------------------------------
@@ -97,6 +100,7 @@ echo "Target cell type   : $TARGET_CELL_TYPE"
 echo "Target marker      : $TARGET_MARKER"
 echo "Scheduler          : $SCHEDULER -> $hparam_search"
 echo "Optimization       : $OPT"
+echo "Target Quantile    : $TARGET_QUANTILE"
 echo "Constraints        : $constraints"
 echo "Num Samples        : $N_OPT_SAMPLES"
 echo "Dump directory     : $dump_dir"
@@ -116,6 +120,7 @@ $CMD python scripts/inverse/experiment/run_inverse_experiment_marker_opt.py \
     +marker_opt=sweep_marker_opt \
     annotation=bloodplus \
     loss.target_marker_names="[${TARGET_MARKER}]" \
+    loss.target_quantile="${TARGET_QUANTILE}" \
     constraints="${constraints}" \
     paths="${PATHS}" \
     paths.dump_dir="${dump_dir}" \

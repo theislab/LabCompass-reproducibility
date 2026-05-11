@@ -14,7 +14,8 @@ SBATCH_SCRIPT="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambri
 
 # Experimental grid
 TARGET_CELL_TYPE="late_MgkPro"
-TARGET_MARKERS=("CD41a" "CD56" "EPCR")
+# TARGET_MARKERS=("CD41a" "CD56" "EPCR")
+TARGET_MARKERS=("CD56" "EPCR")
 SCHEDULERS=("constant" "reciprocal")
 OPTIMIZATION_TYPE=("unconstrained" "penalized_oxy_days" "penalized_all_axes")
 
