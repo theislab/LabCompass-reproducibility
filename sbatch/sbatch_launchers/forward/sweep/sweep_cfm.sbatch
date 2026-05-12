@@ -87,7 +87,7 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 3 ]]; then
 
 elif [[ $USE_NEW_MEASUREMENTS -eq 4 ]]; then
     paths="${paths}_bloodplus_loop2"
-    wandb_name="${wandb_name}_bloodplus_loop2"
+    wandb_name="bloodplus_loop2"
     annotation="bloodplus"
     transforms="bloodplus"
 fi
