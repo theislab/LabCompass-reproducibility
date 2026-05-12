@@ -14,7 +14,7 @@ SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
 PROTOCOL_AXIS="protocol_id"
 UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
-USE_NEW_MEASUREMENTS=3
+USE_NEW_MEASUREMENTS=4
 HPARAMSEARCH="in_distribution_big"
 OOD_EXPERIMENT=0
 
@@ -73,7 +73,6 @@ transforms="default"
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
-  
 elif [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
     paths="${paths}_bloodplus"
     wandb_name="${wandb_name}_bloodplus"
@@ -86,6 +85,11 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 3 ]]; then
     annotation="bloodplus"
     transforms="bloodplus"
 
+elif [[ $USE_NEW_MEASUREMENTS -eq 4 ]]; then
+    paths="${paths}_bloodplus_loop2"
+    wandb_name="${wandb_name}_bloodplus_loop2"
+    annotation="bloodplus"
+    transforms="bloodplus"
 fi
 
 split_mode="in-distribution"
