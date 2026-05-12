@@ -56,7 +56,7 @@ done
 
 echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE, hparams: ${HPARAMSEARCH}, use_new_measurements: ${USE_NEW_MEASUREMENTS}"
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="sc_exp_design"
 echo "Using environment: $ENV_NAME"
 
 WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
@@ -97,7 +97,8 @@ if [[ $OOD_EXPERIMENT -eq 1 ]]; then
   split_mode="ood"
 fi
 
-conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
+# conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
+micromamba run -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
     --multirun \
     +launcher=slurm \
     +hparams_search="${HPARAMSEARCH}" \
