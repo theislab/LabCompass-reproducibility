@@ -14,7 +14,7 @@ SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
 PROTOCOL_AXIS="protocol_id"
 UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
-USE_NEW_MEASUREMENTS=4
+USE_NEW_MEASUREMENTS=5
 HPARAMSEARCH="in_distribution_big"
 OOD_EXPERIMENT=0
 
@@ -90,7 +90,6 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 4 ]]; then
     wandb_name="bloodplus_loop2"
     annotation="bloodplus"
     transforms="bloodplus"
-fi
 
 
 elif [[ $USE_NEW_MEASUREMENTS -eq 5 ]]; then
