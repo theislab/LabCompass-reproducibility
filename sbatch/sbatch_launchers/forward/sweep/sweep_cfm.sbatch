@@ -92,6 +92,15 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 4 ]]; then
     transforms="bloodplus"
 fi
 
+
+elif [[ $USE_NEW_MEASUREMENTS -eq 5 ]]; then
+    paths="${paths}_bloodplus_loop3"
+    wandb_name="bloodplus_loop3"
+    annotation="bloodplus_loop3"
+    transforms="bloodplus"
+fi
+
+
 split_mode="in-distribution"
 if [[ $OOD_EXPERIMENT -eq 1 ]]; then
   split_mode="ood"
