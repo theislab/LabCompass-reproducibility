@@ -70,6 +70,9 @@ wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMS
 paths="hpc_full"
 annotation="default"
 transforms="default"
+
+vf="default_${CONDITION_MODE}"
+
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
@@ -97,6 +100,7 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 5 ]]; then
     wandb_name="bloodplus_loop3"
     annotation="bloodplus_loop3"
     transforms="bloodplus"
+    vf=default_protocol_concat_loop3
 fi
 
 
@@ -113,7 +117,7 @@ micromamba run -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_ma
     annotation=${annotation} \
     transforms=${transforms} \
     paths=${paths} \
-    vf="default_${CONDITION_MODE}" \
+    vf="${vf}" \
     data="${CONDITION_MODE}" \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
