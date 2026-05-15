@@ -36,7 +36,7 @@ done
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="sc_exp_design_"
 echo "Using environment: $ENV_NAME"
 
 WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
@@ -83,10 +83,12 @@ echo "Wandb project ${wandb_name}"
 echo "paths ${paths}"
 
 
-conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
+# conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
+micromamba run -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
     --multirun \
     +launcher=slurm \
     +hparams_search=small \
+    data=${data} \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
     paths="${paths}" \
