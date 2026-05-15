@@ -1,0 +1,29 @@
+# @package _global_
+
+defaults:
+  - override /hydra/sweeper/sampler: grid 
+  - override /hydra/sweeper: optuna 
+  
+optimized_metric: all_conditions_wasserstein_distance
+
+hydra:
+
+  sweeper:
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+
+    direction: minimize
+
+    # n_jobs: 16
+    n_jobs: 50
+
+    # n_trials: 16
+    n_trials: 225
+
+    sampler: 
+      _target_: optuna.samplers.GridSampler
+
+    # define hyperparameter search space
+    params:
+      loss.agg_type: choice("min")
+      loss.obj_type: choice("cell", "pop")
+      loss.loss_name: choice("l2", "l1", "hinge", "cauchy")

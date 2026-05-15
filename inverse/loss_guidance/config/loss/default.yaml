@@ -1,0 +1,12 @@
+use_penalization: False
+target_marker_names: ["CD41a"]
+target_morph_feat_names: []
+filter_dict:
+target_quantile: 99.5
+loss_name: "l2"
+loss_kwargs: 
+agg_type: "min"
+obj_type: "pop"
+agg_fn_kwargs:
+  axis: 0
+  keepdims: True

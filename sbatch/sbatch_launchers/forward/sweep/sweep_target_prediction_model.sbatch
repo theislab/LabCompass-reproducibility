@@ -10,12 +10,33 @@
 #SBATCH --time=1-00:00:00
 
 
-SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
-USE_NEW_MEASUREMENTS=${2:-2} # 0: no new measurements, 1: use new measurements, 2: use bloodplus
+SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
+USE_NEW_MEASUREMENTS=4
+USE_NEW_CAT=0
+
+
+# Parse Flags
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -sr|--sample_rep)
+      SAMPLE_REP="$2"
+      shift 2
+      ;;
+    -nm|--new-measurements)
+      USE_NEW_MEASUREMENTS="$2"
+      shift 2
+      ;;
+    -nc|--new-cat)
+      USE_NEW_CAT="$2"
+      shift 2
+      ;;
+  esac
+done
+
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="sc_exp_design"
 echo "Using environment: $ENV_NAME"
 
 WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
@@ -30,25 +51,48 @@ paths="hpc_subset"
 transforms="default"
 annotation="default"
 model="cell_type_default.yaml"
+data="cell_type_default"
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
-fi
-if [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
+elif [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
     paths="${paths}_bloodplus"
     wandb_name="${wandb_name}_bloodplus"
     transforms="bloodplus"
     model="cell_type_bloodplus"
+elif [[ $USE_NEW_MEASUREMENTS -eq 3 ]]; then
+    paths="${paths}_bloodplus_old_measurements"
+    wandb_name="${wandb_name}_bloodplus_old"
+    transforms="bloodplus"
+    model="cell_type_bloodplus"
+
+elif [[ $USE_NEW_MEASUREMENTS -eq 4 ]]; then
+    paths="${paths}_bloodplus_loop2"
+    wandb_name="bloodplus_loop2"
+    annotation="bloodplus"
+    transforms="bloodplus"
+    data="cell_type_leiden"
+    wandb_name="bloodplus_loop2_classifier"
+    model="cell_type_bloodplus_leiden"
+
+    if [[ $USE_NEW_CAT -eq 1 ]]; then
+        data="cell_type_leiden_new_cat"
+        wandb_name="bloodplus_loop2_classifier_new_cat"
+        model="cell_type_bloodplus_leiden_new_cat"
+    fi
+
 fi
 
 echo "Wandb project ${wandb_name}"
 echo "paths ${paths}"
 
 
-conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
+# conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
+micromamba run -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
     --multirun \
-    +launcher=slurm_preentible \
-    +hparams_search=default \
+    +launcher=slurm \
+    +hparams_search=small \
+    data=${data} \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
     paths="${paths}" \

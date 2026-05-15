@@ -1,9 +1,10 @@
 #!/bin/bash
 
-ENV_NAME="sc_exp_design"
-PATHS="bloodplus_fm"
+ENV_NAME="sc_exp_design_12"
+PATHS="bloodplus_fm_old_measurements"
 USE_FM=0
-ENV_MANAGER="micromamba"
+ENV_MANAGER="conda"
+# ENV_MANAGER="micromamba"
 # PATHS="new_measurements"
 
 # Parse Flags
@@ -42,9 +43,9 @@ TARGET_CELL_TYPES=(
     # "EosBasMast2"
     # "EosBasMast3"
     # "EryPro"
-    "HSCs"
+    # "HSCs"
     # "ProB"
-    # "late_MgkPro"
+    "late_MgkPro"
     # 'GMP-Neutro'
     # 'preProB'
     # 'pre_cDC1'
