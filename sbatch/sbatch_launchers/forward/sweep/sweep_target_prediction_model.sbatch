@@ -36,7 +36,7 @@ done
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
-ENV_NAME="sc_exp_design_"
+ENV_NAME="sc_exp_design"
 echo "Using environment: $ENV_NAME"
 
 WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
@@ -72,9 +72,13 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 4 ]]; then
     annotation="bloodplus"
     transforms="bloodplus"
     data="cell_type_leiden"
+    wandb_name="bloodplus_loop2_classifier"
+    model="cell_type_bloodplus_leiden"
 
     if [[ $USE_NEW_CAT -eq 1 ]]; then
         data="cell_type_leiden_new_cat"
+        wandb_name="bloodplus_loop2_classifier_new_cat"
+        model="cell_type_bloodplus_leiden_new_cat"
     fi
 
 fi
