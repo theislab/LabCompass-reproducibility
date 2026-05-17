@@ -41,12 +41,12 @@ TARGET_CELL_TYPES=(
     # "EosBasMast1"
     # "EosBasMast2"
     # "EosBasMast3"
-    # "EryPro"
+    "EryPro"
     "HSCs"
-    # "ProB"
-    # "late_MgkPro"
+    "ProB"
+    "late_MgkPro"
     # 'GMP-Neutro'
-    # 'preProB'
+    'preProB'
     # 'pre_cDC1'
 )
 
