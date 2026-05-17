@@ -98,7 +98,8 @@ esac
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_best/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_old_measurements_official/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_old_measurements_official/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_loop2/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 
 # prepare command
 if [[ "${ENV_MANAGER}" == "conda" ]]; then
