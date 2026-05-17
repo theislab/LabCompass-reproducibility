@@ -2,7 +2,8 @@
 
 ENV_NAME="sc_exp_design"
 PATHS="bloodplus_fm"
-USE_FM=0 
+USE_FM=0
+ENV_MANAGER="micromamba"
 # PATHS="new_measurements"
 
 # Parse Flags
@@ -26,10 +27,8 @@ if [[ $USE_FM -eq 1 ]]; then
     PATHS="${PATHS}_fm"
 fi
 
-
 echo "Conda environment set to ${ENV_NAME}"
 echo "Paths set to ${PATHS}"
-
 
 BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch"
 
@@ -52,7 +51,7 @@ TARGET_CELL_TYPES=(
 )
 
 SCHEDULERS=(
-    # "constant"
+    "constant"
     # "exp-decay"
     "reciprocal"
     # "lin-decay"

@@ -5,7 +5,7 @@ BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_camb
 SWEEP_FLAG=0
 VALIDATE_FLAG=0
 CLASSIFIER_FLAG=0
-NEW_MEASUREMENTS_FLAG=1
+NEW_MEASUREMENTS_FLAG=4
 RERUN_EXPERIMENTS_FLAG=0
 
 # Check for debugging flag

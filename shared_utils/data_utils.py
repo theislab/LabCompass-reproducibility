@@ -596,3 +596,226 @@ def ensure_type_safety(adata):
         if adata.obs[col].dtype == 'object':
             adata.obs[col] = adata.obs[col].astype(str)
     return adata
+
+
+def transform_validation_data(
+    scatter_columns,
+    train_adata_phi,
+    target_adata,
+    logger=None,
+):
+    if logger is not None:
+        logger.info("="*80)
+        logger.info("Standardizing Scatter Features.")
+    X_scatter = target_adata.obs[scatter_columns].values
+    target_adata = standardize_array_and_write_to_adata(
+        target_adata, X_scatter, "X_scatter", params=train_adata_phi.uns["X_scatter_params"]
+    )
+    if logger is not None:
+        logger.info(f"{target_adata=}")
+    if logger is not None:
+        logger.info("="*80)
+        logger.info("Standardizing Channel Features.")
+    X_channel = target_adata.X
+    target_adata = standardize_array_and_write_to_adata(
+        target_adata,
+        X_channel,
+        "X_channel",
+        params=train_adata_phi.uns["X_channel_params"])
+    if logger is not None:
+        logger.info(f"{target_adata=}")
+
+    if logger is not None:    
+        logger.info("Creating joint representations.")
+    morphology_obsm_keys = ["X_scatter", "X_scatter_standardized"]
+    marker_expression_obsm_keys = ["X_channel", "X_channel_standardized"]
+    if logger is not None:    
+        logger.info("="*80)
+    for morph_key in morphology_obsm_keys:
+        for mark_key in marker_expression_obsm_keys:
+                target_adata.obsm[f"{mark_key}+{morph_key}"] = np.concatenate(
+                    (target_adata.obsm[mark_key], target_adata.obsm[morph_key]), axis=-1
+                )
+    if logger is not None:    
+        logger.info(f"{target_adata=}")
+    return target_adata
+
+
+def get_feature_mask(
+    adata_query,
+    target_marker_names,
+    target_morph_feat_names=None,
+    scatter_columns=None,
+):
+    target_morph_feat_names = [] if target_morph_feat_names is None else target_morph_feat_names
+    scatter_columns = [] if scatter_columns is None else scatter_columns
+    target_feat_names = target_marker_names + target_morph_feat_names
+    all_feat_names = adata_query.var_names.to_list() + scatter_columns
+    return [name in target_feat_names for name in all_feat_names]
+
+
+def get_target_marker_features(
+    adata_query,
+    target_marker_names,
+    agg_fn,
+    agg_fn_kwargs={"axis": 0, "keepdims": True}
+):
+    X_target = np.zeros(adata_query.shape)
+    target_values = adata_query[:,  target_marker_names].X
+
+    for idx, marker_name in enumerate(target_marker_names):
+        marker_val = target_values[:, idx]
+        marker_idx = adata_query.var_names.to_list().index(marker_name)
+        X_target[:, marker_idx] = marker_val
+    return agg_fn(X_target, **agg_fn_kwargs)
+
+
+def get_target_scatter_features(
+    adata_query,
+    scatter_columns,
+    target_scatter_names,
+    agg_fn,
+    agg_fn_kwargs={"axis": 0, "keepdims": True}
+):
+    target_values = adata_query.obs[scatter_columns].values
+    X_target = np.zeros_like(target_values)
+
+    for idx, scatter_name in enumerate(target_scatter_names):
+        scatter_val = target_values[:, idx]
+        scatter_idx = scatter_columns.index(scatter_name)
+        X_target[:, scatter_idx] = scatter_val
+    return agg_fn(X_target, **agg_fn_kwargs)
+
+
+def get_target_group(
+    adata_query,
+    filter_dict,
+    target_feat_names,
+    target_quantile,
+):
+    # prepare mask for columns
+    # and filter adata
+    mask = np.full(adata_query.shape[0], True)
+    for col, val in filter_dict.items():
+        col_mask = adata_query.obs[col] == val
+        mask = mask & col_mask
+    adata_group = adata_query[mask].copy()
+
+    # filter by target quantile on target features
+    X_target = adata_group[:, target_feat_names].X
+    if hasattr(X_target, 'toarray'):
+        X_target = X_target.toarray()
+
+    # Keep cells with all markers above percentile
+    thresholds = np.percentile(X_target, target_quantile, axis=0)
+    keep_mask = np.all(X_target >= thresholds, axis=1)
+    return adata_group[keep_mask].copy()
+
+
+def aggregate_target_adata_marker_opt(
+    adata_query,
+    target_marker_names,
+    target_morph_feat_names,
+    scatter_columns,
+    agg_fn,
+    agg_fn_kwargs=None
+):
+    # prepare keyword arguments for aggregation
+    agg_fn_kwargs = {"axis": 0, "keepdims": True} if agg_fn_kwargs is None else agg_fn_kwargs
+
+    # prepare target channel features 
+    X_channel_target = get_target_marker_features(
+        adata_query,
+        target_marker_names,
+        agg_fn,
+        agg_fn_kwargs=agg_fn_kwargs
+    )
+
+    # prepare target marker features 
+    X_scatter_target = get_target_scatter_features(
+        adata_query,
+        scatter_columns,
+        target_morph_feat_names,
+        agg_fn,
+        agg_fn_kwargs=agg_fn_kwargs
+    )
+
+    # Build obs dictionary correctly
+    n_obs = X_scatter_target.shape[0]
+    obs_dict = {}
+    for idx, feat in enumerate(scatter_columns):
+        values = X_scatter_target[..., idx]
+        obs_dict[feat] = values
+
+    # Create AnnData
+    return sc.AnnData(
+        X=X_channel_target,
+        obs=obs_dict,
+        var=pd.DataFrame(index=adata_query.var_names)  # ensure correct length
+    )
+
+
+def get_target_adata_marker_opt(
+    adata_ref,
+    adata_query,
+    agg_fn,
+    target_marker_names,
+    target_morph_feat_names,
+    scatter_columns,
+    filter_dict,
+    target_quantile,
+    agg_fn_kwargs=None,
+    logger=None,
+):
+
+    # prepare target feature identifiers
+    target_feat_names = target_marker_names + target_morph_feat_names
+    target_feats_mask = get_feature_mask(
+        adata_query,
+        target_marker_names,
+        scatter_columns=scatter_columns
+    )
+
+    # get target group
+    adata_query = get_target_group(
+        adata_query,
+        filter_dict,
+        target_feat_names,
+        target_quantile,
+    )
+    adata_query.uns["target_feats_mask"] = target_feats_mask
+
+    # aggregate target group
+    msg = f"Number query cells before aggregation: {len(adata_query)}"
+    if logger is not None:
+        logger.info(msg)
+    else:
+        print(msg)
+    adata_query_agg = aggregate_target_adata_marker_opt(
+        adata_query,
+        target_marker_names,
+        target_morph_feat_names,
+        scatter_columns,
+        agg_fn,
+        agg_fn_kwargs=agg_fn_kwargs
+    )
+    msg = f"Number query cells after aggregation: {len(adata_query_agg)}"
+    if logger is not None:
+        logger.info(msg)
+    else:
+        print(msg)
+
+    # apply share transformations with reference data
+    adata_query_agg = transform_validation_data(
+        scatter_columns,
+        adata_ref,
+        adata_query_agg,
+        logger=logger,
+    )
+    adata_query = transform_validation_data(
+        scatter_columns,
+        adata_ref,
+        adata_query,
+        logger=logger,
+    )
+    return adata_query_agg, adata_query

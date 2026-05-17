@@ -14,7 +14,7 @@ SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
 PROTOCOL_AXIS="protocol_id"
 UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
-USE_NEW_MEASUREMENTS=2
+USE_NEW_MEASUREMENTS=5
 HPARAMSEARCH="in_distribution_big"
 OOD_EXPERIMENT=0
 
@@ -70,30 +70,54 @@ wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMS
 paths="hpc_full"
 annotation="default"
 transforms="default"
+
+vf="default_${CONDITION_MODE}"
+
 if [[ $USE_NEW_MEASUREMENTS -eq 1 ]]; then
     paths="${paths}_new_measurements"
     wandb_name="${wandb_name}_new_measurements"
-  
 elif [[ $USE_NEW_MEASUREMENTS -eq 2 ]]; then
     paths="${paths}_bloodplus"
     wandb_name="${wandb_name}_bloodplus"
     annotation="bloodplus"
     transforms="bloodplus"
+
+elif [[ $USE_NEW_MEASUREMENTS -eq 3 ]]; then
+    paths="${paths}_bloodplus_old_measurements"
+    wandb_name="${wandb_name}_bloodplus_old"
+    annotation="bloodplus"
+    transforms="bloodplus"
+
+elif [[ $USE_NEW_MEASUREMENTS -eq 4 ]]; then
+    paths="${paths}_bloodplus_loop2"
+    wandb_name="bloodplus_loop2"
+    annotation="bloodplus"
+    transforms="bloodplus"
+
+
+elif [[ $USE_NEW_MEASUREMENTS -eq 5 ]]; then
+    paths="${paths}_bloodplus_loop3"
+    wandb_name="bloodplus_loop3"
+    annotation="bloodplus_loop3"
+    transforms="bloodplus"
+    vf=default_protocol_concat_loop3
 fi
+
 
 split_mode="in-distribution"
 if [[ $OOD_EXPERIMENT -eq 1 ]]; then
   split_mode="ood"
 fi
 
-conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
+# conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
+micromamba run -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
     --multirun \
     +launcher=slurm \
     +hparams_search="${HPARAMSEARCH}" \
     annotation=${annotation} \
     transforms=${transforms} \
     paths=${paths} \
-    vf="default_${CONDITION_MODE}" \
+    vf="${vf}" \
     data="${CONDITION_MODE}" \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \

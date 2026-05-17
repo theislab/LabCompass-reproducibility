@@ -613,6 +613,8 @@ def compute_sequential_local_penalization(
 
     # Convert to arrays for easier downstream handling
     return {k: np.array(v) for k, v in results.items()}
+
+
 def manual_filtering(df_dict, 
                      bounds, 
                      columns_to_keep, 
@@ -671,3 +673,59 @@ def manual_filtering(df_dict,
         df_dict_annotated[cell_type] = df_ct[df_ct.filtering_step != "proportion_filter"]
         
     return df_dict_filtered, df_dict_annotated 
+
+
+def compute_condition_means(
+    X, cond_ids, unique_cond_ids, rescale_func,
+    target_prediction_model, classes,
+):
+    mean_probs = {clean_name(ct): [] for ct in classes}
+    
+    for cond_id in tqdm(unique_cond_ids, desc="Computing condition means"):
+        idx = np.where(cond_ids == cond_id)[0]
+        if len(idx) == 0:
+            # No cells – fill with zeros (scalar)
+            for ct in classes:
+                mean_probs[clean_name(ct)].append(0.0)
+            continue
+        
+        X_cond = X[idx]
+        all_probs = []
+        with torch.no_grad():
+            for i in range(0, X_cond.shape[0], BATCH_SIZE):
+                batch = torch.from_numpy(X_cond[i:i+BATCH_SIZE]).cuda()
+                if rescale_func is not None:
+                    batch = rescale_func(batch)
+                logits = target_prediction_model.target_prediction_model(batch)["cell_type"]
+                probs = torch.nn.functional.softmax(logits, dim=1)
+                all_probs.append(probs)
+        g_probs = torch.cat(all_probs, dim=0)
+        g_mean = g_probs.mean(0).cpu().numpy()
+        
+        for idx_ct, ct in enumerate(classes):
+            mean_probs[clean_name(ct)].append(g_mean[idx_ct])
+    
+    return pd.DataFrame(mean_probs)
+
+
+def clean_name(ct):
+    return ct.replace("/", "_").replace("*", "").replace(" ", "_")
+
+
+def get_observed_proportions_aligned(adata, cond_ids, unique_cond_ids, classes):
+    """Return DataFrame of observed proportions for each condition (aligned by cond_id)."""
+    obs_props = {clean_name(ct) + "_observed": [] for ct in classes}
+    cell_types = adata.obs["cell_type"].values
+    
+    for cond_id in unique_cond_ids:
+        idx = np.where(cond_ids == cond_id)[0]
+        if len(idx) == 0:
+            for ct in classes:
+                obs_props[clean_name(ct) + "_observed"].append(0.0)
+            continue
+        conc_cell_types = cell_types[idx]
+        counts = {ct: np.sum(conc_cell_types == ct) for ct in classes}
+        total = len(idx)
+        for ct in classes:
+            obs_props[clean_name(ct) + "_observed"].append(counts[ct] / total if total > 0 else 0.0)
+    return pd.DataFrame(obs_props)

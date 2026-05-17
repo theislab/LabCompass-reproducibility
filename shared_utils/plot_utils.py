@@ -949,3 +949,61 @@ def plot_wucb_ranking_results(
 
     fig.tight_layout()
     return fig
+
+
+def plot_all_markers_overlay(gen_markers_list, target_info, target_type,
+                              feat_names, condition_ids=None, loss_name=None, save_dir=None):
+    """
+    gen_markers_list: list of (n_cells, n_markers) arrays – one per optimized condition
+    target_info: 
+        - for point targets: (target_values, None) where target_values is (n_markers,) array
+        - for population targets: (None, ref_markers) where ref_markers is (n_cells_ref, n_markers)
+    condition_ids: optional labels for legend (without mean info; means will be appended)
+    loss_name: string to use as figure title (overrides target_type)
+    """
+    n_markers = len(feat_names)
+    fig, axes = plt.subplots(1, n_markers, figsize=(5*n_markers, 4))
+    if n_markers == 1:
+        axes = [axes]
+    
+    colors = plt.cm.tab10(np.linspace(0, 1, len(gen_markers_list)))
+    is_population = target_type not in ['max', 'mean', 'median']
+    
+    for i, marker in enumerate(feat_names):
+        ax = axes[i]
+        for j, gen_markers in enumerate(gen_markers_list):
+            # Compute per‑marker mean and build label including it
+            mean_val = np.mean(gen_markers[:, i])
+            base_label = f'Cond {j+1}' if condition_ids is None else str(condition_ids[j])
+            label = f"{base_label} (μ={mean_val:.2f})"
+            
+            # KDE with the new label
+            sns.kdeplot(gen_markers[:, i], ax=ax, label=label, 
+                        color=colors[j], alpha=0.5, linewidth=1.5)
+            # Optional: keep mean line without extra legend entry
+            ax.axvline(mean_val, color=colors[j], linestyle=':', linewidth=1.5, label=None)
+        
+        # Reference or target line
+        if is_population:
+            ref_markers = target_info[1]
+            sns.kdeplot(ref_markers[:, i], ax=ax, label='Reference', 
+                        color='black', linestyle='--', linewidth=2, alpha=0.8)
+        else:
+            target_values = target_info[0]
+            ax.axvline(target_values[i], color='red', linestyle='--', linewidth=2, 
+                       label=f'Target = {target_values[i]:.2f}')
+        
+        ax.set_title(marker)
+        ax.set_xlabel('Expression')
+        ax.set_ylabel('Density')
+        ax.legend(fontsize=8)
+    
+    title_str = loss_name if loss_name is not None else target_type
+    plt.suptitle(title_str)
+    plt.tight_layout()
+    plt.show()
+    
+    if save_dir is not None:
+        os.makedirs(save_dir, exist_ok=True)
+        fname = f"{loss_name if loss_name else target_type}_overlay.png"
+        plt.savefig(os.path.join(save_dir, fname), dpi=150, bbox_inches='tight')
