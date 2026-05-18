@@ -147,6 +147,7 @@ def generate_with_condition(
     noise=None,
     logger=None,
     n_scatter_feats=6,
+    cell_type_column="cell_type",
 ):
     # prepare batch data
     perturbation_reps = next(iter(forward_model.forward_model.train_data.data.perturbation_covariates))
@@ -174,7 +175,7 @@ def generate_with_condition(
         fix_noise=noise is not None,
     )
     X_gen = cforward_out[PredictionFields.PREDICTION_DATA].detach().cpu().numpy()
-    gen_ct_logits = cforward_out[PredictionFields.TARGET_PREDICTION_DATA]["cell_type"].detach().cpu().numpy()
+    gen_ct_logits = cforward_out[PredictionFields.TARGET_PREDICTION_DATA][cell_type_column].detach().cpu().numpy()
 
     # split channel and scatter features
     X_channel_gen = X_gen[..., :-n_scatter_feats]
@@ -206,6 +207,7 @@ def query_forward_model(
     n_scatter_feats: int = 6,
     logger: logging.Logger | None = None,
     dim_to_take: int = 1,
+    cell_type_column: str = "cell_type",
 ):
     # prepare condition data
     samples = np.maximum(np.take(traj, -1, axis=dim_to_take), 0) # this is hard-coded now, maybe change?
@@ -218,6 +220,7 @@ def query_forward_model(
         noise=noise,
         logger=logger,
         n_scatter_feats=n_scatter_feats,
+        cell_type_column=cell_type_column
     )
 
 
@@ -252,6 +255,7 @@ def get_transformed_data(
 def get_target_dict(
     config,
     classes,
+    cell_type_column,
     device
 ):
     if config.sampling.query_pure_cell_types:
@@ -260,14 +264,14 @@ def get_target_dict(
         target = torch.zeros((nclasses,)).float().to(device)
         target[idx] = 1.0
         target = {
-            "cell_type": target.unsqueeze(0)
+            cell_type_column: target.unsqueeze(0)
         }
     else:
         prop = torch.tensor(
             config.sampling.target_probs
         ).float().to(device)
         target = {
-            "cell_type": prop.unsqueeze(0)
+            cell_type_column: prop.unsqueeze(0)
         }
     return target
 
@@ -276,10 +280,10 @@ def get_loss_fn(config):
     if config.sampling.query_pure_cell_types and config.sampling.mask_gradients:
         mask = config.sampling.mask
         return  {
-            "cell_type": lambda pred, target: -torch.sum(target[..., mask]*torch.nn.functional.log_softmax(pred[..., mask], dim=-1), dim=-1)
+            config.loss.cell_type_column: lambda pred, target: -torch.sum(target[..., mask]*torch.nn.functional.log_softmax(pred[..., mask], dim=-1), dim=-1)
         }
     return {
-        "cell_type": lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
+        config.loss.cell_type_column: lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
     }
 
 

@@ -41,6 +41,8 @@ class LossGuidedFlow:
 
     def compute_target_loss(self, target_pred_dict, optimal_condition):
         """"""
+        print(target_pred_dict)
+        print(optimal_condition)
         if self.fix_noise:
             return torch.sum(
                 torch.stack(
