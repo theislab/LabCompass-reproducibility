@@ -18,6 +18,10 @@ OPT="unconstrained"
 QUERY_TYPE="pure_populations"
 ENV_NAME="sc_exp_design"
 PATHS="default"
+ENV_MANAGER="conda"
+N_SAMPLES=2
+N_FWD_SAMPLES=350
+CELL_TYPE_COLUMN="cell_type"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -44,6 +48,18 @@ while [[ $# -gt 0 ]]; do
       ;;
     -p|--paths)
       PATHS="$2"
+      shift 2
+      ;;
+    -n|--n-samples)
+      N_SAMPLES="$2"
+      shift 2
+      ;;
+    -nf|--n-fwd-samples)
+      N_FWD_SAMPLES="$2"
+      shift 2
+      ;;
+    -ctc|--ct-column)
+      CELL_TYPE_COLUMN="$2"
       shift 2
       ;;
     *)
@@ -89,7 +105,18 @@ esac
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_best/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_official/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_old_measurements_official/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_loop2/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+
+# prepare command
+if [[ "${ENV_MANAGER}" == "conda" ]]; then
+  CMD="${ENV_MANAGER} run -n ${ENV_NAME} --no-capture-output"
+elif [[ "${ENV_MANAGER}" == "micromamba" ]]; then
+  CMD="${ENV_MANAGER} run -n ${ENV_NAME}"
+else
+  echo "❌ Unknown env manager: $ENV_MANAGER"
+  exit 1
+fi
 
 # Pring logging messages
 echo "------------------------------------------------"
@@ -100,16 +127,24 @@ echo "Query Mode       : ${QUERY_TYPE} (pure=${query_pure}, mask=${mask_gradient
 echo "Dump Directory   : ${dump_dir}"
 echo "Environment      : ${ENV_NAME}"
 echo "Path             : ${PATHS}"
+echo "Env Manager      : ${ENV_MANAGER}"
+echo "Command          : ${CMD}"
+echo "N                : ${N_SAMPLES}"
+echo "N Forward        : ${N_FWD_SAMPLES}"
+echo "ct column        : ${CELL_TYPE_COLUMN}"
 echo "------------------------------------------------"
 
 # handle hydra errors
 export HYDRA_FULL_ERROR=1
     
-conda run -n ${ENV_NAME} --no-capture-output \
-    python scripts/inverse/experiment/${script_name}.py \
+
+$CMD python scripts/inverse/experiment/${script_name}.py \
     constraints="${constraints}" \
+    loss_guidance.num_forward_pass_per_sample="${N_FWD_SAMPLES}" \
     paths=${PATHS} \
+    loss.cell_type_column="${CELL_TYPE_COLUMN}" \
     paths.dump_dir=${dump_dir} \
     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
     sampling.query_pure_cell_types="${query_pure}" \
-    sampling.mask_gradients="${mask_gradients}"
+    sampling.mask_gradients="${mask_gradients}" \
+    sampling.N="${N_SAMPLES}" \

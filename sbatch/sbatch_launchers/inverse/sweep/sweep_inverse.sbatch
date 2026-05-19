@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/bin/bash
 
 #SBATCH --job-name=sweep_loss_guidance
 #SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/sweep_loss_guidance_%j.out
@@ -19,6 +19,7 @@ PATHS="default"
 ENV_MANAGER="conda"
 N_SAMPLES=50
 N_FWD_SAMPLES=350
+CELL_TYPE_COLUMN="cell_type"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -53,6 +54,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -nf|--n-fwd-samples)
       N_FWD_SAMPLES="$2"
+      shift 2
+      ;;
+    -ctc|--ct-column)
+      CELL_TYPE_COLUMN="$2"
       shift 2
       ;;
     *)
@@ -124,11 +129,13 @@ echo "Env Manager      : ${ENV_MANAGER}"
 echo "Command          : ${CMD}"
 echo "N                : ${N_SAMPLES}"
 echo "N Forward        : ${N_FWD_SAMPLES}"
+echo "ct column        : ${CELL_TYPE_COLUMN}"
 echo "------------------------------------------------"
 
 # handle hydra errors
 export HYDRA_FULL_ERROR=1
     
+
 $CMD python scripts/inverse/experiment/${script_name}.py \
     --multirun \
     +launcher=slurm \
@@ -136,6 +143,7 @@ $CMD python scripts/inverse/experiment/${script_name}.py \
     constraints="${constraints}" \
     loss_guidance.num_forward_pass_per_sample="${N_FWD_SAMPLES}" \
     paths=${PATHS} \
+    loss.cell_type_column="${CELL_TYPE_COLUMN}" \
     paths.dump_dir=${dump_dir} \
     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
     sampling.query_pure_cell_types="${query_pure}" \

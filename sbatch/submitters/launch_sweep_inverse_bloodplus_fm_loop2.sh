@@ -43,11 +43,11 @@ TARGET_CELL_TYPES=(
     # "EosBasMast2"
     # "EosBasMast3"
     "EryPro"
-    "HSCs"
+    # "HSCs"
     # "ProB"
     "late_MgkPro"
     # 'GMP-Neutro'
-    'preProB'
+    # 'preProB'
     # 'pre_cDC1'
 )
 
@@ -89,7 +89,8 @@ for target_cell_type in ${TARGET_CELL_TYPES[@]}; do
                   --optimization-type ${optimization_type} \
                   --query-type ${query_type} \
                   --env-name ${ENV_NAME} \
-                  --paths ${PATHS};
+                  --paths ${PATHS} \
+                  --ct-column "cell_type_leiden" ;
             done
         done
     done
