@@ -1007,3 +1007,90 @@ def plot_all_markers_overlay(gen_markers_list, target_info, target_type,
         os.makedirs(save_dir, exist_ok=True)
         fname = f"{loss_name if loss_name else target_type}_overlay.png"
         plt.savefig(os.path.join(save_dir, fname), dpi=150, bbox_inches='tight')
+
+
+def make_scatter_plot(
+    input_adata,
+    target_markers=["CD41a"],
+    ref_markers=["CD34", "CD90", "EPCR"],
+    base_size=4,
+    offset_ratio=0.5,
+    dpi=100,
+    cmap='viridis',
+    s=5,
+    alpha=0.6,
+    title=""
+):
+    # Helper function to add density-colored scatter points
+    def _add_density_scatter(ax, x, y, cmap='viridis', s=5, alpha=0.6):
+        """Compute 2D KDE and scatter points colored by density."""
+        # Remove NaNs
+        mask = ~(np.isnan(x) | np.isnan(y))
+        x_clean = x[mask]
+        y_clean = y[mask]
+        if len(x_clean) == 0:
+            return
+        # Compute density estimate
+        xy = np.vstack([x_clean, y_clean])
+        kde = gaussian_kde(xy, bw_method='scott')
+        density = kde(xy)
+        # Plot with density color
+        sc = ax.scatter(x_clean, y_clean, c=density, cmap=cmap, s=s, alpha=alpha, edgecolor='none')
+        return sc
+
+    def _get_marker_values(
+        marker,
+    ):
+        if marker in input_adata.var_names:
+            return input_adata[:, marker].X[:, 0]
+        elif marker in input_adata.obs.columns:
+            return input_adata.obs[marker].astype(float).values
+        else:
+            raise KeyError(f"{marker} not found.")
+
+    # get values for marker
+    tgt_marker_values_dict = {
+       marker: _get_marker_values(marker)
+        for marker in target_markers
+    }
+    ref_marker_values_dict = {
+        marker: _get_marker_values(marker)
+        for marker in ref_markers
+    }
+
+    # create figure
+    n_tgt_markers = len(target_markers)
+    n_ref_markers = len(ref_markers)
+    fig_width = (n_ref_markers + offset_ratio)*base_size
+    fig_height = (n_tgt_markers + offset_ratio)*base_size
+    fig, all_ax = plt.subplots(n_tgt_markers, n_ref_markers, figsize=(fig_width, fig_height), dpi=dpi)
+    fig.suptitle(title)
+
+    # plot markers
+    for tgt_idx, (tgt_marker_name, tgt_marker_values) in enumerate(tgt_marker_values_dict.items()):
+        # get axes
+        if n_tgt_markers > 1:
+            tgt_ax = all_ax[tgt_idx]
+        else:
+            tgt_ax = all_ax
+        for ref_idx, (ref_marker_name, ref_marker_values) in enumerate(ref_marker_values_dict.items()):
+            # get axes
+            if n_ref_markers > 1:
+                cur_ax = tgt_ax[ref_idx]
+            else:
+                cur_ax = tgt_ax
+
+            # define axes to plot
+            y = tgt_marker_values
+            x = ref_marker_values
+
+            # plot density scatter
+            _add_density_scatter(cur_ax, x, y, s=s, alpha=alpha)
+
+            # set axes labels
+            cur_ax.set_xlabel(ref_marker_name)
+            cur_ax.set_ylabel(tgt_marker_name)
+
+            # set title
+            cur_ax.set_title(f"{ref_marker_name} vs {tgt_marker_name}")
+    return fig, all_ax
