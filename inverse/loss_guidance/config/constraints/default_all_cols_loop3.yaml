@@ -1,0 +1,39 @@
+eps: 1e-15
+use_lstsq: True
+g_tol: 1e-1
+constraints_in_original_space: True
+lbound_dict:
+  gm-csf_[ng_ml]: 0.0
+  tpo_[ng_ml]: 0.0
+  um171_[nm]: 0.0
+  um729_[µm]: 0.0
+  sr1_[nm]: 0.0
+  scf_[ng_ml]: 0.0
+  butyzamide_[nm]: 0.0
+  retinoic_acid_[µm]: 0.0
+  ldl_[ng_ml]: 0.0
+  il3_[ng_ml]: 0.0
+  o2_[%]: 10.0
+  days_of_culture: 12.0
+  il7_[ng_ml]: 0.0
+  mcsf_[ng_ml]: 0.0
+ubound_dict:
+  gm-csf_[ng_ml]: 10.0
+  tpo_[ng_ml]: 2.5
+  um171_[nm]: 1120.0
+  um729_[µm]: 1120.0
+  sr1_[nm]: 750.0
+  scf_[ng_ml]: 50.0
+  butyzamide_[nm]: 100.0
+  retinoic_acid_[µm]: 25.0
+  ldl_[ng_ml]: 50.0
+  il3_[ng_ml]: 20.0
+  o2_[%]: 20.0
+  days_of_culture: 18.0
+  il7_[ng_ml]: 20.0
+  mcsf_[ng_ml]: 20.0
+c_scheduler_kwargs:
+  t_warmup: 0.0
+  vmin: 0.0
+  vmax: 1.0
+use_exponential_penalty: False
