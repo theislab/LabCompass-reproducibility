@@ -16,10 +16,11 @@ OPT="unconstrained"
 QUERY_TYPE="pure_populations"
 ENV_NAME="sc_exp_design"
 PATHS="default"
+# ENV_MANAGER="micromamba"
 ENV_MANAGER="conda"
-N_SAMPLES=50
+N_SAMPLES=50 
 N_FWD_SAMPLES=350
-CELL_TYPE_COLUMN="cell_type"
+CELL_TYPE_COLUMN=cell_type_leiden # "cell_type" 
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -84,7 +85,8 @@ else
 fi
 
 if [[ "$OPT" == "penalized_all_axes" ]]; then
-    constraints="default_all_cols"
+    # constraints="default_all_cols"
+    constraints="default_all_cols_loop3"
 else
     constraints="default"
 fi
@@ -104,7 +106,8 @@ esac
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_best/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 # dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_old_measurements_official/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_loop2/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_loop2/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_fm_loop3/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 
 # prepare command
 if [[ "${ENV_MANAGER}" == "conda" ]]; then
@@ -149,3 +152,4 @@ $CMD python scripts/inverse/experiment/${script_name}.py \
     sampling.query_pure_cell_types="${query_pure}" \
     sampling.mask_gradients="${mask_gradients}" \
     sampling.N="${N_SAMPLES}" \
+    annotation=bloodplus_loop3

@@ -1,0 +1,5 @@
+perturbation_prediction_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/conditional_model/flow_matching/2026-05-14_08-38-41/royal-pyramid-29_FlowMatching.pkl"
+ct_classifier_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/cell_type_classifier_loop2/2026-05-16_14-49-07/major-hill-132_TargetPredictionModel.pkl"
+prior_flow_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop3/peach-snowflake-29_FlowMatchingWithScore.pkl"
+prior_flow_map_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop3/denim-vortex-30_FlowMap.pkl"
+dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_loop3"
