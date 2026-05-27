@@ -43,6 +43,7 @@ def main(config: DictConfig):
             config_name=config.base_config_name,
             overrides=[f"paths={config.paths}"]
         )
+    base_cfg.loss.cell_type_column = config.cell_type_column
     
     print("Using checkpoints", base_cfg.paths.perturbation_prediction_path)
         
@@ -126,7 +127,7 @@ def main(config: DictConfig):
             y_target_ct = y_target_ct.unsqueeze(0)  # 1 x 1 x no_cell_types
             
             logger.info("Compute loss function")
-            loss_fn = get_loss_fn(config_run)[config.cell_type_column]
+            loss_fn = get_loss_fn(config_run, cell_type_column=config.cell_type_column)[config.cell_type_column]
             with torch.no_grad():
                 loss = loss_fn(y_pred_mean, y_target_ct)  # no_candidates x no_populations
             loss_std = loss.std(1).detach().cpu().numpy()  # no_candidates
@@ -174,7 +175,7 @@ def main(config: DictConfig):
             result_csv["acq_values"] = sequential_local_penalization_score_dict["acq_values"]
             
             # Save updated results 
-            result_csv.to_csv(uncertainty_annotation_folder / "candidates_with_uncertainties.csv")
+            result_csv.to_csv(uncertainty_annotation_folder / config.destination_file_name)
         
 def parse_args():
     import argparse    
@@ -189,6 +190,7 @@ def parse_args():
     parser.add_argument("--true_concentration_path", required=True)
     parser.add_argument("--paths", default="default")
     parser.add_argument("--cell_type_column", default="cell_type")
+    parser.add_argument("--destination_file_name", default="candidates_with_uncertainties.csv")
     return parser.parse_args()
 
 def run():
