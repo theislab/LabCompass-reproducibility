@@ -122,7 +122,7 @@ def main(config: DictConfig):
             # Collect cell type of interest 
             y_pred_ct_std = y_pred_softmax[..., cell_type_index].std(1).detach().cpu().numpy()  # standard deviation prob cell type of interest 
             # Calculate loss
-            y_target_ct = get_target_dict(config_run, classes, "cuda")["cell_type"]  # 1 x no_cell_type
+            y_target_ct = get_target_dict(config_run, classes, "cell_type", "cuda")["cell_type"]  # 1 x no_cell_type
             y_target_ct = y_target_ct.unsqueeze(0)  # 1 x 1 x no_cell_types
             
             logger.info("Compute loss function")
@@ -174,7 +174,7 @@ def main(config: DictConfig):
             result_csv["acq_values"] = sequential_local_penalization_score_dict["acq_values"]
             
             # Save updated results 
-            result_csv.to_csv(uncertainty_annotation_folder / "candidates_with_uncertainties.csv")
+            result_csv.to_csv(uncertainty_annotation_folder / "candidates_with_uncertainties_loop1.csv")
         
 def parse_args():
     import argparse    

@@ -276,14 +276,22 @@ def get_target_dict(
     return target
 
 
-def get_loss_fn(config):
+def get_loss_fn(config, cell_type_column="cell_type"):
+    if hasattr(config, "loss"):
+        if hasattr(config.loss, "cell_type_column"):
+            ct_col = config.loss.cell_type_column
+        else:
+            ct_col = cell_type_column
+    else:
+        ct_col = cell_type_column
+
     if config.sampling.query_pure_cell_types and config.sampling.mask_gradients:
         mask = config.sampling.mask
         return  {
-            config.loss.cell_type_column: lambda pred, target: -torch.sum(target[..., mask]*torch.nn.functional.log_softmax(pred[..., mask], dim=-1), dim=-1)
+            ct_col: lambda pred, target: -torch.sum(target[..., mask]*torch.nn.functional.log_softmax(pred[..., mask], dim=-1), dim=-1)
         }
     return {
-        config.loss.cell_type_column: lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
+        ct_col: lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
     }
 
 
