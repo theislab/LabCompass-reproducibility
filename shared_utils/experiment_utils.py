@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Callable, Collection
 import logging
 import math
 import os
@@ -20,6 +21,8 @@ from tqdm import tqdm
 from sc_exp_design.constants import DataFields, ParamsFields, PredictionFields
 from sc_exp_design.metrics import compute_e_distance
 from sc_exp_design.models import FlowMatching, TargetPredictionModel
+
+import scopt
 
 sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
 sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
@@ -741,3 +744,58 @@ def get_observed_proportions_aligned(adata, cond_ids, unique_cond_ids, classes):
         for ct in classes:
             obs_props[clean_name(ct) + "_observed"].append(counts[ct] / total if total > 0 else 0.0)
     return pd.DataFrame(obs_props)
+
+
+def get_initial_value_sgd(
+    n_samples,
+    real_matrix=None,
+    log1p=True
+):
+    if real_matrix is None:
+        raise ValueError("Real Matrix should be passed")
+    n_samples, _ = n_samples
+    idxs = np.random.choice(real_matrix.shape[0], size=n_samples)
+    batch_matrix = real_matrix[idxs]
+    if log1p:
+        batch_matrix = np.log1p(batch_matrix)
+    return torch.from_numpy(batch_matrix)
+
+
+def get_unique_conds(adata, protocol_cols):
+    # Real condition vectors (assumed shape (n_cells, n_protocol))
+    real_conds = adata.obs[protocol_cols].astype(float).values   # or use obs[protocol_columns].values
+    exp_nums = adata.obs["experiment_number"].values
+    unique_exps = np.unique(exp_nums)
+    real_matrix = []
+    for exp in unique_exps:
+        mask = exp_nums == exp
+        cond = real_conds[mask][0]   # all cells in same exp share the same condition
+        real_matrix.append(cond)
+    return np.array(real_matrix)
+
+
+class FWDPotential(scopt.potentials.BasePotential):
+    def __init__(
+        self,
+        target,
+        loss_fn: Callable[[torch.Tensor], torch.Tensor],
+        penalties: Collection[Callable[[torch.Tensor], torch.Tensor]] | None = None,
+        lambda_pen = 1.0,
+    ):
+        super().__init__()
+        self._target = target
+        self._loss_fn = loss_fn
+        self._penalties = penalties if penalties is not None else []
+        self._lambda_pen = lambda_pen
+    
+    def forward(
+        self,
+        x: torch.Tensor
+    ) -> torch.Tensor:
+        loss = self._loss_fn(x)
+        penalties = []
+        for pen_fn in self._penalties:
+            pen_val = pen_fn(x)
+            penalties.append(pen_val)
+        penalties = torch.stack(penalties, axis=0).sum(0)
+        return loss + self._lambda_pen * penalties
