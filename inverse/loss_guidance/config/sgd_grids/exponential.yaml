@@ -24,6 +24,7 @@ hydra:
 
     # define hyperparameter search space
     params:
+      non_linearity.non_linearity_id: ("relu", "identity")
       sampling.num_time_steps: choice(10, 100, 1000, 10000)
       loss.lambda_pen: choice(0.0, 0.001, 0.01, 0.1, 1.0)
       scheduler.scheduler_id: choice("exp")
