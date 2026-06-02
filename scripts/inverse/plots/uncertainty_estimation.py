@@ -41,7 +41,9 @@ def main(config: DictConfig):
     with initialize(config_path=config.base_config_path, version_base=None):
         base_cfg = compose(
             config_name=config.base_config_name,
-            overrides=[f"paths={config.paths}"]
+            overrides=[f"paths={config.paths}", 
+                       f"annotation={config.annotation}", 
+                       f"constraints={config.constraints}"]
         )
     base_cfg.loss.cell_type_column = config.cell_type_column
     
@@ -191,6 +193,8 @@ def parse_args():
     parser.add_argument("--paths", default="default")
     parser.add_argument("--cell_type_column", default="cell_type")
     parser.add_argument("--destination_file_name", default="candidates_with_uncertainties.csv")
+    parser.add_argument("--annotation", default="bloodplus")
+    parser.add_argument("--constraints", default="default")
     return parser.parse_args()
 
 def run():

@@ -35,9 +35,11 @@ python scripts/inverse/plots/uncertainty_estimation.py \
     --base_config_name run_inverse \
     --result_dir "$EXPERIMENT_DIR" \
     --experiment_type "$EXPERIMENT" \
-    --true_concentration_path /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous/unique_concentrations_adata_bloodplus.h5ad \
+    --true_concentration_path  /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/data/gdrive/loop3/unique_concentrations.h5ad \
     --paths bloodplus_loop3_old_clf \
     --cell_type_column cell_type_leiden \
+    --annotation bloodplus_loop3 \
+    --constraints default_all_cols_loop3 \
 
 
 # --target_cell_types "EryPro__HSCs__late_MgkPro__preProB__ProB" \
