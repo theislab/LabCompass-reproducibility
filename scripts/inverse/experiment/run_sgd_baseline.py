@@ -352,7 +352,9 @@ def main(config: DictConfig) -> float:
 
     # plot loss history
     logger.info("Plotting loss history...")
-    loss_history_fig = plot_loss_history(ct_string, loss_history.detach().cpu().numpy())
+    if isinstance(loss_history, torch.Tensor):
+        loss_history = loss_history.detach().cpu().numpy()
+    loss_history_fig = plot_loss_history(ct_string, loss_history)
     loss_history_fig.savefig(
         loss_history_plot_path,
         dpi=300,
