@@ -10,7 +10,7 @@
 #SBATCH --time=1-00:00:00
 
 # ---- 1. Define defaults ----
-TARGET_CELL_TYPE="MgkPro"
+TARGET_CELL_TYPE="late_MgkPro"
 SCHEDULER="reciprocal"
 ENV_NAME="sc_exp_design"
 PATHS="loop1"
