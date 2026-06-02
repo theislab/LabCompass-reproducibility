@@ -1,3 +1,5 @@
 scheduler_id: "cnst"
 scheduler_kwargs:
+  lmin: null
   lmax: 1.0
+  gamma: null

@@ -24,4 +24,7 @@ hydra:
 
     # define hyperparameter search space
     params:
-      
+      sampling.num_time_steps: choice(10, 100, 1000, 10000)
+      loss.lambda_pen: choice(0.0, 0.001, 0.01, 0.1, 1.0)
+      scheduler.scheduler_id: choice("cnst")
+      scheduler.lmax: choice(10.0, 1.0, 0.1, 0.01, 0.001, 0.0001)
