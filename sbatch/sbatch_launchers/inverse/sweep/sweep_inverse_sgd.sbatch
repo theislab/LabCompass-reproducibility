@@ -66,7 +66,7 @@ case $SCHEDULER in
 esac
 
 # ---- 4. Define path based on configuration ----
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/sgd/bloodplus_loop1/${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/sgd/loop1/${SCHEDULER}"
 
 # ---- 5. Prepare command ----
 script_name="run_inverse_experiment"
@@ -113,7 +113,7 @@ script_name="run_sgd_baseline"
 $CMD python scripts/inverse/experiment/${script_name}.py \
     --multirun \
     +launcher=${launcher} \
-    +hparam_search="${hparam_search}" \
+    +sgd_grids="${hparam_search}" \
     annotation="${annotation}" \
     constraints="${constraints}" \
     forward_model="${forward_model}" \
