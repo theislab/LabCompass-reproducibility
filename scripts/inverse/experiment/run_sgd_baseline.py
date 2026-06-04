@@ -79,10 +79,15 @@ def main(config: DictConfig) -> float:
     # load adata and get unique conds
     adata_full = ad.read_h5ad(PATH_ADATA)
     X_cond = get_unique_conds(adata_full, config.annotation.protocol_columns)
-    init_fn = partial(get_initial_value_sgd, real_matrix=X_cond, log1p=True)
     ndims = X_cond.shape[1]
     logger.info(f"Adata Loaded: {adata_full}")
     logger.info(f"X condition: {X_cond.shape}")
+
+    # define initialization function
+    if config.sgd_init_from_data:
+        init_fn = partial(get_initial_value_sgd, real_matrix=X_cond, log1p=True)
+    else:
+        init_fn = torch.randn
 
     # Get forward model
     logger.info(f"Preparing forward model...")

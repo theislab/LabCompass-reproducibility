@@ -18,6 +18,7 @@ ENV_MANAGER="micromamba"
 N_SAMPLES=50 
 N_FWD_SAMPLES=350
 CELL_TYPE_COLUMN="cell_type" 
+SGD_INIT_FROM_DATA=0
 
 # ---- 2. Parse Flags ----
 while [[ $# -gt 0 ]]; do
@@ -50,6 +51,10 @@ while [[ $# -gt 0 ]]; do
       CELL_TYPE_COLUMN="$2"
       shift 2
       ;;
+    -sid|--sgd-init-from-data)
+      SGD_INIT_FROM_DATA="$2"
+      shift 2
+      ;;
     *)
       echo "Unknown parameter passed: $1"
       exit 1
@@ -65,8 +70,15 @@ case $SCHEDULER in
     *) echo "❌ Unknown scheduler: $SCHEDULER"; exit 1 ;;
 esac
 
+# ---- 
+case $SGD_INIT_FROM_DATA in
+    0)    sgd_init_from_data="False" ;;
+    1)    sgd_init_from_data="True" ;;
+    *) echo "❌ Invalid flag for optional data initialization: $SGD_INIT_FROM_DATA"; exit 1 ;;
+esac
+
 # ---- 4. Define path based on configuration ----
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/sgd/loop1/${SCHEDULER}"
+dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/sgd_gaussian_init/loop1/${SCHEDULER}"
 
 # ---- 5. Prepare command ----
 script_name="run_inverse_experiment"
@@ -114,6 +126,7 @@ $CMD python scripts/inverse/experiment/${script_name}.py \
     --multirun \
     +launcher=${launcher} \
     +sgd_grids="${hparam_search}" \
+    +sgd_init_from_data="${init_from_data}" \
     annotation="${annotation}" \
     constraints="${constraints}" \
     forward_model="${forward_model}" \
