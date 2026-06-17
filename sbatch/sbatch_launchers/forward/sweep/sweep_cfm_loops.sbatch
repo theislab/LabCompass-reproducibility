@@ -9,14 +9,13 @@
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
 
-
 SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
 PROTOCOL_AXIS="protocol_id"
 UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
-LOOP=2
+LOOP="2"
 HPARAMSEARCH="in_distribution_big"
-
+ENV_MANAGER="micromamba"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -61,7 +60,7 @@ echo "Current Working Directory: $WDIR"
 export HYDRA_FULL_ERROR=1
 
 
-wandb_name="sweep_cfm_${CONDITION_MODE}_${SAMPLE_REP}_${PROTOCOL_AXIS}_${HPARAMSEARCH}"
+wandb_name="sweep_flow_matching"
 paths="hpc_full"
 annotation="bloodplus"
 transforms="bloodplus"
@@ -79,11 +78,12 @@ case $LOOP in
     ;;
   2.5)
     paths="loop2p5_replicate"
-    wandb_name="${wandb_name}_loop2"
+    wandb_name="${wandb_name}_loop2p5"
     ;;
   3)
     paths="loop3_replicate"
     wandb_name="${wandb_name}_loop3"
+    annotation="bloodplus_loop3"
     ;;
   *)
     echo "Unknown LOOP value: $LOOP"
@@ -92,8 +92,8 @@ case $LOOP in
 esac
 
 
-# conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
 micromamba run -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
+# conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
     --multirun \
     +launcher=slurm \
     +hparams_search="${HPARAMSEARCH}" \
