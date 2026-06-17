@@ -92,8 +92,8 @@ case $LOOP in
 esac
 
 
-micromamba run -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
 # conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
+micromamba run -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
     --multirun \
     +launcher=slurm \
     +hparams_search="${HPARAMSEARCH}" \
