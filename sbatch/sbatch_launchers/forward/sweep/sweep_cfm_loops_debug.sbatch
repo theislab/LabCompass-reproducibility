@@ -3,11 +3,13 @@
 #SBATCH --job-name=sweep_flow_matching
 #SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/sweep_flow_matching-%j.log
 #SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/sweep_flow_matching-%j.err
-#SBATCH --partition=cpu_p
-#SBATCH --qos=cpu_normal
-#SBATCH --mem=20G
+#SBATCH --partition=gpu_p
+#SBATCH --qos=gpu_normal
+#SBATCH --gres=gpu:1
+#SBATCH --mem=500G
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
+#SBATCH --constraint="h100_80gb"
 
 SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
 PROTOCOL_AXIS="protocol_id"
@@ -96,9 +98,6 @@ esac
 
 # micromamba run -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
 conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
-    --multirun \
-    +launcher=slurm \
-    +hparams_search="${HPARAMSEARCH}" \
     annotation=${annotation} \
     transforms=${transforms} \
     paths=${paths} \
