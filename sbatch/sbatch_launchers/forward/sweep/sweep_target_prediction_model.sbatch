@@ -36,7 +36,8 @@ done
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
-ENV_NAME="sc_exp_design"
+# ENV_NAME="sc_exp_design"
+ENV_NAME="sc_exp_design_12"
 echo "Using environment: $ENV_NAME"
 
 WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
@@ -68,7 +69,7 @@ elif [[ $USE_NEW_MEASUREMENTS -eq 3 ]]; then
 
 elif [[ $USE_NEW_MEASUREMENTS -eq 4 ]]; then
     paths="${paths}_bloodplus_loop2"
-    wandb_name="bloodplus_loop2"
+    # wandb_name="bloodplus_loop2" 
     annotation="bloodplus"
     transforms="bloodplus"
     data="cell_type_leiden"
@@ -86,9 +87,8 @@ fi
 echo "Wandb project ${wandb_name}"
 echo "paths ${paths}"
 
-
-# conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
-micromamba run -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
+# micromamba run -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
+conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
     --multirun \
     +launcher=slurm \
     +hparams_search=small \

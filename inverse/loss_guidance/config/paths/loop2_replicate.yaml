@@ -1,0 +1,5 @@
+perturbation_prediction_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/forward_model/loop2/2026-06-17_17-19-47/fresh-bee-21_FlowMatching.pkl"
+ct_classifier_path:
+prior_flow_path:
+prior_flow_map_path:
+dump_dir:

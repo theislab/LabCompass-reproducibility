@@ -1,4 +1,6 @@
+lambda_pen: 0.0
 use_penalization: False
+cell_type_column: "cell_type"
 target_marker_names: ["CD41a"]
 target_morph_feat_names: []
 filter_dict:

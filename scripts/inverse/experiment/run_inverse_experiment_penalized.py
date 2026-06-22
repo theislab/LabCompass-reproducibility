@@ -81,7 +81,7 @@ def main(config: DictConfig) -> float:
 
     # Prepare label encoder
     ct_le = LabelEncoder()
-    ct_values = target_prediction_model.train_data.adata.obs["cell_type"].values
+    ct_values = target_prediction_model.train_data.adata.obs[config.loss.cell_type_column].values
     ct_le.fit(ct_values)
     classes = ct_le.classes_.tolist()
 
@@ -108,6 +108,7 @@ def main(config: DictConfig) -> float:
     target = get_target_dict(
         config,
         classes,
+        config.loss.cell_type_column,
         forward_model.forward_model.device
     )
     logger.info(f"Target ready!\n{target}")
@@ -180,7 +181,7 @@ def main(config: DictConfig) -> float:
         lambda_scheduler=lambda_scheduler,
         c_scheduler=c_scheduler,
         num_time_steps=config.sampling.num_time_steps,
-        solver_kwargs=resolve_omegaconf_to_dictionary(config.sampling.solver_kwargs),
+        solver_kwargs=resolve_omegaconf_to_dictionary(config.sampling.solver_kwargs)
     )
     # moving results to numpy
     trajectory = np.permute_dims(trajectory, (1, 0, 2))
@@ -201,7 +202,8 @@ def main(config: DictConfig) -> float:
         config.forward_model.num_time_steps,
         solver_kwargs,
         ct_le,
-        logger=logger
+        logger=logger,
+        cell_type_column=config.loss.cell_type_column
     )
     torch.cuda.empty_cache()
 

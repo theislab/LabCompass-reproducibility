@@ -70,7 +70,7 @@ def main(config: DictConfig) -> float:
 
     # Prepare label encoder
     ct_le = LabelEncoder()
-    ct_values = target_prediction_model.train_data.adata.obs["cell_type"].values
+    ct_values = target_prediction_model.train_data.adata.obs[config.loss.cell_type_column].values
     ct_le.fit(ct_values)
     classes = ct_le.classes_.tolist()
 
@@ -97,6 +97,7 @@ def main(config: DictConfig) -> float:
     target = get_target_dict(
         config,
         classes,
+        config.loss.cell_type_column,
         forward_model.forward_model.device
     )
     logger.info(f"Target ready!\n{target}")
@@ -119,7 +120,8 @@ def main(config: DictConfig) -> float:
         regularization=config.loss_guidance.regularization,
         reg_strength=config.loss_guidance.reg_strength,
         n_time_steps_forward_model=config.loss_guidance.n_time_steps_forward_model,
-        solver_kwargs_forward_model=resolve_omegaconf_to_dictionary(config.loss_guidance.solver_kwargs_forward_model)
+        solver_kwargs_forward_model=resolve_omegaconf_to_dictionary(config.loss_guidance.solver_kwargs_forward_model),
+        target_id=config.loss.cell_type_column
     )
     torch.cuda.empty_cache()
     logger.info(f"Guided Flow Ready!\n{guided_flow}")
@@ -178,7 +180,8 @@ def main(config: DictConfig) -> float:
         config.forward_model.num_time_steps,
         solver_kwargs,
         ct_le,
-        logger=logger
+        logger=logger,
+        cell_type_column=config.loss.cell_type_column
     )
     torch.cuda.empty_cache()
 

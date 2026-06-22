@@ -1,0 +1,32 @@
+# @package _global_
+
+defaults:
+  - override /hydra/sweeper/sampler: grid 
+  - override /hydra/sweeper: optuna 
+  
+optimized_metric: all_conditions_wasserstein_distance
+
+hydra:
+
+  sweeper:
+    _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
+
+    direction: minimize
+
+    # n_jobs: 16
+    n_jobs: 50
+
+    # n_trials: 16
+    n_trials: 225
+
+    sampler: 
+      _target_: optuna.samplers.GridSampler
+
+    # define hyperparameter search space
+    params:
+      non_linearity.non_linearity_id: choice("relu", "identity")
+      sampling.num_time_steps: choice(10, 100, 1000, 10000)
+      loss.lambda_pen: choice(0.0, 0.001, 0.01, 0.1, 1.0)
+      scheduler.scheduler_id: choice("exp")
+      scheduler.scheduler_kwargs.lmax: choice(10.0, 1.0, 0.1, 0.01, 0.001, 0.0001)
+      scheduler.scheduler_kwargs.gamma: choice(0.9, 0.99, 0.999)

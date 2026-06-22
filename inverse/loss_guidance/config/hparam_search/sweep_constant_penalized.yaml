@@ -28,7 +28,7 @@ hydra:
       # run.random_seed: choice(42, 512, 1024)
       sampling.num_time_steps: choice(100, 200, 500)
       scheduler.scheduler_id: choice("constant")
-      scheduler.scheduler_kwargs.lmax: choice(1.0, 3.0, 5.0, 7.0)
+      scheduler.scheduler_kwargs.lmax: choice(1.0, 3.0, 5.0, 7.0, 10.0)
       constraints.c_scheduler_kwargs.t_warmup: choice(0.0, 0.1, 0.25, 0.5)
       constraints.c_scheduler_kwargs.vmin: choice(1.0, 2.0, 5.0)
       constraints.c_scheduler_kwargs.vmax: choice(7.5, 10.0, 15.0)

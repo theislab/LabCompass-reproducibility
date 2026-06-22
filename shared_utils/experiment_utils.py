@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections.abc import Callable, Collection
 import logging
 import math
 import os
@@ -20,6 +21,8 @@ from tqdm import tqdm
 from sc_exp_design.constants import DataFields, ParamsFields, PredictionFields
 from sc_exp_design.metrics import compute_e_distance
 from sc_exp_design.models import FlowMatching, TargetPredictionModel
+
+import scopt
 
 sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
 sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
@@ -147,6 +150,7 @@ def generate_with_condition(
     noise=None,
     logger=None,
     n_scatter_feats=6,
+    cell_type_column="cell_type",
 ):
     # prepare batch data
     perturbation_reps = next(iter(forward_model.forward_model.train_data.data.perturbation_covariates))
@@ -174,7 +178,7 @@ def generate_with_condition(
         fix_noise=noise is not None,
     )
     X_gen = cforward_out[PredictionFields.PREDICTION_DATA].detach().cpu().numpy()
-    gen_ct_logits = cforward_out[PredictionFields.TARGET_PREDICTION_DATA]["cell_type"].detach().cpu().numpy()
+    gen_ct_logits = cforward_out[PredictionFields.TARGET_PREDICTION_DATA][cell_type_column].detach().cpu().numpy()
 
     # split channel and scatter features
     X_channel_gen = X_gen[..., :-n_scatter_feats]
@@ -206,6 +210,7 @@ def query_forward_model(
     n_scatter_feats: int = 6,
     logger: logging.Logger | None = None,
     dim_to_take: int = 1,
+    cell_type_column: str = "cell_type",
 ):
     # prepare condition data
     samples = np.maximum(np.take(traj, -1, axis=dim_to_take), 0) # this is hard-coded now, maybe change?
@@ -218,6 +223,7 @@ def query_forward_model(
         noise=noise,
         logger=logger,
         n_scatter_feats=n_scatter_feats,
+        cell_type_column=cell_type_column
     )
 
 
@@ -252,6 +258,7 @@ def get_transformed_data(
 def get_target_dict(
     config,
     classes,
+    cell_type_column,
     device
 ):
     if config.sampling.query_pure_cell_types:
@@ -260,26 +267,34 @@ def get_target_dict(
         target = torch.zeros((nclasses,)).float().to(device)
         target[idx] = 1.0
         target = {
-            "cell_type": target.unsqueeze(0)
+            cell_type_column: target.unsqueeze(0)
         }
     else:
         prop = torch.tensor(
             config.sampling.target_probs
         ).float().to(device)
         target = {
-            "cell_type": prop.unsqueeze(0)
+            cell_type_column: prop.unsqueeze(0)
         }
     return target
 
 
-def get_loss_fn(config):
+def get_loss_fn(config, cell_type_column="cell_type"):
+    if hasattr(config, "loss"):
+        if hasattr(config.loss, "cell_type_column"):
+            ct_col = config.loss.cell_type_column
+        else:
+            ct_col = cell_type_column
+    else:
+        ct_col = cell_type_column
+
     if config.sampling.query_pure_cell_types and config.sampling.mask_gradients:
         mask = config.sampling.mask
         return  {
-            "cell_type": lambda pred, target: -torch.sum(target[..., mask]*torch.nn.functional.log_softmax(pred[..., mask], dim=-1), dim=-1)
+            ct_col: lambda pred, target: -torch.sum(target[..., mask]*torch.nn.functional.log_softmax(pred[..., mask], dim=-1), dim=-1)
         }
     return {
-        "cell_type": lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
+        ct_col: lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
     }
 
 
@@ -729,3 +744,58 @@ def get_observed_proportions_aligned(adata, cond_ids, unique_cond_ids, classes):
         for ct in classes:
             obs_props[clean_name(ct) + "_observed"].append(counts[ct] / total if total > 0 else 0.0)
     return pd.DataFrame(obs_props)
+
+
+def get_initial_value_sgd(
+    n_samples,
+    real_matrix=None,
+    log1p=True
+):
+    if real_matrix is None:
+        raise ValueError("Real Matrix should be passed")
+    n_samples, _ = n_samples
+    idxs = np.random.choice(real_matrix.shape[0], size=n_samples)
+    batch_matrix = real_matrix[idxs]
+    if log1p:
+        batch_matrix = np.log1p(batch_matrix)
+    return torch.from_numpy(batch_matrix)
+
+
+def get_unique_conds(adata, protocol_cols):
+    # Real condition vectors (assumed shape (n_cells, n_protocol))
+    real_conds = adata.obs[protocol_cols].astype(float).values   # or use obs[protocol_columns].values
+    exp_nums = adata.obs["experiment_number"].values
+    unique_exps = np.unique(exp_nums)
+    real_matrix = []
+    for exp in unique_exps:
+        mask = exp_nums == exp
+        cond = real_conds[mask][0]   # all cells in same exp share the same condition
+        real_matrix.append(cond)
+    return np.array(real_matrix)
+
+
+class FWDPotential(scopt.potentials.BasePotential):
+    def __init__(
+        self,
+        target,
+        loss_fn: Callable[[torch.Tensor], torch.Tensor],
+        penalties: Collection[Callable[[torch.Tensor], torch.Tensor]] | None = None,
+        lambda_pen = 1.0,
+    ):
+        super().__init__()
+        self._target = target
+        self._loss_fn = loss_fn
+        self._penalties = penalties if penalties is not None else []
+        self._lambda_pen = lambda_pen
+    
+    def forward(
+        self,
+        x: torch.Tensor
+    ) -> torch.Tensor:
+        loss = self._loss_fn(x)
+        penalties = []
+        for pen_fn in self._penalties:
+            pen_val = pen_fn(x)
+            penalties.append(pen_val)
+        penalties = torch.stack(penalties, axis=0).sum(0)
+        return loss + self._lambda_pen * penalties
