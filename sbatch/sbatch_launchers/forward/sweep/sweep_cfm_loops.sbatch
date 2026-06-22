@@ -15,7 +15,7 @@ UNIQUE_VALUE=0
 CONDITION_MODE="protocol_concat"
 LOOP="3"
 HPARAMSEARCH="in_distribution_big"
-# ENV_MANAGER="micromamba"
+ENV_MANAGER="conda"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -44,6 +44,10 @@ while [[ $# -gt 0 ]]; do
       HPARAMSEARCH="$2"
       shift 2
       ;;
+    -e|--env-manager)
+      ENV_MANAGER="$2"
+      shift 2
+      ;;
   esac
 done
 
@@ -51,6 +55,7 @@ done
 echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE, hparams: ${HPARAMSEARCH}, loop: ${LOOP}"
 
 ENV_NAME="sc_exp_design"
+# ENV_NAME="sc_exp_design_12"
 echo "Using environment: $ENV_NAME"
 
 WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
@@ -93,10 +98,20 @@ case $LOOP in
 esac
 
 
+case $ENV_MANAGER in
+  "conda")
+    cmd="conda run --no-capture-output -n ${ENV_NAME} python ${WDIR}/scripts/forward/train/train_flow_matching.py"
+    ;;
+  "micromamba")
+    cmd="micromamba run -n ${ENV_NAME} python ${WDIR}/scripts/forward/train/train_flow_matching.py"
+    ;;
+  *)
+    echo "Unknown env manager value: $ENV_MANAGER"
+    exit 1
+    ;;
+esac
 
-# micromamba run -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
-conda run --no-capture-output -n "$ENV_NAME" python ${WDIR}/scripts/forward/train/train_flow_matching.py \
-    --multirun \
+$cmd --multirun \
     +launcher=slurm \
     +hparams_search="${HPARAMSEARCH}" \
     annotation=${annotation} \
