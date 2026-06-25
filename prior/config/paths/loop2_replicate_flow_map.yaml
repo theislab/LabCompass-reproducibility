@@ -1,4 +1,4 @@
-dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop_2_replicate"
+dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop2_replicate"
 forward_model_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/forward_model/loop2/2026-06-17_17-19-47/fresh-bee-21_FlowMatching.pkl"
-teacher_checkpoint_path: ""
-log_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/prior/flow_map"
+teacher_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop2_replicate/proud-durian-32_FlowMatchingWithScore.pkl"
+log_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/prior/flow_map_new"
