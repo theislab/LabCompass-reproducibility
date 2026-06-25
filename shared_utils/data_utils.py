@@ -819,3 +819,17 @@ def get_target_adata_marker_opt(
         logger=logger,
     )
     return adata_query_agg, adata_query
+
+
+def sanitize_anndata(adata: sc.AnnData, convert_to: str = "string") -> sc.AnnData:
+    for df, name in [(adata.obs, "obs"), (adata.var, "var")]:
+        for col in df.columns:
+            if df[col].dtype == "object":
+                if convert_to == "string":
+                    # Convert to pandas nullable string dtype (safe for HDF5 writing)
+                    df[col] = df[col].astype("string")
+                elif convert_to == "category":
+                    df[col] = df[col].astype("category")
+                else:
+                    raise ValueError("convert_to must be 'string' or 'category'")
+    return adata
