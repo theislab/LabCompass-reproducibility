@@ -9,7 +9,7 @@
 #SBATCH --time=1-00:00:00
 
 SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
-LOOP="3"
+LOOP="2"
 HPARAMSEARCH="small"
 ENV_MANAGER="micromamba"
 ENV_NAME="sc_exp_design"
@@ -53,11 +53,15 @@ data="cell_type_default"
 wandb_name="sweep_classifier"
 paths="loop2_replicate"
 transforms="bloodplus"
+model="cell_type_default"
+training="default"
 
 case $LOOP in
   2)
     data="cell_type_reannot_final"
     paths="loop2_replicate"
+    model="cell_type_reannot_final"
+    training="cell_type_reannot_final"
     wandb_name="${wandb_name}_loop2"
     ;;
   2.5)
@@ -96,4 +100,5 @@ $cmd --multirun \
     callbacks.wandb_project_name="$wandb_name" \
     paths="${paths}" \
     transforms="${transforms}" \
+    training="${training}" \
     model="${model}"
