@@ -44,6 +44,15 @@ def main(config: DictConfig):
     adata = sc.read_h5ad(config.paths.h5ad_path)
     logger.info(f"Data read! {adata}")
 
+    # Filter out cells without a label (optional: adjust column name)
+    target_col = config.training.class_weights_obs_col
+    if target_col in adata.obs.columns:
+        mask = adata.obs[target_col].notna()
+        logger.info(f"Filtering out {sum(~mask)} unlabelled cells from original data.")
+        adata = adata[mask].copy()
+    else:
+        logger.warning(f"Column '{target_col}' not found; skipping filtering.")
+
     # Data 1. splitting data
     logger.info(f"Splitting data...\n\tPerforming validation split {config.splits.mode}")
     split_fn = split_fns.get(config.splits.mode, shuffle_split)
@@ -128,8 +137,10 @@ def main(config: DictConfig):
     # model 4. optionally using class weights
     if config.training.use_class_weights:
         logger.info("Computing class weights...")
-        values = train_adata.obs[config.training.class_weights_obs_col].values
-        classes = np.unique(values)
+        col = config.training.class_weights_obs_col
+        train_adata.obs[col] = train_adata.obs[col].astype('category')
+        values = train_adata.obs[col].values
+        classes = train_adata.obs[col].cat.categories.values
         class_weights = torch.from_numpy(
             compute_class_weight(
                 config.training.class_weight,
