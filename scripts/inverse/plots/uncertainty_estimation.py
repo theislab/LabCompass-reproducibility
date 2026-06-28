@@ -41,8 +41,11 @@ def main(config: DictConfig):
     with initialize(config_path=config.base_config_path, version_base=None):
         base_cfg = compose(
             config_name=config.base_config_name,
-            overrides=[f"paths={config.paths}"]
+            overrides=[f"paths={config.paths}", 
+                       f"annotation={config.annotation}", 
+                       f"constraints={config.constraints}"]
         )
+    base_cfg.loss.cell_type_column = config.cell_type_column
     
     print("Using checkpoints", base_cfg.paths.perturbation_prediction_path)
         
@@ -59,7 +62,7 @@ def main(config: DictConfig):
     # Prepare label encoder
     logger.info("Preparing labels")   
     ct_le = LabelEncoder()
-    ct_values = target_prediction_model.train_data.adata.obs["cell_type"].values
+    ct_values = target_prediction_model.train_data.adata.obs[config.cell_type_column].values
     ct_le.fit(ct_values)
     classes = ct_le.classes_.tolist()  # List of cell types in alphabetical order 
     
@@ -109,7 +112,7 @@ def main(config: DictConfig):
                 num_time_steps=100
             )
             # Collect predictions 
-            y_pred = forward_out["target_prediction_data"]["cell_type"].view(X_candidates_add.shape[0],
+            y_pred = forward_out["target_prediction_data"][config.cell_type_column].view(X_candidates_add.shape[0],
                                                                              config.n_populations,
                                                                              -1,
                                                                              len(classes))  
@@ -122,11 +125,11 @@ def main(config: DictConfig):
             # Collect cell type of interest 
             y_pred_ct_std = y_pred_softmax[..., cell_type_index].std(1).detach().cpu().numpy()  # standard deviation prob cell type of interest 
             # Calculate loss
-            y_target_ct = get_target_dict(config_run, classes, "cell_type", "cuda")["cell_type"]  # 1 x no_cell_type
+            y_target_ct = get_target_dict(config_run, classes, config.cell_type_column, "cuda")[config.cell_type_column]  # 1 x no_cell_type
             y_target_ct = y_target_ct.unsqueeze(0)  # 1 x 1 x no_cell_types
             
             logger.info("Compute loss function")
-            loss_fn = get_loss_fn(config_run)["cell_type"]
+            loss_fn = get_loss_fn(config_run, cell_type_column=config.cell_type_column)[config.cell_type_column]
             with torch.no_grad():
                 loss = loss_fn(y_pred_mean, y_target_ct)  # no_candidates x no_populations
             loss_std = loss.std(1).detach().cpu().numpy()  # no_candidates
@@ -174,7 +177,7 @@ def main(config: DictConfig):
             result_csv["acq_values"] = sequential_local_penalization_score_dict["acq_values"]
             
             # Save updated results 
-            result_csv.to_csv(uncertainty_annotation_folder / "candidates_with_uncertainties_loop1.csv")
+            result_csv.to_csv(uncertainty_annotation_folder / config.destination_file_name)
         
 def parse_args():
     import argparse    
@@ -188,6 +191,10 @@ def parse_args():
     parser.add_argument("--experiment_type", required=False, default="unconstrained-pure_populations-reciprocal")
     parser.add_argument("--true_concentration_path", required=True)
     parser.add_argument("--paths", default="default")
+    parser.add_argument("--cell_type_column", default="cell_type")
+    parser.add_argument("--destination_file_name", default="candidates_with_uncertainties.csv")
+    parser.add_argument("--annotation", default="bloodplus")
+    parser.add_argument("--constraints", default="default")
     return parser.parse_args()
 
 def run():
