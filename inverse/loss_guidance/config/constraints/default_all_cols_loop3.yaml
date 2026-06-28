@@ -17,6 +17,7 @@ lbound_dict:
   days_of_culture: 12.0
   il7_[ng_ml]: 0.0
   mcsf_[ng_ml]: 0.0
+  ly_cocktail_[ul/well]: 0.0
 ubound_dict:
   gm-csf_[ng_ml]: 10.0
   tpo_[ng_ml]: 2.5
@@ -32,6 +33,7 @@ ubound_dict:
   days_of_culture: 18.0
   il7_[ng_ml]: 20.0
   mcsf_[ng_ml]: 20.0
+  ly_cocktail_[ul/well]: 15.0
 c_scheduler_kwargs:
   t_warmup: 0.0
   vmin: 0.0
