@@ -19,6 +19,7 @@ ENV_MANAGER="micromamba"
 N_SAMPLES=50 
 N_FWD_SAMPLES=350
 LOOP="2.5"
+OLD_CLF="false"
 
 
 # ---- 2. Define constants set automatically by the script ----
@@ -68,6 +69,10 @@ while [[ $# -gt 0 ]]; do
     -l|--loop)
       LOOP="$2"
       shift 2
+      ;;
+    -ocl|--old-clf)
+      OLD_CLF="true"
+      shift
       ;;
     *)
       echo "Unknown parameter passed: $1"
@@ -120,11 +125,21 @@ case $LOOP in
     paths="loop2_replicate"
     loss="loop2_replicate"
     dump_dir="${base_dump_dir}/loop2_replicate/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+    if [[ "${OLD_CLF}" == "true" ]]; then
+        paths="${paths}_old_clf"
+        dump_dir="${base_dump_dir}/loop2_replicate_old_clf/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+        loss=f"${loss}_old_clf"
+    fi
     ;;
   2.5)
     paths="loop2p5_replicate"
     loss="loop2p5_replicate"
     dump_dir="${base_dump_dir}/loop2p5_replicate/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+    if [[ "${OLD_CLF}" == "true" ]]; then
+        paths="${paths}_old_clf"
+        dump_dir="${base_dump_dir}/loop2p5_replicate_old_clf/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+        loss=f"${loss}_old_clf"
+    fi
     ;;
   3)
     paths="loop3_replicate"
@@ -133,6 +148,11 @@ case $LOOP in
     dump_dir="${base_dump_dir}/loop3_replicate/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
     if [[ "$OPT" == "penalized_all_axes" ]]; then
         constraints="default_all_cols_loop3"
+    fi
+    if [[ "${OLD_CLF}" == "true" ]]; then
+        paths="${paths}_old_clf"
+        dump_dir="${base_dump_dir}/loop3_replicate_old_clf/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+        loss=f"${loss}_old_clf"
     fi
     ;;
   *)
