@@ -138,7 +138,7 @@ case $LOOP in
     if [[ "${OLD_CLF}" == "true" ]]; then
         paths="${paths}_old_clf"
         dump_dir="${base_dump_dir}/loop2p5_replicate_old_clf/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-        loss=f"${loss}_old_clf"
+        loss="${loss}_old_clf"
     fi
     ;;
   3)
