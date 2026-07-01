@@ -13,6 +13,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 UTILS_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils"
+COLS_TO_MASK = ["il7_[ng_ml]", "mcsf_[ng_ml]", "ly_cocktail_[ul/well]"] # HACK: pass it as argument
+SOLVER_KWARGS = {"method":"euler", "atol": 5e-5, "rtol": 5e-5} # HACK: pass it as argument
 
 
 def main(config: DictConfig):
@@ -44,7 +46,7 @@ def main(config: DictConfig):
     forward_model, (
         _,
         target_prediction_model
-    ) = get_forward_model(config, logger=logger)
+    ) = get_forward_model(inv_config, logger=logger)
     logger.info(f"Forward model ready!\n{forward_model}")
 
     # ---- Prepare label encoder ----
@@ -71,7 +73,11 @@ def main(config: DictConfig):
     logger.info(f"Concentration values transformed with log1p.")
 
     # ---- Prepare conterfactual concentration data (i.e.: mask new molecules) ----
-    cols_to_mask = json.loads(config.columns_to_mask)
+    # if isinstance(config.columns_to_mask, str):
+    #     cols_to_mask = json.loads(config.columns_to_mask)
+    # else:
+    #     cols_to_mask = config.columns_to_mask
+    cols_to_mask = COLS_TO_MASK # HACK: parse cli argument
     logger.info(f"Running counterfactual experiments by masking the {cols_to_mask} columns...")
 
     X_cond_log1p_masked = X_cond_log1p.copy()
@@ -82,7 +88,12 @@ def main(config: DictConfig):
 
     # ---- Query the forward model with the masked conditions ----
     num_time_steps = config.num_time_steps
-    solver_kwargs = json.loads(config.solver_kwargs)
+    # logger.info(f"DEBUG: Loading solver keywargs -> {config.solver_kwargs}")
+    # if isinstance(config.solver_kwargs, str):
+    #     solver_kwargs = json.loads(config.solver_kwargs)
+    # else:
+    #     solver_kwargs = config.solver_kwargs
+    solver_kwargs = SOLVER_KWARGS # HACK: parse cli argument
     num_samples = config.num_samples
     cell_type_column = config.cell_type_column
     logger.info(f"Querying the forward model: {num_time_steps=}, {solver_kwargs=}, {num_samples=}, {cell_type_column=}")
@@ -116,6 +127,7 @@ def main(config: DictConfig):
         index=opt_df.index,
         columns=[f"{c}_prop" for c in classes]
     )
+    ct_probs_df["sample_id"] = opt_df["sample_id"]
     logger.info(f"Cell type proportion DataFrame created: {ct_probs_df.shape}")
 
     # ---- Save generated prediction data to disk ----    
@@ -139,8 +151,8 @@ if __name__ == "__main__":
     parser.add_argument("--columns_to_mask", type=str, default='["il7_[ng_ml]", "mcsf_[ng_ml]", "ly_cocktail_[ul/well]"]', help="The names of the protocol columns to mask for the counterfactual experiment.")
     parser.add_argument("--num_time_steps", type=int, default=1_000, help="The number of time steps used to query the forward model.")
     parser.add_argument("--solver_kwargs", type=str, default='{"method":"euler", "atol": 5e-5, "rtol": 5e-5}', help="The solver key-word arguments used to query the forward model.")
-    parser.add_argument("--num_samples", type=int, default=20_000, help="The number of samples to generate with the forward model.")
-    parser.add_argument("--cell_type_column", type=str, default="cell_type_reannot_final", help="The identifier of the cell type column used by the forward model.")
+    parser.add_argument("--num_samples", type=int, default=2_000, help="The number of samples to generate with the forward model.")
+    parser.add_argument("--cell_type_column", type=str, default="cell_type", help="The identifier of the cell type column used by the forward model.")
     args = parser.parse_args()
 
     main(args)

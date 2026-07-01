@@ -1,0 +1,3 @@
+dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/forward_model/loop4/${now:%Y-%m-%d}_${now:%H-%M-%S}"
+h5ad_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/loops/data/loop4/replicate/adata_full.h5ad"
+log_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/flow_matching/loop4/${now:%Y-%m-%d}_${now:%H-%M-%S}"
