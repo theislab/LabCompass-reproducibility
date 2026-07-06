@@ -12,9 +12,10 @@
 
 EXPERIMENT=$1
 
-EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/loop3_replicate
+EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/loop4_replicate
 
-WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
+# WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
+WDIR=/home/icb/alessandro.palma/environment/collab-goettgens-SFC
 
 cd "$WDIR" || exit 1
 
@@ -24,8 +25,22 @@ conda activate sc_exp_design_12
 echo "Running experiment: $EXPERIMENT"
 echo "Experiment dir: $EXPERIMENT_DIR"
 
+# python scripts/inverse/plots/uncertainty_estimation.py \
+#     --target_cell_types "EryPro__late_MgkPro" \
+#     --n_noise_samples 5000 \
+#     --n_populations 10 \
+#     --base_config_path ../../../inverse/loss_guidance/config/ \
+#     --base_config_name run_inverse \
+#     --result_dir "$EXPERIMENT_DIR" \
+#     --experiment_type "$EXPERIMENT" \
+#     --true_concentration_path  /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/data/gdrive/loop3/unique_concentrations.h5ad \
+#     --paths loop2p5_replicate \
+#     --cell_type_column cell_type_reannot_final \
+#     --annotation bloodplus \
+#     --constraints default_all_cols \
+
 python scripts/inverse/plots/uncertainty_estimation.py \
-    --target_cell_types "CD14Mono__CD16Mono__ProB__preProB" \
+    --target_cell_types "EryPro__late_MgkPro" \
     --n_noise_samples 5000 \
     --n_populations 10 \
     --base_config_path ../../../inverse/loss_guidance/config/ \
@@ -33,7 +48,7 @@ python scripts/inverse/plots/uncertainty_estimation.py \
     --result_dir "$EXPERIMENT_DIR" \
     --experiment_type "$EXPERIMENT" \
     --true_concentration_path  /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/data/gdrive/loop3/unique_concentrations.h5ad \
-    --paths loop3_replicate \
+    --paths loop4_replicate \
     --cell_type_column cell_type \
     --annotation bloodplus_loop3 \
     --constraints default_all_cols_loop3 \

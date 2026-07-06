@@ -29,10 +29,10 @@ def main(config: DictConfig):
         get_forward_model,
         get_target_dict, 
         get_loss_fn, 
-        compute_exploitation_score, 
-        compute_exploration_score, 
-        compute_weighted_uncertainty_score, 
-        compute_sequential_local_penalization
+        # compute_exploitation_score, 
+        # compute_exploration_score, 
+        # compute_weighted_uncertainty_score, 
+        # compute_sequential_local_penalization
     )
     
     # Sanity check
@@ -53,10 +53,10 @@ def main(config: DictConfig):
     logger.info("Read model")
     
     # Unique concentration adata 
-    adata_unique_concentrations = sc.read_h5ad(config.true_concentration_path)
+    # adata_unique_concentrations = sc.read_h5ad(config.true_concentration_path)
     protocol_columns = base_cfg["annotation"]["protocol_columns"]
-    adata_unique_concentrations =  adata_unique_concentrations[:, protocol_columns]
-    X_real_concentrations = adata_unique_concentrations.X
+    # adata_unique_concentrations =  adata_unique_concentrations[:, protocol_columns]
+    # X_real_concentrations = adata_unique_concentrations.X
     protocol_columns = [col + ":rescaled" for col in protocol_columns]
     
     # Prepare label encoder
@@ -148,33 +148,34 @@ def main(config: DictConfig):
                 result_csv[f"{cell_type}_prop_std"] = np.sqrt(y_pred_var[:, i])
                 
             # Exploration & Exploitation scores 
-            exploitation_score = compute_exploitation_score(loss_mean)
+            # exploitation_score = compute_exploitation_score(loss_mean)
             # Leggi i dati veri e calcola le distanxe
-            X_candidates = X_candidates.detach().cpu().numpy()
-            Dts = cdist(X_candidates, X_real_concentrations)
-            exploration_score = compute_exploration_score(Dts)
-            weights = np.linspace(0, 1, 100)[None, :].repeat(exploitation_score.shape[0], axis=0)
-            one_minus_weights = 1. - weights
-            # Calcola interpolazioni e media 
-            metric_response_surface = (weights * exploitation_score[:, None].repeat(100, axis=1) + one_minus_weights * exploration_score[:, None].repeat(100, axis=1))
-            metric_response_surface = metric_response_surface.mean(1)
+            # X_candidates = X_candidates.detach().cpu().numpy()
             
-            weighted_uncertainty_score = compute_weighted_uncertainty_score(loss_mean, X_candidates, X_real_concentrations)
+            # Dts = cdist(X_candidates, X_real_concentrations)
+            # exploration_score = compute_exploration_score(Dts)
+            # weights = np.linspace(0, 1, 100)[None, :].repeat(exploitation_score.shape[0], axis=0)
+            # one_minus_weights = 1. - weights
+            # # Calcola interpolazioni e media 
+            # metric_response_surface = (weights * exploitation_score[:, None].repeat(100, axis=1) + one_minus_weights * exploration_score[:, None].repeat(100, axis=1))
+            # metric_response_surface = metric_response_surface.mean(1)
             
-            # Compute sequential local penalization score 
-            sequential_local_penalization_score_dict = compute_sequential_local_penalization(X_candidates=X_candidates,
-                                                                                             mean_candidates_loss=loss_mean,
-                                                                                             std_candidates_loss=loss_std,
-                                                                                             gamma=1.0,
-                                                                                             kappa=1.0)
+            # weighted_uncertainty_score = compute_weighted_uncertainty_score(loss_mean, X_candidates, X_real_concentrations)
             
-            result_csv["exploitation_score"] = exploitation_score
-            result_csv["exploration_score"] = exploration_score
-            result_csv["weighted_uncertainty_score"] = weighted_uncertainty_score
-            result_csv["metric_response_surface"] = metric_response_surface
-            result_csv["indices"] = sequential_local_penalization_score_dict["indices"]
-            result_csv["losses"] = sequential_local_penalization_score_dict["losses"]
-            result_csv["acq_values"] = sequential_local_penalization_score_dict["acq_values"]
+            # # Compute sequential local penalization score 
+            # sequential_local_penalization_score_dict = compute_sequential_local_penalization(X_candidates=X_candidates,
+            #                                                                                  mean_candidates_loss=loss_mean,
+            #                                                                                  std_candidates_loss=loss_std,
+            #                                                                                  gamma=1.0,
+            #                                                                                  kappa=1.0)
+            
+            # result_csv["exploitation_score"] = exploitation_score
+            # result_csv["exploration_score"] = exploration_score
+            # result_csv["weighted_uncertainty_score"] = weighted_uncertainty_score
+            # result_csv["metric_response_surface"] = metric_response_surface
+            # result_csv["indices"] = sequential_local_penalization_score_dict["indices"]
+            # result_csv["losses"] = sequential_local_penalization_score_dict["losses"]
+            # result_csv["acq_values"] = sequential_local_penalization_score_dict["acq_values"]
             
             # Save updated results 
             result_csv.to_csv(uncertainty_annotation_folder / config.destination_file_name)
