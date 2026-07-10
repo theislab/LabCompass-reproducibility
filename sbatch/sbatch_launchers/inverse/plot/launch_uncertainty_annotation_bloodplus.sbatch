@@ -40,7 +40,7 @@ echo "Experiment dir: $EXPERIMENT_DIR"
 #     --constraints default_all_cols \
 
 python scripts/inverse/plots/uncertainty_estimation.py \
-    --target_cell_types "EryPro__late_MgkPro" \
+    --target_cell_types "CD14Mono__CD16Mono__preProB" \
     --n_noise_samples 5000 \
     --n_populations 10 \
     --base_config_path ../../../inverse/loss_guidance/config/ \
