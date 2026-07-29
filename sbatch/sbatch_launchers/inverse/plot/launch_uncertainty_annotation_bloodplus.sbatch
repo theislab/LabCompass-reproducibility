@@ -12,7 +12,7 @@
 
 EXPERIMENT=$1
 
-EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/loop4_replicate
+EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/loop3_replicate
 
 # WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
 WDIR=/home/icb/alessandro.palma/environment/collab-goettgens-SFC
@@ -40,7 +40,7 @@ echo "Experiment dir: $EXPERIMENT_DIR"
 #     --constraints default_all_cols \
 
 python scripts/inverse/plots/uncertainty_estimation.py \
-    --target_cell_types "CD14Mono__CD16Mono__preProB" \
+    --target_cell_types "late_MgkPro__EryPro" \
     --n_noise_samples 5000 \
     --n_populations 10 \
     --base_config_path ../../../inverse/loss_guidance/config/ \
@@ -48,7 +48,7 @@ python scripts/inverse/plots/uncertainty_estimation.py \
     --result_dir "$EXPERIMENT_DIR" \
     --experiment_type "$EXPERIMENT" \
     --true_concentration_path  /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/data/gdrive/loop3/unique_concentrations.h5ad \
-    --paths loop4_replicate \
+    --paths loop3_replicate \
     --cell_type_column cell_type \
     --annotation bloodplus_loop3 \
     --constraints default_all_cols_loop3 \
