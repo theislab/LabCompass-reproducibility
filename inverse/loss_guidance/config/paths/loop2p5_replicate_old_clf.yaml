@@ -1,4 +1,5 @@
-perturbation_prediction_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/forward_model/loop2p5/2026-06-22_12-36-05/celestial-fire-40_FlowMatching.pkl"
+# perturbation_prediction_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/forward_model/loop2p5/2026-06-22_12-36-05/celestial-fire-40_FlowMatching.pkl"
+perturbation_prediction_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/forward_model/loop2p5/2026-06-22_12-36-05/neat-galaxy-43_FlowMatching.pkl"
 ct_classifier_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/cell_type_classifier/2026-04-08_00-00-38/easy-monkey-341_TargetPredictionModel.pkl"
 prior_flow_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop_2p5_replicate/soft-brook-35_FlowMatchingWithScore.pkl"
 prior_flow_map_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop_2p5_replicate/ancient-grass-37_FlowMap.pkl"

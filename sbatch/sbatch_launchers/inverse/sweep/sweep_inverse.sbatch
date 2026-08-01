@@ -91,7 +91,7 @@ fi
 
 if [[ "$OPT" == "penalized_all_axes" ]]; then
     # constraints="default_all_cols"
-    constraints="default_all_cols_loop3"
+    # constraints="default_all_cols_loop3"
 else
     constraints="default"
 fi

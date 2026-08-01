@@ -24,7 +24,8 @@ echo "Job ID:     $SLURM_JOB_ID"
 echo "Node:       $SLURMD_NODENAME"
 echo "Start time: $(date)"
  
-python "$SCRIPT" "$@" annotation="loop3" paths="loop3_replicate"
+# python "$SCRIPT" "$@" annotation="loop3" paths="loop3_replicate"
+python "$SCRIPT" "$@" annotation="loop3" paths="loop4_replicate"
  
 echo "End time: $(date)"
  

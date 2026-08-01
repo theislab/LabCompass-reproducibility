@@ -1,11 +1,13 @@
 #!/bin/bash
 
 # ---- 1. Define constants to override with cli ----
-ENV_NAME="sc_exp_design"
-ENV_MANAGER="micromamba"
+# ENV_NAME="sc_exp_design"
+ENV_NAME="sc_exp_design_12"
+# ENV_MANAGER="micromamba"
+ENV_MANAGER="conda"
 N_SAMPLES=50 
 N_FWD_SAMPLES=350
-LOOP="2.5"
+LOOP="3"
 OLD_CLF="false"
 
 
@@ -47,7 +49,7 @@ TARGET_CELL_TYPES=(
     # "EosBasMast1"
     # "EosBasMast2"
     # "EosBasMast3"
-    # "EryPro"
+    "EryPro"
     # "HSCs"
     # "ProB"
     "late_MgkPro"

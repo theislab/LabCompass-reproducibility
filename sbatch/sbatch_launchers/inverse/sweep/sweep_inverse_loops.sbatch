@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=sweep_loss_guidance
-#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions_latest/sweep_loss_guidance_%j.out
-#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions_latest/sweep_loss_guidance_%j.err
+#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions1/sweep_loss_guidance_%j.out
+#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions1/sweep_loss_guidance_%j.err
 #SBATCH --partition=cpu_p
 #SBATCH --qos=cpu_normal
 #SBATCH --mem=20G
@@ -153,6 +153,15 @@ case $LOOP in
         paths="${paths}_old_clf"
         dump_dir="${base_dump_dir}/loop3_replicate_old_clf/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
         loss=f"${loss}_old_clf"
+    fi
+    ;;
+  4)
+    paths="loop4_replicate"
+    loss="loop4_replicate"
+    annotation="bloodplus_loop3"
+    dump_dir="${base_dump_dir}/loop4_replicate/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+    if [[ "$OPT" == "penalized_all_axes" ]]; then
+        constraints="default_all_cols_loop4"
     fi
     ;;
   *)
