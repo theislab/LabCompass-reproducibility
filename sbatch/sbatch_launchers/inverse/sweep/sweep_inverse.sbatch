@@ -21,6 +21,7 @@ ENV_MANAGER="conda"
 N_SAMPLES=50 
 N_FWD_SAMPLES=350
 CELL_TYPE_COLUMN=cell_type_leiden # "cell_type" 
+LOOP="2.5"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -61,6 +62,10 @@ while [[ $# -gt 0 ]]; do
       CELL_TYPE_COLUMN="$2"
       shift 2
       ;;
+    -l|--loop)
+      LOOP="$2"
+      shift 2
+      ;;
     *)
       echo "Unknown parameter passed: $1"
       exit 1
@@ -86,11 +91,35 @@ fi
 
 if [[ "$OPT" == "penalized_all_axes" ]]; then
     # constraints="default_all_cols"
-    constraints="default_all_cols_loop3"
+    # constraints="default_all_cols_loop3"
 else
     constraints="default"
 fi
 
+case $LOOP in
+  1)
+    paths="loop1"
+    wandb_name="${wandb_name}_loop1"
+    ;;
+  2)
+    paths="loop2_replicate"
+    wandb_name="${wandb_name}_loop2"
+    ;;
+  2.5)
+    paths="loop2p5_replicate"
+    wandb_name="${wandb_name}_loop2p5"
+    ;;
+  3)
+    paths="loop3_replicate"
+    wandb_name="${wandb_name}_loop3"
+    annotation="bloodplus_loop3"
+    vf="default_protocol_concat_loop3"
+    ;;
+  *)
+    echo "Unknown LOOP value: $LOOP"
+    exit 1
+    ;;
+esac
 
 # Map scheduler to configurations
 case $QUERY_TYPE in

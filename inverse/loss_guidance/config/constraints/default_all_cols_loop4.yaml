@@ -20,7 +20,7 @@ lbound_dict:
   ly_cocktail_[ul/well]: 0.0
 ubound_dict:
   gm-csf_[ng_ml]: 10.0
-  tpo_[ng_ml]: 2.5
+  tpo_[ng_ml]: 100.0
   um171_[nm]: 1120.0
   um729_[µm]: 1120.0
   sr1_[nm]: 750.0

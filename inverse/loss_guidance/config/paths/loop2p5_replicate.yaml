@@ -1,5 +1,5 @@
-perturbation_prediction_path:
-ct_classifier_path:
-prior_flow_path:
-prior_flow_map_path:
-dump_dir:
+perturbation_prediction_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/forward_model/loop2p5/2026-06-22_12-36-05/celestial-fire-40_FlowMatching.pkl"
+ct_classifier_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/cell_type_classifier/loop2_replicate/2026-06-25_12-41-22/robust-terrain-39_TargetPredictionModel.pkl"
+prior_flow_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop_2p5_replicate/soft-brook-35_FlowMatchingWithScore.pkl"
+prior_flow_map_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop_2p5_replicate/ancient-grass-37_FlowMap.pkl"
+dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/loop2p5_replicate"

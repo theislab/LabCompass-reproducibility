@@ -1,0 +1,5 @@
+sample_rep: "X_channel_standardized+X_scatter_standardized"
+target_covariates:
+  cell_type_reannot_final: "label"
+target_covariates_in_obsm: null
+target_covariates_kwargs: null
