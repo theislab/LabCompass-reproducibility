@@ -20,24 +20,11 @@ try:
 except ImportError as e:
     RAPIDS_IMPORT_OKAY = False
 
-sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+sys.path.insert(0, "/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/shared_utils")
 from ood_utils import shuffle_split, split_adata
 
 
-LOG1P_EXP_COL = [
-    "gm-csf_[ng_ml]",
-    "tpo_[ng_ml]",
-    "sr1_[nm]",
-    "um171_[nm]",
-    "um729_[µm]",
-    "scf_[ng_ml]",
-    "butyzamide_[nm]",
-    "retinoic_acid_[µm]",
-    "ldl_[ng_ml]",
-    "il3_[ng_ml]",
-    "o2_[%]",
-    "days_of_culture"
-]
+LOG1P_EXP_COL = []
 LOG21P_EXP_COL = []
 
 
@@ -97,7 +84,6 @@ def get_protocol_tranformations(
                 col2transf[col] = lambda x: np.exp2(x) - 1
             else:
                 col2transf[col] = lambda x: np.log2(x + 1)
-
         else:
             col2transf[col] = None
     return col2transf
@@ -122,7 +108,7 @@ def write_unique_protocols_representations(
         unique_values_registry = {}
         protocol_vals = np.unique(col_values)
         for idx, unique_val in enumerate(protocol_vals):
-            unique_values_registry[f"{col}{unique_val_sep}{idx + 1}"] = unique_val.item()
+            unique_values_registry[f"{col}{unique_val_sep}{idx + 1}"] = unique_val.item() # convert a numpy scalar to a native Python type
         uniqe_values_inverse_registry = {v:k for k, v in unique_values_registry.items()}
         col_registry[col] = unique_values_registry
         col_inverse_registry[col] = uniqe_values_inverse_registry
@@ -292,7 +278,7 @@ def compute_whitening_matrix(
 
     raise ValueError(f"Unknown method: {method}")
 
-
+# Decorrelates the observations by transforming the covariance matrix to the identity matrix. This is done by multiplying the data with the whitening matrix W.
 def whiten_array_and_write_to_adata(
     adata,
     X,

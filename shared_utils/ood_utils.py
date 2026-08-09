@@ -42,7 +42,7 @@ def split_adata(
     train_adata = adata[~is_ood].copy()
     return train_adata, odd_adatas_dict
 
-
+# Used for K-fold cross validation
 def shuffle_split(adata, K=3, test_size=0.3, random_state=42, split_to_retrieve=0):
     skf = ShuffleSplit(n_splits=K, test_size=test_size, random_state=random_state)
     splits = skf.split(np.zeros(len(adata)))

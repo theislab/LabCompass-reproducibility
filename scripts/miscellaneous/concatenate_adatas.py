@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 def main(config):
     # import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    sys.path.insert(0, "/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/shared_utils")
     from data_utils import drop_duplicates, ensure_type_safety
 
     # read anndatas

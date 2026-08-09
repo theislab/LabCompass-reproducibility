@@ -21,8 +21,8 @@ from sc_exp_design.constants import DataFields, ParamsFields, PredictionFields
 from sc_exp_design.metrics import compute_e_distance
 from sc_exp_design.models import FlowMatching, TargetPredictionModel
 
-sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
-sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
+sys.path.insert(0, "/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/shared_utils")
+sys.path.insert(0, "/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/shared_utils")
 from forward_model import ForwardModel
 from z_norm_modules import ZNorm, IZNorm, RescaledTargetPredictionModel
 

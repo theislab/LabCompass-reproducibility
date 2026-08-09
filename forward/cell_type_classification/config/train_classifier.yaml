@@ -4,11 +4,11 @@
 defaults:
   - _self_
   - callbacks: "default"
-  - data: "cell_type_default"
+  - data: "Region_default"
   - hydra: "default"
-  - model: "cell_type_default"
-  - paths: "hpc_subset"
+  - model: "Region_default"
+  - paths: "hpc_ood_ra4"
   - reproducibility: "default"
-  - splits: "shuffle"
+#  - splits: "shuffle"
   - training: "default"
-  - transforms: "default"
+#  - transforms: "default"

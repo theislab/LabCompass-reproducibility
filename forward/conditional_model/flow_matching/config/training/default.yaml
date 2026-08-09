@@ -1,13 +1,13 @@
-num_training_steps: 2000000
-valid_freq: 100000
-train_batch_size: 2048
-validation_batch_size: 16384
-state_transforms: null
-grad_steps_log_interval: 100
-num_treatments_to_load: null
-num_samples_per_validation_step: null
-cfg_prob_unconditional: 0.0
-validation_cfg_guidance_strength: 1.0
-num_grad_accumulation_steps: 20
-N: 1_000
-sample_groups: True
+num_training_steps: 500000 # defaults to 500
+valid_freq: null # defaults to null
+train_batch_size: 1024 # defaults to 1024
+validation_batch_size: 512 # defaults to 512 
+state_transforms: null # defaults to null
+grad_steps_log_interval: 100 # defaults to 100 
+num_treatments_to_load: null # defaults to null
+num_samples_per_validation_step: null # defaults to null, which is 1 sample
+cfg_prob_unconditional: 0.0 # defaults to 0.1
+validation_cfg_guidance_strength: 1.0 # defaults to 1.0
+num_grad_accumulation_steps: 20 # defaults to 1
+N: 1_000 # WHAT FOR 
+sample_groups: False # defaults to False, present in feat/add_score...

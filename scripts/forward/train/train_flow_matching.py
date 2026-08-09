@@ -2,6 +2,7 @@ import os
 import logging
 import sys
 import traceback
+import scanpy as sc
 
 import hydra
 from omegaconf import DictConfig
@@ -23,7 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DO_VALIDATION = False
+DO_VALIDATION = True
 time_samplers = {}
 noise_distributions = {}
 activation_functions = {}
@@ -33,22 +34,26 @@ state_transforms = {}
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/conditional_model/flow_matching/config",
+    config_path="/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/forward/conditional_model/flow_matching/config",
     config_name="train_cfm",
 )
 def main(config: DictConfig):
 
     # import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
-    from data_utils import get_adata_splits
+    sys.path.insert(0, "/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/shared_utils")
     from train_utils import (
         parse_mlp_config_dictionary,
         parse_nested_mlp_config_dictionary,
         resolve_omegaconf_to_dictionary
     )
 
-    # 0. retrieving adata and ensuring reproducibility
-    train_adata, ood_adatas_dict = get_adata_splits(config, logger_orig=logger)
+    # Data 0. loading adata
+    logger.info("Loading data...")
+    train_adata = sc.read_h5ad(config.paths.train_h5ad_path)
+    val_adata = sc.read_h5ad(config.paths.val_h5ad_path)
+    logger.info(f"Train data loaded! {train_adata}")
+    logger.info(f"Validation data loaded! {val_adata}")
+
     set_reproducibility(config.reproducibility.seed)
 
     # Model 1. initialize flow matching model
@@ -63,7 +68,7 @@ def main(config: DictConfig):
         generate_from_noise=config.flow_matching.generate_from_noise,
         noise_distribution=noise_distributions.get(config.flow_matching.noise_distribution, torch.randn),
     )
-    logger.info("Model inialized!")
+    logger.info("Model initalized!")
 
     # Model 2. prepare data
     logger.info("Preparing training data...")
@@ -82,15 +87,14 @@ def main(config: DictConfig):
     )
     logger.info("Train data ready!")
     logger.info("Preparing OOD data...")
-    for k, v in ood_adatas_dict.items():
-        flow_matching.prepare_validation_data(k, v)
+    flow_matching.prepare_validation_data("RA_4", val_adata)
     logger.info("OOD data ready!")
     print(flow_matching.train_data.perturbation_data.keys())
 
     # Model 3. initialize velocity field configurations and prepare additional arguments
     logger.info("Initializing neural configurations...")
     cvf_config = NeuralVelocityFieldConfig(
-        flow_matching.train_data.state_data.shape[-1],
+        train_adata.obsm["X_pca_center"].shape[1], # dimension of the flow, features
         encode_state=config.vf.encode_state,
         state_encoder_output_dim=config.vf.state_encoder_output_dim,
         state_encoder_mlp_kwargs=parse_mlp_config_dictionary(activation_functions, config.vf.state_encoder_mlp_kwargs),
@@ -172,7 +176,7 @@ def main(config: DictConfig):
         validation_cfg_guidance_strength=config.training.validation_cfg_guidance_strength,
         num_grad_accumulation_steps=config.training.num_grad_accumulation_steps,
         close_wandb_connection=False,
-        sample_groups=config.training.sample_groups,
+        #sample_groups=config.training.sample_groups,
     )
     logger.info("Model trained!")
 

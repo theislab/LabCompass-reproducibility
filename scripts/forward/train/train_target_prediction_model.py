@@ -25,46 +25,26 @@ state_transforms = {}
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/cell_type_classification/config",
+    config_path="/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/forward/cell_type_classification/config",
     config_name="train_classifier",
 )
 def main(config: DictConfig):
     # import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
-    from data_utils import apply_shared_transformations
-    from ood_utils import shuffle_split
+    sys.path.insert(0, "/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/shared_utils")
     from train_utils import (
         parse_mlp_config_dictionary,
         parse_nested_mlp_config_dictionary,
         resolve_omegaconf_to_dictionary
     )
 
-    # Data 0. reading adata
-    logger.info("Reading data...")
-    adata = sc.read_h5ad(config.paths.h5ad_path)
-    logger.info(f"Data read! {adata}")
+    # Data 0. loading adata
+    logger.info("Loading data...")
+    train_adata = sc.read_h5ad(config.paths.train_h5ad_path)
+    val_adata = sc.read_h5ad(config.paths.val_h5ad_path)
+    logger.info(f"Train data loaded! {train_adata}")
+    logger.info(f"Validation data loaded! {val_adata}")
 
-    # Data 1. splitting data
-    logger.info(f"Splitting data...\n\tPerforming validation split {config.splits.mode}")
-    split_fn = split_fns.get(config.splits.mode, shuffle_split)
-    train_adata, ood_adata = split_fn(
-        adata,
-        **resolve_omegaconf_to_dictionary(config.splits.kwargs)
-    )
     set_reproducibility(config.reproducibility.seed)
-    # logger.info(f"Data split performed!\n \tTrain data of shape {train_adata.shape}\tValidation data of shape {ood_adata.shape}")
-
-    # Data 2. apply shared transformations
-    logger.info("Computing tranformation params on train data and applying to both train and ood data...")
-    train_adata, ood_adatas_dict = apply_shared_transformations(
-        train_adata,
-        # {"test0": ood_adata},
-        ood_adata,
-        config.transforms.scatter_columns,
-        compute_channel_pcs=config.transforms.compute_channel_pcs,
-    )
-    ood_adata = next(iter(ood_adatas_dict.values()))
-    logger.info("Shared tranformations applied!")
 
     # Model 0. initializing model
     logger.info("Initializing model...")
@@ -84,7 +64,7 @@ def main(config: DictConfig):
     )
     logger.info("Train data ready!")
     logger.info("Preparing OOD data...")
-    classifier.prepare_validation_data(ood_adata)
+    classifier.prepare_validation_data(val_adata)
     logger.info("OOD data ready!")
 
     # Model 2. preparing model

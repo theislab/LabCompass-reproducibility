@@ -1,18 +1,18 @@
 device_id: "cuda"
-target_covariates: ["cell_type", ]
+target_covariates: ["Region", ]
 target_covariates_dims:
-  cell_type: 19
+  Region: 8
 target_covariates_noise_models:
-  cell_type: null
+  Region: null
 target_covariates_predictor_kwargs:
-  cell_type:
+  Region:
     hidden_dims: []
     use_batchnorm: False
     use_dropout: False
     dropout_rate: 0.0
-    activation_class: "identity"
+    activation_class: "selu"
     final_activation_class: "identity"
-target_covariates_use_shared_representation: True
+target_covariates_use_shared_representation: False
 target_covariates_latent_dim: 16
 target_covariates_encoder_mlp_kwargs:
   hidden_dims: [32, 32]
@@ -23,7 +23,7 @@ target_covariates_encoder_mlp_kwargs:
   final_activation_class: "identity"
 optimizer_id: null
 optimizer_kwargs:
-  lr: 0.0001
+  lr: 0.001
 scheduler_id: null
 lr_scheduler_kwargs: null
 lr_scheduler_step: null

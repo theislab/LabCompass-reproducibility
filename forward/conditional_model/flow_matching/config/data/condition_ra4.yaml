@@ -1,0 +1,12 @@
+sample_rep: "X_pca_center"
+control_key: null
+perturbations:
+  - "condition"
+perturbation_covariates: null
+perturbations_in_obsm: null
+perturbation_reps:
+  condition: "conditions"
+load_target_covariates: False
+target_covariates: null
+target_covariates_in_obsm: null
+target_covariates_kwargs: null

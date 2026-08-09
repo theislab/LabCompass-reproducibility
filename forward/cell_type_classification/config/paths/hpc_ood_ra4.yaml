@@ -1,0 +1,4 @@
+dump_dir: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/output/checkpoints/${now:%Y-%m-%d}_${now:%H-%M-%S}"
+train_h5ad_path: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/data/RA_4/train_adata.h5ad"
+val_h5ad_path: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/data/RA_4/val_adata.h5ad"
+log_dir: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/output/logs/forward/${now:%Y-%m-%d}_${now:%H-%M-%S}"

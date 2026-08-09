@@ -29,7 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-ROOT_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
+ROOT_DIR = "/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC"
 NON_LINEARITIES_REGISTRY = {
     "identity": torch.nn.Identity,
     "relu": torch.nn.ReLU
@@ -37,7 +37,7 @@ NON_LINEARITIES_REGISTRY = {
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config",
+    config_path="/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/inverse/loss_guidance/config",
     config_name="run_inverse_constrained"
 )
 def main(config: DictConfig) -> float:
