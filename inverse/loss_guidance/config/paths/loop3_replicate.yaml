@@ -1,5 +1,5 @@
-perturbation_prediction_path:
-ct_classifier_path:
-prior_flow_path:
-prior_flow_map_path:
-dump_dir:
+perturbation_prediction_path: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/forward_model/loop3/2026-06-22_15-10-12/rich-sunset-44_FlowMatching.pkl
+ct_classifier_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/cell_type_classifier/2026-04-08_00-00-38/easy-monkey-341_TargetPredictionModel.pkl"
+prior_flow_path: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop3_replicate/comic-aardvark-33_FlowMatchingWithScore.pkl
+prior_flow_map_path: /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop3_replicate/floral-river-34_FlowMap.pkl
+dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/loop3_replicate"
