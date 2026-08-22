@@ -11,9 +11,9 @@ import scanpy as sc
 from sklearn.utils.class_weight import compute_class_weight
 import torch
 
-from sc_exp_design.models import TargetPredictionModel
-from sc_exp_design.utils import set_reproducibility
-from sc_exp_design.training.callbacks import MetricsCallBack, TrainingCallBacks, WandBLogger
+from labcompass.models import TargetPredictionModel
+from labcompass.utils import set_reproducibility
+from labcompass.training.callbacks import MetricsCallBack, TrainingCallBacks, WandBLogger
 
 logger = logging.getLogger(__name__)
 

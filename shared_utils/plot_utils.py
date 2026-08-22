@@ -11,7 +11,7 @@ import seaborn as sns
 from scipy.stats import gaussian_kde
 from sklearn.neighbors import NearestNeighbors
 
-from sc_exp_design.metrics import compute_e_distance
+from labcompass.metrics import compute_e_distance
 
 sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
 from experiment_utils import (

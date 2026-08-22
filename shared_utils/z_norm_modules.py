@@ -4,8 +4,8 @@ import numpy as np
 import scanpy as sc
 import torch
 
-from sc_exp_design.constants import DataFields, ParamsFields
-from sc_exp_design.models import TargetPredictionModel
+from labcompass.constants import DataFields, ParamsFields
+from labcompass.models import TargetPredictionModel
 
 
 TensorParams = dict[Literal[ParamsFields.MEAN, ParamsFields.COVARIANCE], torch.Tensor]

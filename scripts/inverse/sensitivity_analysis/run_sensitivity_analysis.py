@@ -12,7 +12,7 @@ import scanpy as sc
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_exp_design.utils import set_reproducibility
+from labcompass.utils import set_reproducibility
 
 
 BASE_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"

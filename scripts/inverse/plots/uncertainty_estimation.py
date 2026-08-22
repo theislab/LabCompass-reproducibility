@@ -13,7 +13,7 @@ import numpy as np
 from pathlib import Path 
 import torch.nn.functional as F
 
-from sc_exp_design.constants import DataFields
+from labcompass.constants import DataFields
 
 BASE_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
 CONFIG_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config"

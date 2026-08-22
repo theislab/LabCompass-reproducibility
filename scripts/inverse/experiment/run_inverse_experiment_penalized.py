@@ -14,9 +14,9 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_exp_design.models import FlowMatching, FlowMatchingWithScore, FlowMap
-from sc_exp_design.utils import set_reproducibility
-from sc_exp_design.inverse import LossGuidedFlow
+from labcompass.models import FlowMatching, FlowMatchingWithScore, FlowMap
+from labcompass.utils import set_reproducibility
+from labcompass.inverse import LossGuidedFlow
 
 # 1. Configure the logging behavior
 logging.basicConfig(

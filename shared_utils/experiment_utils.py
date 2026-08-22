@@ -18,9 +18,9 @@ from sklearn.preprocessing import LabelEncoder
 import torch
 from tqdm import tqdm
 
-from sc_exp_design.constants import DataFields, ParamsFields, PredictionFields
-from sc_exp_design.metrics import compute_e_distance
-from sc_exp_design.models import FlowMatching, TargetPredictionModel
+from labcompass.constants import DataFields, ParamsFields, PredictionFields
+from labcompass.metrics import compute_e_distance
+from labcompass.models import FlowMatching, TargetPredictionModel
 
 import scopt
 

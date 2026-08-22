@@ -14,8 +14,8 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_exp_design.models import FlowMatchingWithScore, FlowMap
-from sc_exp_design.utils import set_reproducibility
+from labcompass.models import FlowMatchingWithScore, FlowMap
+from labcompass.utils import set_reproducibility
 
 import scopt
 

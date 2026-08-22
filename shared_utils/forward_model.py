@@ -7,10 +7,10 @@ import cloudpickle
 import numpy as np
 import torch
 
-from sc_exp_design.constants import PredictionFields
-from sc_exp_design.networks.blocks import BaseForwardModel
+from labcompass.constants import PredictionFields
+from labcompass.networks.blocks import BaseForwardModel
 
-from sc_exp_design.models.base import BaseModel
+from labcompass.models.base import BaseModel
 
 logger = logging.getLogger(__name__)
 

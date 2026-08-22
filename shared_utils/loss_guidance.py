@@ -5,8 +5,8 @@ import torch
 from torchdiffeq import odeint
 from torchsde import sdeint
 
-from sc_exp_design.constants import PredictionFields, DataFields
-from sc_exp_design.utils import match_shapes
+from labcompass.constants import PredictionFields, DataFields
+from labcompass.utils import match_shapes
 
 from lambda_schedulers import LambdaScheduler
 from sde import SDE

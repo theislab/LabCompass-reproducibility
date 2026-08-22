@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from sc_exp_design.constants import DataFields, PredictionFields
+from labcompass.constants import DataFields, PredictionFields
 
 
 # define upper bound

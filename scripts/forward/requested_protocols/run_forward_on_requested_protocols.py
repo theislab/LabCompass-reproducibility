@@ -12,8 +12,8 @@ from omegaconf import OmegaConf
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_exp_design.data.container import DataMixin
-from sc_exp_design.utils import set_reproducibility
+from labcompass.data.container import DataMixin
+from labcompass.utils import set_reproducibility
 
 
 logger = logging.getLogger(__name__)

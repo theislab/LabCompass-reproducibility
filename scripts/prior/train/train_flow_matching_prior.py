@@ -9,10 +9,10 @@ import pandas as pd
 from omegaconf import DictConfig
 import torch
 
-from sc_exp_design.config import NeuralVelocityFieldConfig
-from sc_exp_design.models import FlowMatching, FlowMatchingWithScore
-from sc_exp_design.utils import set_reproducibility
-from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
+from labcompass.config import NeuralVelocityFieldConfig
+from labcompass.models import FlowMatching, FlowMatchingWithScore
+from labcompass.utils import set_reproducibility
+from labcompass.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
 logger = logging.getLogger(__name__)
 
