@@ -1,4 +1,0 @@
-run:
-  dir: "${oc.env:REPO_ROOT}/project_folder/output/logs/inverse/loss_guidance/experiments/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/"
-sweep:
-  dir: "${oc.env:REPO_ROOT}/project_folder/output/logs/inverse/loss_guidance/experiments/multiruns/${now:%Y-%m-%d}_${now:%H-%M-%S}/hydra/"

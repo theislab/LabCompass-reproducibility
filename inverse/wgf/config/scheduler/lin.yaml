@@ -1,3 +1,0 @@
-scheduler_id: "lin"
-scheduler_kwargs:
-  horizon: 1.0

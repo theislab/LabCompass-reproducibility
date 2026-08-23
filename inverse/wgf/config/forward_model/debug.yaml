@@ -1,3 +1,0 @@
-num_time_steps: 3
-solver_kwargs:
-  method: "euler"
