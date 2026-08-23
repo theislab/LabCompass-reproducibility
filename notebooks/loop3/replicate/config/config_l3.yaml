@@ -1,0 +1,189 @@
+annotation:
+  protocol_columns:
+  - gm-csf_[ng_ml]
+  - tpo_[ng_ml]
+  - sr1_[nm]
+  - um171_[nm]
+  - um729_[µm]
+  - scf_[ng_ml]
+  - butyzamide_[nm]
+  - retinoic_acid_[µm]
+  - ldl_[ng_ml]
+  - il3_[ng_ml]
+  - o2_[%]
+  - days_of_culture
+  - il7_[ng_ml]
+  - mcsf_[ng_ml]
+  - ly_cocktail_[ul/well]
+  protocol_obs_key_added: protocol_id
+  protocol_sep: _
+  one_hot_uns_key_added: one_hot
+  protocol_obsm_key: condition_concat
+  scatter_columns:
+  - 'FSC-A :: FSC - Area'
+  - 'FSC-H :: FSC - Height'
+  - 'FSC-W :: FSC - Width'
+  - 'SSC-A :: SSC - Area'
+  - 'SSC-H :: SSC - Height'
+  - 'SSC-W :: SSC - Width'
+  base_sample_rep: null
+  scatter_obsm_key: X_scatter
+  concat_obsm_key: X_concat
+  log1p_exp_cols:
+  - gm-csf_[ng_ml]
+  - tpo_[ng_ml]
+  - sr1_[nm]
+  - um171_[nm]
+  - um729_[µm]
+  - scf_[ng_ml]
+  - butyzamide_[nm]
+  - retinoic_acid_[µm]
+  - ldl_[ng_ml]
+  - il3_[ng_ml]
+  - o2_[%]
+  - days_of_culture
+  - il7_[ng_ml]
+  - mcsf_[ng_ml]
+  - ly_cocktail_[ul/well]
+  log21p_exp_cols: []
+constraints:
+  eps: 1.0e-15
+  use_lstsq: true
+  g_tol: 0.1
+  constraints_in_original_space: true
+  lbound_dict:
+    gm-csf_[ng_ml]: 0.0
+    tpo_[ng_ml]: 0.0
+    um171_[nm]: 0.0
+    um729_[µm]: 0.0
+    sr1_[nm]: 0.0
+    scf_[ng_ml]: 0.0
+    butyzamide_[nm]: 0.0
+    retinoic_acid_[µm]: 0.0
+    ldl_[ng_ml]: 0.0
+    il3_[ng_ml]: 0.0
+    o2_[%]: 10.0
+    days_of_culture: 12.0
+    il7_[ng_ml]: 0.0
+    mcsf_[ng_ml]: 0.0
+    ly_cocktail_[ul/well]: 0.0
+  ubound_dict:
+    gm-csf_[ng_ml]: 10.0
+    tpo_[ng_ml]: 2.5
+    um171_[nm]: 1120.0
+    um729_[µm]: 1120.0
+    sr1_[nm]: 750.0
+    scf_[ng_ml]: 50.0
+    butyzamide_[nm]: 100.0
+    retinoic_acid_[µm]: 25.0
+    ldl_[ng_ml]: 50.0
+    il3_[ng_ml]: 20.0
+    o2_[%]: 20.0
+    days_of_culture: 18.0
+    il7_[ng_ml]: 20.0
+    mcsf_[ng_ml]: 20.0
+    ly_cocktail_[ul/well]: 15.0
+  c_scheduler_kwargs:
+    t_warmup: 0.0
+    vmin: 1.0
+    vmax: 15.0
+  use_exponential_penalty: false
+forward_model:
+  num_time_steps: 1000
+  solver_kwargs:
+    method: euler
+    atol: 1.0e-05
+    rtol: 1.0e-05
+loss:
+  use_penalization: false
+  cell_type_column: cell_type
+  target_marker_names:
+  - CD41a
+  target_morph_feat_names: []
+  filter_dict: null
+  target_quantile: 99.5
+  loss_name: l2
+  loss_kwargs: null
+  agg_type: min
+  obj_type: pop
+  agg_fn_kwargs:
+    axis: 0
+    keepdims: true
+loss_guidance:
+  fix_noise: true
+  num_forward_pass_per_sample: 350
+  regularization: null
+  reg_strength: 0.0
+  n_time_steps_forward_model: 50
+  solver_kwargs_forward_model:
+    method: euler
+    atol: 1.0e-05
+    rtol: 1.0e-05
+non_linearity:
+  non_linearity_id: relu
+  non_linearity_kwargs: null
+paths:
+  perturbation_prediction_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/forward_model/loop3/2026-06-22_15-10-12/rich-sunset-44_FlowMatching.pkl"
+  ct_classifier_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/cell_type_classifier/2026-04-08_00-00-38/easy-monkey-341_TargetPredictionModel.pkl"
+  prior_flow_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/prior/loop3_replicate/comic-aardvark-33_FlowMatchingWithScore.pkl"
+  prior_flow_map_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/prior/loop3_replicate/floral-river-34_FlowMap.pkl"
+  dump_dir: "${oc.env:REPO_ROOT}/project_folder/output/inverse/loss_guidance//loop3_replicate/penalized_all_axes-pure_populations-constant"
+run:
+  random_seed: 42
+sampling:
+  target_cell_type: preProB
+  'N': 50
+  num_time_steps: 500
+  solver_kwargs:
+    method: euler
+  sde_sampling: false
+  query_pure_cell_types: true
+  mask_gradients: false
+  target_probs:
+  - 0.07
+  - 0.07
+  - 0.0
+  - 0.0
+  - 0.07
+  - 0.01
+  - 0.07
+  - 0.07
+  - 0.0
+  - 0.07
+  - 0.07
+  - 0.0
+  - 0.21
+  - 0.07
+  - 0.07
+  - 0.07
+  - 0.0
+  - 0.01
+  - 0.07
+  mask:
+  - false
+  - false
+  - true
+  - true
+  - false
+  - false
+  - false
+  - false
+  - true
+  - false
+  - false
+  - true
+  - true
+  - false
+  - false
+  - false
+  - true
+  - false
+  - false
+scheduler:
+  scheduler_id: constant
+  scheduler_kwargs:
+    lambda_val: null
+    lmin: null
+    lmax: 3.0
+    gamma: null
+optimized_metric: all_conditions_wasserstein_distance
