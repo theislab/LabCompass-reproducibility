@@ -19,6 +19,10 @@ from labcompass.models import FlowMatching, FlowMatchingWithScore, FlowMap
 from labcompass.utils import set_reproducibility
 from labcompass.inverse import LossGuidedFlow
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[3]
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
+
 # 1. Configure the logging behavior
 logging.basicConfig(
     level=logging.INFO,
@@ -30,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-ROOT_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
+ROOT_DIR = str(REPO_ROOT)
 NON_LINEARITIES_REGISTRY = {
     "identity": torch.nn.Identity,
     "relu": torch.nn.ReLU
@@ -44,7 +48,7 @@ AGG_FN_REGISTRY = {
 }
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config",
+    config_path=str(REPO_ROOT / "inverse/loss_guidance/config"),
     config_name="run_inverse_constrained"
 )
 def main(config: DictConfig) -> float:

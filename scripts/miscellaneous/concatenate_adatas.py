@@ -3,13 +3,18 @@ import sys
 
 import scanpy as sc
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[2]
+import os
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
+
 # initialize logger
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def main(config):
     # import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    sys.path.insert(0, str(REPO_ROOT / "shared_utils"))
     from data_utils import drop_duplicates, ensure_type_safety
 
     # read anndatas
@@ -52,11 +57,11 @@ def main(config):
 def parse_args():
     import argparse    
     parser = argparse.ArgumentParser()
-    parser.add_argument("--full_base_data_path", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/data/gdrive/HID01_fcs_concatenated_logicle.h5ad")
-    parser.add_argument("--annot_base_data_path", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/data/gdrive/ds_HID01_logicle_100k_UMAP_ann.h5ad")
-    parser.add_argument("--additional_base_data_path", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/data/gdrive/LPHO012/projected_LPHO12_all_exp.h5ad")
-    parser.add_argument("--full_concat_data_path", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous/HID01_fcs_concatenated_logicle_with_LPHO12.h5ad")
-    parser.add_argument("--annot_concat_data_path", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous/ds_HID01_logicle_100k_UMAP_ann_with_LPHO12.h5ad")
+    parser.add_argument("--full_base_data_path", required=False, default=str(REPO_ROOT / "project_folder" / "data/gdrive/HID01_fcs_concatenated_logicle.h5ad"))
+    parser.add_argument("--annot_base_data_path", required=False, default=str(REPO_ROOT / "project_folder" / "data/gdrive/ds_HID01_logicle_100k_UMAP_ann.h5ad"))
+    parser.add_argument("--additional_base_data_path", required=False, default=str(REPO_ROOT / "project_folder" / "data/gdrive/LPHO012/projected_LPHO12_all_exp.h5ad"))
+    parser.add_argument("--full_concat_data_path", required=False, default=str(REPO_ROOT / "project_folder" / "output/miscellaneous/HID01_fcs_concatenated_logicle_with_LPHO12.h5ad"))
+    parser.add_argument("--annot_concat_data_path", required=False, default=str(REPO_ROOT / "project_folder" / "output/miscellaneous/ds_HID01_logicle_100k_UMAP_ann_with_LPHO12.h5ad"))
     return parser.parse_args()
 
 if __name__ == "__main__":

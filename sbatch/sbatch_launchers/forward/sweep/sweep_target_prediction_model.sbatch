@@ -1,13 +1,16 @@
 #!/bin/bash
 
 #SBATCH --job-name=sweep_classifier
-#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/cell_type_classifier/job_submissions/sweep_classifier-%j.log
-#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/cell_type_classifier/job_submissions/sweep_classifier-%j.err
+#SBATCH --output=sweep_classifier-%j.log
+#SBATCH --error=sweep_classifier-%j.err
 #SBATCH --partition=cpu_p
 #SBATCH --qos=cpu_normal
 #SBATCH --mem=20G
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 
 SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
@@ -40,7 +43,7 @@ echo "Running experiments on sample: $SAMPLE_REP"
 ENV_NAME="sc_exp_design_12"
 echo "Using environment: $ENV_NAME"
 
-WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
+WDIR=$REPO_ROOT
 
 cd "$WDIR" || exit 1
 echo "Current Working Directory: $WDIR"

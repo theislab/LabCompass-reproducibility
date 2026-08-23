@@ -14,6 +14,10 @@ from labcompass.models import FlowMatching, FlowMatchingWithScore, FlowMap
 from labcompass.utils import set_reproducibility
 from labcompass.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[3]
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
+
 logger = logging.getLogger(__name__)
 
 time_samplers = {}
@@ -25,13 +29,13 @@ state_transforms = {}
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/prior/config",
+    config_path=str(REPO_ROOT / "prior/config"),
     config_name="distill_flow_map",
 )
 def main(config: DictConfig):
 
     # import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    sys.path.insert(0, str(REPO_ROOT / "shared_utils"))
     from experiment_utils import get_forward_model
     from train_utils import (
         parse_mlp_config_dictionary,

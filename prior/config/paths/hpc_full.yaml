@@ -1,6 +1,6 @@
-dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/flow_matching/${now:%Y-%m-%d}_${now:%H-%M-%S}"
-# forward_model_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/conditional_model/flow_matching/2026-03-09_13-54-17/8-bit-dry-bones-12_FlowMatching.pkl" used for original data 
-# forward_model_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/conditional_model/flow_matching/2026-04-02_14-16-39/crisp-pine-1_FlowMatching.pkl" # Used for bloodplus
-# forward_model_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/conditional_model/flow_matching/2026-04-26_19-03-48/glamorous-sun-4_FlowMatching.pkl" # Used for bloodplus old measurements
-forward_model_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/conditional_model/flow_matching/2026-05-14_08-38-41/royal-pyramid-29_FlowMatching.pkl" # Used for loop3
-log_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/prior/flow_matching/${now:%Y-%m-%d}_${now:%H-%M-%S}"
+dump_dir: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/prior/flow_matching/${now:%Y-%m-%d}_${now:%H-%M-%S}"
+# forward_model_checkpoint_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/conditional_model/flow_matching/2026-03-09_13-54-17/8-bit-dry-bones-12_FlowMatching.pkl" used for original data 
+# forward_model_checkpoint_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/conditional_model/flow_matching/2026-04-02_14-16-39/crisp-pine-1_FlowMatching.pkl" # Used for bloodplus
+# forward_model_checkpoint_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/conditional_model/flow_matching/2026-04-26_19-03-48/glamorous-sun-4_FlowMatching.pkl" # Used for bloodplus old measurements
+forward_model_checkpoint_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/conditional_model/flow_matching/2026-05-14_08-38-41/royal-pyramid-29_FlowMatching.pkl" # Used for loop3
+log_dir: "${oc.env:REPO_ROOT}/project_folder/output/logs/prior/flow_matching/${now:%Y-%m-%d}_${now:%H-%M-%S}"

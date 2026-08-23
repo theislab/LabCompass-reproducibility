@@ -15,17 +15,21 @@ import torch
 from labcompass.data.container import DataMixin
 from labcompass.utils import set_reproducibility
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[3]
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
+
 
 logger = logging.getLogger(__name__)
 
 
 @hydra.main(
-    "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/conditional_model/flow_matching/config",
+    str(REPO_ROOT / "forward/conditional_model/flow_matching/config"),
     config_name="load_models",
 )
 def main(config):
     # import libraries
-    sys.path.insert(0, f"/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    sys.path.insert(0, str(REPO_ROOT / "shared_utils"))
     from data_utils import (
         get_condition_data_from_file,
     )

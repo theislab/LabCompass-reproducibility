@@ -1,6 +1,6 @@
-dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop3/"
-# forward_model_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/conditional_model/flow_matching/2026-04-02_14-16-39/eager-feather-1_FlowMatching.pkl"
-# teacher_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/flow_matching/2026-04-04_10-19-42/woven-dawn-22_FlowMatchingWithScore.pkl"
-forward_model_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/conditional_model/flow_matching/2026-05-14_08-38-41/royal-pyramid-29_FlowMatching.pkl" # Used for loop3
-teacher_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop3/peach-snowflake-29_FlowMatchingWithScore.pkl" # Used for loop3
-log_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/prior/flow_map/${now:%Y-%m-%d}_${now:%H-%M-%S}"
+dump_dir: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/prior/loop3/"
+# forward_model_checkpoint_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/conditional_model/flow_matching/2026-04-02_14-16-39/eager-feather-1_FlowMatching.pkl"
+# teacher_checkpoint_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/prior/flow_matching/2026-04-04_10-19-42/woven-dawn-22_FlowMatchingWithScore.pkl"
+forward_model_checkpoint_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/conditional_model/flow_matching/2026-05-14_08-38-41/royal-pyramid-29_FlowMatching.pkl" # Used for loop3
+teacher_checkpoint_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/prior/loop3/peach-snowflake-29_FlowMatchingWithScore.pkl" # Used for loop3
+log_dir: "${oc.env:REPO_ROOT}/project_folder/output/logs/prior/flow_map/${now:%Y-%m-%d}_${now:%H-%M-%S}"

@@ -11,21 +11,26 @@ from sklearn.preprocessing import LabelEncoder
 import torch
 from tqdm import tqdm
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[2]
+import os
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
+
 
 logger = logging.getLogger(__name__)
 
-OUT_ADATA_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous_new/unique_concentrations_adata_bloodplus.h5ad"
+OUT_ADATA_PATH = str(REPO_ROOT / "project_folder" / "output/miscellaneous_new/unique_concentrations_adata_bloodplus.h5ad")
 BATCH_SIZE = 500_000
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config",
+    config_path=str(REPO_ROOT / "inverse/loss_guidance/config"),
     config_name="run_inverse",
     version_base=None
 )
 def main(config):
     # lazily import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    sys.path.insert(0, str(REPO_ROOT / "shared_utils"))
     from experiment_utils import (
         get_forward_model,
         compute_condition_means,

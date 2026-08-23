@@ -1,13 +1,16 @@
 #!/bin/bash
 
 #SBATCH --job-name=sweep_loss_guidance
-#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/sgd/job_submissions/sweep_loss_guidance_%j.out
-#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/sgd/job_submissions/sweep_loss_guidance_%j.err
+#SBATCH --output=sweep_loss_guidance_%j.out
+#SBATCH --error=sweep_loss_guidance_%j.err
 #SBATCH --partition=cpu_p
 #SBATCH --qos=cpu_normal
 #SBATCH --mem=20G
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 # ---- 1. Define defaults ----
 TARGET_CELL_TYPE="late_MgkPro"
@@ -78,7 +81,7 @@ case $SGD_INIT_FROM_DATA in
 esac
 
 # ---- 4. Define path based on configuration ----
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/sgd_gaussian_init/loop1/${SCHEDULER}"
+dump_dir="$REPO_ROOT/project_folder/output/inverse/sgd_gaussian_init/loop1/${SCHEDULER}"
 
 # ---- 5. Prepare command ----
 script_name="run_inverse_experiment"

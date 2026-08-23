@@ -24,8 +24,9 @@ from labcompass.models import FlowMatching, TargetPredictionModel
 
 import scopt
 
-sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
-sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/shared_utils")
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from forward_model import ForwardModel
 from z_norm_modules import ZNorm, IZNorm, RescaledTargetPredictionModel
 

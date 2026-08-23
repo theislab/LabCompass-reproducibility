@@ -1,8 +1,11 @@
 #!/bin/bash
 
-BASE_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+BASE_DIR="$REPO_ROOT/project_folder/output/inverse/loss_guidance/raw_data"
 PYTHON_SCRIPT="./scripts/inverse/sensitivity_analysis/run_sensitivity_analysis.py"
-LOG_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions"
+LOG_DIR="$REPO_ROOT/project_folder/output/logs/inverse/loss_guidance/job_submissions"
 
 EXP_TYPE=(
     "unconstrained-pure_populations-reciprocal"

@@ -1,6 +1,9 @@
 #!/bin/bash
 
-BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+BASE_SBATCH_DIR="$REPO_ROOT/sbatch"
 
 SWEEP_FLAG=0
 VALIDATE_FLAG=0

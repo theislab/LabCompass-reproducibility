@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=run_sensitivity_analysis
-#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/sensitivity_analysis_%j.out
-#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/sensitivity_analysis_%j.err
+#SBATCH --output=sensitivity_analysis_%j.out
+#SBATCH --error=sensitivity_analysis_%j.err
 #SBATCH -p gpu_p
 #SBATCH --qos=gpu_normal
 #SBATCH --gres=gpu:1

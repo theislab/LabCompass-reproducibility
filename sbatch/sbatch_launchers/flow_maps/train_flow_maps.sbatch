@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=train_flow_matching_prior
-#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/train_flow_maps-%j.log
-#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/train_flow_maps-%j.err
+#SBATCH --output=train_flow_maps-%j.log
+#SBATCH --error=train_flow_maps-%j.err
 #SBATCH --partition=gpu_p
 #SBATCH --qos=gpu_normal
 #SBATCH --gres=gpu:1
@@ -10,6 +10,9 @@
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
 #SBATCH --constraint="h100_80gb"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
  
 # ── Environment ──────────────────────────────────────────────────────────────
 source ~/.bashrc
@@ -18,7 +21,7 @@ conda activate sc_exp_design_12
 export HYDRA_FULL_ERROR=1
  
 # ── Paths ────────────────────────────────────────────────────────────────────
-PROJECT_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
+PROJECT_DIR="$REPO_ROOT"
 SCRIPT="$PROJECT_DIR/scripts/prior/train/distill_flow_map_prior.py"
  
 # ── Run ──────────────────────────────────────────────────────────────────────

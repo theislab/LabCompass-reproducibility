@@ -13,7 +13,10 @@ from sklearn.neighbors import NearestNeighbors
 
 from labcompass.metrics import compute_e_distance
 
-sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+sys.path.insert(0, str(REPO_ROOT / "shared_utils"))
 from experiment_utils import (
     get_distance_df,
     get_dimensionality_reduced_condition_space,

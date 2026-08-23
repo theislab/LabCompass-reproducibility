@@ -12,8 +12,12 @@ from sklearn.preprocessing import LabelEncoder
 import torch
 from tqdm import tqdm
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[3]
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
 
-BASE_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
+
+BASE_DIR = str(REPO_ROOT)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -196,7 +200,7 @@ def parse_args():
     parser.add_argument("--base_config_name", required=False, default="run_inverse")
     parser.add_argument("--n_train_cells", required=False, default=70_000)
     parser.add_argument("--n_val_cells", required=False, default=30_000)
-    parser.add_argument("--base_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
+    parser.add_argument("--base_dir", required=False, default=str(REPO_ROOT / "project_folder" / "output/inverse/loss_guidance/raw_data"))
     parser.add_argument("--experiment_type", required=False, default="unconstrained-pure_populations-reciprocal")
     return parser.parse_args()
 

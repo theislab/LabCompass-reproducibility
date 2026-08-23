@@ -21,6 +21,10 @@ from labcompass.inverse import LossGuidedFlow
 
 import scopt
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[3]
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
+
 # 1. Configure the logging behavior
 logging.basicConfig(
     level=logging.INFO,
@@ -32,8 +36,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-PATH_ADATA = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/data/gdrive/new_dataset/BloodPlus_Logicle_pm_.h5ad"
-ROOT_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
+PATH_ADATA = str(REPO_ROOT / "project_folder" / "data/gdrive/new_dataset/BloodPlus_Logicle_pm_.h5ad")
+ROOT_DIR = str(REPO_ROOT)
 NON_LINEARITIES_REGISTRY = {
     "identity": torch.nn.Identity,
     "relu": torch.nn.ReLU
@@ -41,7 +45,7 @@ NON_LINEARITIES_REGISTRY = {
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config",
+    config_path=str(REPO_ROOT / "inverse/loss_guidance/config"),
     config_name="run_inverse_constrained"
 )
 def main(config: DictConfig) -> float:

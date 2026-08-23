@@ -14,6 +14,10 @@ from data_utils import annotate_perturbations, get_protocol_tranformations, appl
 from train_utils import resolve_omegaconf_to_dictionary
 from distances import compute_e_distance, compute_distance_fn
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[2]
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
+
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +64,7 @@ def get_adata(config: DictConfig):
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/data_analysis/subpopulation_distances/config",
+    config_path=str(REPO_ROOT / "data_analysis/subpopulation_distances/config"),
     config_name="compute_subpop_dists"
 )
 def main(

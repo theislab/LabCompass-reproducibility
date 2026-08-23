@@ -1,23 +1,26 @@
 #!/bin/bash
 #SBATCH --job-name=sweep_marker_opt
-#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/marker_opt/job_submissions/sweep_loss_guidance_%j.out
-#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/marker_opt/job_submissions/sweep_loss_guidance_%j.err
+#SBATCH --output=sweep_loss_guidance_%j.out
+#SBATCH --error=sweep_loss_guidance_%j.err
 #SBATCH --partition=cpu_p
 #SBATCH --qos=cpu_normal
 #SBATCH --mem=20G
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
 # ----------------------------------------------------------------------
 # 1. Force correct working directory (where the Python script lives)
 # ----------------------------------------------------------------------
-PROJECT_ROOT="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
+PROJECT_ROOT="$REPO_ROOT"
 cd "$PROJECT_ROOT" || { echo "❌ Cannot cd to $PROJECT_ROOT"; exit 1; }
 
 # ----------------------------------------------------------------------
 # 2. Ensure output directories exist (Slurm does not create parents)
 # ----------------------------------------------------------------------
-LOG_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/marker_opt/job_submissions"
+LOG_DIR="$REPO_ROOT/project_folder/output/logs/inverse/marker_opt/job_submissions"
 mkdir -p "$LOG_DIR"
 
 # ----------------------------------------------------------------------
@@ -75,8 +78,8 @@ fi
 # ----------------------------------------------------------------------
 # 6. Define dump directory and create it
 # ----------------------------------------------------------------------
-# dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_marker_opt/${OPT}-${SCHEDULER}"
-dump_dir="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/bloodplus_inverse_marker_opt_0999threshold/${OPT}-${SCHEDULER}"
+# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_marker_opt/${OPT}-${SCHEDULER}"
+dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_marker_opt_0999threshold/${OPT}-${SCHEDULER}"
 mkdir -p "$dump_dir"
 
 # ----------------------------------------------------------------------

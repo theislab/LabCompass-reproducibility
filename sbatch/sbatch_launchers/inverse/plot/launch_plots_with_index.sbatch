@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=inverse_plot_per_index
-#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/%x_%j.out
-#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions/%x_%j.err
+#SBATCH --output=%x_%j.out
+#SBATCH --error=%x_%j.err
 #SBATCH --time=02:00:00
 #SBATCH --mem=500G
 #SBATCH --gres=gpu:1
@@ -10,7 +10,10 @@
 #SBATCH --qos=gpu_normal
 #SBATCH --array=1-299
 
-WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/experiments
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
+WDIR=$REPO_ROOT/inverse/experiments
 
 source ~/.bashrc
 conda activate sc_exp_design

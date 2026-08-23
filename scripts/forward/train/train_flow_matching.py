@@ -12,6 +12,10 @@ from labcompass.models import FlowMatching
 from labcompass.utils import set_reproducibility
 from labcompass.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[3]
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,13 +37,13 @@ state_transforms = {}
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/forward/conditional_model/flow_matching/config",
+    config_path=str(REPO_ROOT / "forward/conditional_model/flow_matching/config"),
     config_name="train_cfm",
 )
 def main(config: DictConfig):
 
     # import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    sys.path.insert(0, str(REPO_ROOT / "shared_utils"))
     from data_utils import get_adata_splits
     from train_utils import (
         parse_mlp_config_dictionary,

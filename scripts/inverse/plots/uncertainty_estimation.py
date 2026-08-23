@@ -15,8 +15,11 @@ import torch.nn.functional as F
 
 from labcompass.constants import DataFields
 
-BASE_DIR = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC"
-CONFIG_PATH = "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/inverse/loss_guidance/config"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+os.environ["REPO_ROOT"] = str(REPO_ROOT)
+
+BASE_DIR = str(REPO_ROOT)
+CONFIG_PATH = str(REPO_ROOT / "inverse/loss_guidance/config")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -188,7 +191,7 @@ def parse_args():
     parser.add_argument("--n_populations", type=int, default=20)
     parser.add_argument("--base_config_path", required=True, default=...)
     parser.add_argument("--base_config_name", required=True, default=...)
-    parser.add_argument("--result_dir", required=False, default="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data")
+    parser.add_argument("--result_dir", required=False, default=str(REPO_ROOT / "project_folder" / "output/inverse/loss_guidance/raw_data"))
     parser.add_argument("--experiment_type", required=False, default="unconstrained-pure_populations-reciprocal")
     parser.add_argument("--true_concentration_path", required=True)
     parser.add_argument("--paths", default="default")

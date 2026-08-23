@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=inverse_plot
-#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions1/%x_%j.out
-#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/inverse/loss_guidance/job_submissions1/%x_%j.err
+#SBATCH --output=%x_%j.out
+#SBATCH --error=%x_%j.err
 #SBATCH --time=10:00:00
 #SBATCH --mem=500G
 #SBATCH --gres=gpu:1
@@ -10,10 +10,13 @@
 #SBATCH --qos=gpu_normal
 #SBATCH --constraint="a100_80gb|h100_80gb"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
 EXPERIMENT=$1
 
-# EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/raw_data
-EXPERIMENT_DIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/inverse/loss_guidance/new_runs_mgkpro
+# EXPERIMENT_DIR=$REPO_ROOT/project_folder/output/inverse/loss_guidance/raw_data
+EXPERIMENT_DIR=$REPO_ROOT/project_folder/output/inverse/loss_guidance/new_runs_mgkpro
 
 WDIR=/home/icb/alessandro.palma/environment/collab-goettgens-SFC
 
@@ -33,5 +36,5 @@ python scripts/inverse/plots/uncertainty_estimation.py \
     --base_config_name run_inverse \
     --result_dir "$EXPERIMENT_DIR" \
     --experiment_type "$EXPERIMENT" \
-    --true_concentration_path /lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/miscellaneous/unique_concentrations_adata.h5ad \
+    --true_concentration_path $REPO_ROOT/project_folder/output/miscellaneous/unique_concentrations_adata.h5ad \
     --paths new_measurements

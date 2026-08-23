@@ -1,5 +1,8 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
 ENV_NAME="sc_exp_design_12"
 PATHS="bloodplus"
 # PATHS="new_measurements"
@@ -20,7 +23,7 @@ echo "Conda environment set to ${ENV_NAME}"
 echo "Paths set to ${PATHS}"
 
 
-BASE_SBATCH_DIR="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch"
+BASE_SBATCH_DIR="$REPO_ROOT/sbatch"
 
 # define experimental grid
 TARGET_CELL_TYPES=(

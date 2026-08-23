@@ -1,4 +1,4 @@
-dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/prior/loop_3_replicate"
-forward_model_checkpoint_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/forward_model/loop3/2026-06-18_07-18-13/winter-sea-13_FlowMatching.pkl"
+dump_dir: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/prior/loop_3_replicate"
+forward_model_checkpoint_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/forward_model/loop3/2026-06-18_07-18-13/winter-sea-13_FlowMatching.pkl"
 teacher_checkpoint_path:
-log_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/prior/flow_map"
+log_dir: "${oc.env:REPO_ROOT}/project_folder/output/logs/prior/flow_map"

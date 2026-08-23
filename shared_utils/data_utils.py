@@ -12,6 +12,9 @@ from scipy.linalg import cholesky
 from sklearn.preprocessing import OneHotEncoder
 from tqdm import tqdm
 
+from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 # try import to rapids for faster pcas
 RAPIDS_IMPORT_OKAY = True
@@ -20,7 +23,7 @@ try:
 except ImportError as e:
     RAPIDS_IMPORT_OKAY = False
 
-sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+sys.path.insert(0, str(REPO_ROOT / "shared_utils"))
 from ood_utils import shuffle_split, split_adata
 
 

@@ -1,4 +1,7 @@
 #!/bin/bash
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 set -eu
 
 # ----------------------------------------------------------------------
@@ -10,7 +13,7 @@ USE_FM=1
 ENV_MANAGER="micromamba"
 
 # Path to the inner sbatch script (adjust if needed)
-SBATCH_SCRIPT="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/sbatch/sbatch_launchers/inverse/sweep/sweep_inverse_marker_opt.sbatch"
+SBATCH_SCRIPT="$REPO_ROOT/sbatch/sbatch_launchers/inverse/sweep/sweep_inverse_marker_opt.sbatch"
 
 # Experimental grid
 TARGET_CELL_TYPE="late_MgkPro"

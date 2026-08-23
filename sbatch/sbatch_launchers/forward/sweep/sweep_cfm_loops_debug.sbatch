@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=sweep_flow_matching
-#SBATCH --output=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/sweep_flow_matching-%j.log
-#SBATCH --error=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/job_submissions/sweep_flow_matching-%j.err
+#SBATCH --output=sweep_flow_matching-%j.log
+#SBATCH --error=sweep_flow_matching-%j.err
 #SBATCH --partition=gpu_p
 #SBATCH --qos=gpu_normal
 #SBATCH --gres=gpu:1
@@ -10,6 +10,9 @@
 #SBATCH --nice=0
 #SBATCH --time=1-00:00:00
 #SBATCH --constraint="h100_80gb"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 SAMPLE_REP="X_channel_standardized+X_scatter_standardized"
 PROTOCOL_AXIS="protocol_id"
@@ -55,7 +58,7 @@ echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, oo
 ENV_NAME="sc_exp_design"
 echo "Using environment: $ENV_NAME"
 
-WDIR=/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC
+WDIR=$REPO_ROOT
 cd "$WDIR" || exit 1
 echo "Current Working Directory: $WDIR"
 
