@@ -21,9 +21,13 @@ ENV_NAME="sc_exp_design"
 PATHS="default"
 # ENV_MANAGER="micromamba"
 ENV_MANAGER="conda"
-N_SAMPLES=50 
+N_SAMPLES=50
 N_FWD_SAMPLES=350
-CELL_TYPE_COLUMN=cell_type_leiden # "cell_type" 
+CELL_TYPE_COLUMN=cell_type_leiden # "cell_type"
+# name of the output subfolder under project_folder/output/inverse/loss_guidance/
+# other names used previously: raw_data, new_runs_mgkpro, bloodplus_inverse,
+# bloodplus_inverse_fm_best, bloodplus_inverse_fm_old_measurements_official, bloodplus_inverse_fm_loop2
+DUMP_NAME="bloodplus_inverse_fm_loop3"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
@@ -62,6 +66,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     -ctc|--ct-column)
       CELL_TYPE_COLUMN="$2"
+      shift 2
+      ;;
+    -d|--dump-name)
+      DUMP_NAME="$2"
       shift 2
       ;;
     *)
@@ -103,14 +111,8 @@ case $QUERY_TYPE in
     *) echo "❌ Unknown query type: $Q_TYPE"; exit 1 ;;
 esac
 
-# define path based on configuration
-# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/raw_data/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_fm_best/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_fm_old_measurements_official/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_fm_loop2/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
-dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_fm_loop3/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# define path based on configuration (subfolder name selectable via -d/--dump-name)
+dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/${DUMP_NAME}/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 
 # prepare command
 if [[ "${ENV_MANAGER}" == "conda" ]]; then
@@ -128,6 +130,7 @@ echo "Target Cell Type : ${TARGET_CELL_TYPE}"
 echo "Scheduler        : ${SCHEDULER} -> ${hparam_search}"
 echo "Optimization     : ${OPT} -> ${script_name}"
 echo "Query Mode       : ${QUERY_TYPE} (pure=${query_pure}, mask=${mask_gradients})"
+echo "Dump Name        : ${DUMP_NAME}"
 echo "Dump Directory   : ${dump_dir}"
 echo "Environment      : ${ENV_NAME}"
 echo "Path             : ${PATHS}"

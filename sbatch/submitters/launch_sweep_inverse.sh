@@ -6,21 +6,33 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ENV_NAME="sc_exp_design_12"
 PATHS="bloodplus"
 # PATHS="new_measurements"
+DUMP_NAME="bloodplus_inverse_fm_loop3"
 
 # Parse Flags
-case $1 in
--e|--env-name)
-    ENV_NAME="$2"
-    shift 2
-    ;;
--p|--paths)
-    PATHS="$2"
-    shift 2
-    ;;
-esac
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  -e|--env-name)
+      ENV_NAME="$2"
+      shift 2
+      ;;
+  -p|--paths)
+      PATHS="$2"
+      shift 2
+      ;;
+  -d|--dump-name)
+      DUMP_NAME="$2"
+      shift 2
+      ;;
+  *)
+      echo "Unknown parameter passed: $1"
+      exit 1
+      ;;
+  esac
+done
 
 echo "Conda environment set to ${ENV_NAME}"
 echo "Paths set to ${PATHS}"
+echo "Dump name set to ${DUMP_NAME}"
 
 
 BASE_SBATCH_DIR="$REPO_ROOT/sbatch"
@@ -86,7 +98,8 @@ for target_cell_type in ${TARGET_CELL_TYPES[@]}; do
                   --optimization-type ${optimization_type} \
                   --query-type ${query_type} \
                   --env-name ${ENV_NAME} \
-                  --paths ${PATHS};
+                  --paths ${PATHS} \
+                  --dump-name ${DUMP_NAME};
             done
         done
     done
