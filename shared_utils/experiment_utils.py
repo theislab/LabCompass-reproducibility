@@ -22,8 +22,6 @@ from labcompass.constants import DataFields, ParamsFields, PredictionFields
 from labcompass.metrics import compute_e_distance
 from labcompass.models import FlowMatching, TargetPredictionModel
 
-import scopt
-
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -773,30 +771,3 @@ def get_unique_conds(adata, protocol_cols):
         cond = real_conds[mask][0]   # all cells in same exp share the same condition
         real_matrix.append(cond)
     return np.array(real_matrix)
-
-
-class FWDPotential(scopt.potentials.BasePotential):
-    def __init__(
-        self,
-        target,
-        loss_fn: Callable[[torch.Tensor], torch.Tensor],
-        penalties: Collection[Callable[[torch.Tensor], torch.Tensor]] | None = None,
-        lambda_pen = 1.0,
-    ):
-        super().__init__()
-        self._target = target
-        self._loss_fn = loss_fn
-        self._penalties = penalties if penalties is not None else []
-        self._lambda_pen = lambda_pen
-    
-    def forward(
-        self,
-        x: torch.Tensor
-    ) -> torch.Tensor:
-        loss = self._loss_fn(x)
-        penalties = []
-        for pen_fn in self._penalties:
-            pen_val = pen_fn(x)
-            penalties.append(pen_val)
-        penalties = torch.stack(penalties, axis=0).sum(0)
-        return loss + self._lambda_pen * penalties
