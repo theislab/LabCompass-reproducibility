@@ -11,6 +11,9 @@
 #SBATCH --time=1-00:00:00
 
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
 SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
 
 echo "Running experiments on sample: $SAMPLE_REP"
@@ -18,7 +21,7 @@ echo "Running experiments on sample: $SAMPLE_REP"
 ENV_NAME="sc_exp_design_12"
 echo "Using environment: $ENV_NAME"
 
-WDIR=../../../..
+WDIR=$REPO_ROOT
 cd "$WDIR" || exit 1
 echo "Current Working Directory: $WDIR"
 
@@ -26,7 +29,10 @@ export HYDRA_FULL_ERROR=1
 
 wandb_name="train_classifier_${SAMPLE_REP}"
 
+LOG_DIR="$REPO_ROOT/project_folder/output/logs/forward"
+mkdir -p "$LOG_DIR"
+
 conda run --no-capture-output -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py \
     data.sample_rep="$SAMPLE_REP" \
     callbacks.wandb_project_name="$wandb_name" \
-    2>&1 | tee "../../logs/train_classifier-${SAMPLE_REP}.out"
+    2>&1 | tee "$LOG_DIR/train_classifier-${SAMPLE_REP}.out"
