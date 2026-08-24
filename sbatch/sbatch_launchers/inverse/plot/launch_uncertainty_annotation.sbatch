@@ -28,7 +28,7 @@ conda activate sc_exp_design_12
 echo "Running experiment: $EXPERIMENT"
 echo "Experiment dir: $EXPERIMENT_DIR"
 
-python scripts/inverse/plots/uncertainty_estimation.py \
+python scripts/inverse/uncertainty/uncertainty_estimation.py \
     --target_cell_types "CD14-Mono__CyclingProgenitor*__DCs-CD14__Early_Pro-B__EosBasoMastPre__EryPro__GMP-Neutro/CD16-Mono__HSCs__MgkPro__Pro-B" \
     --n_noise_samples 5000 \
     --n_populations 10 \
