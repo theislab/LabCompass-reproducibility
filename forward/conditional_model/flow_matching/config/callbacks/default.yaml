@@ -1,5 +1,5 @@
-wandb_project_name: "ood_morphogen_RA_4"
+wandb_project_name: "cfm_big1_sweep_RA_4"
 wandb_kwargs:
   entity: "i-navosha-technical-university-of-munich"
-metrics: ["r_squared", "energy_distance", "maximum_mean_discrepancy", "wasserstein_distance", "sinkhorn_divergence"]
+metrics: []
 save_model: True

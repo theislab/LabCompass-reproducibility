@@ -41,8 +41,10 @@ def main(config: DictConfig):
     logger.info("Loading data...")
     train_adata = sc.read_h5ad(config.paths.train_h5ad_path)
     val_adata = sc.read_h5ad(config.paths.val_h5ad_path)
+    # test_adata = sc.read_h5ad(config.paths.test_h5ad_path)
     logger.info(f"Train data loaded! {train_adata}")
     logger.info(f"Validation data loaded! {val_adata}")
+    # logger.info(f"Test data loaded! {test_adata}")
 
     set_reproducibility(config.reproducibility.seed)
 
@@ -60,12 +62,15 @@ def main(config: DictConfig):
         sample_rep=config.data.sample_rep,
         target_covariates=config.data.target_covariates,
         target_covariates_in_obsm=config.data.target_covariates_in_obsm,
-        target_covariates_kwargs=config.data.target_covariates_kwargs,
+        target_covariates_kwargs=resolve_omegaconf_to_dictionary(config.data.target_covariates_kwargs),
     )
     logger.info("Train data ready!")
-    logger.info("Preparing OOD data...")
+
+    logger.info("Preparing validation data...")
     classifier.prepare_validation_data(val_adata)
-    logger.info("OOD data ready!")
+    logger.info("Validation data ready!")
+    #classifier.prepare_validation_data(test_adata)
+    #logger.info("Test data ready!")
 
     # Model 2. preparing model
     logger.info("Initializing classifier...")
@@ -129,7 +134,8 @@ def main(config: DictConfig):
         num_training_steps=config.training.num_training_steps,
         valid_freq=config.training.valid_freq,
         train_batch_size=config.training.train_batch_size,
-        validation_batch_size=config.training.validation_batch_size,
+        #validation_batch_size=config.training.validation_batch_size,
+        validation_batch_size=val_adata.n_obs,
         state_transforms=state_transforms.get(config.training.state_transforms, None),
         callbacks=callbacks,
         grad_steps_log_interval=config.training.grad_steps_log_interval,

@@ -1,4 +1,6 @@
 dump_dir: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/output/checkpoints/conditional_model/${now:%Y-%m-%d}_${now:%H-%M-%S}"
-train_h5ad_path: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/data/RA_4/train_adata.h5ad"
-val_h5ad_path: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/data/RA_4/val_adata.h5ad"
+train_h5ad_path: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/data/RA_4/train_adata_flow.h5ad"
+val_h5ad_path: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/data/RA_4/val_adata_flow.h5ad"
+test_h5ad_path: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/data/RA_4/test_adata_flow.h5ad"
+classifier_path: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/output/checkpoints/2026-09-01_15-33-38/deep-wood-2_TargetPredictionModel.pkl"
 log_dir: "/lustre/groups/ml01/workspace/ilia.navosha/projects/ood/output/logs/forward/conditional_model/${now:%Y-%m-%d}_${now:%H-%M-%S}"

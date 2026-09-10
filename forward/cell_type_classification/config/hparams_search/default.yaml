@@ -4,14 +4,14 @@ defaults:
   - override /hydra/sweeper/sampler: random 
   - override /hydra/sweeper: optuna 
   
-optimized_metric: all_conditions_wasserstein_distance
+optimized_metric: weighted_f1_score
 
 hydra:
 
   sweeper:
     _target_: hydra_plugins.hydra_optuna_sweeper.optuna_sweeper.OptunaSweeper
 
-    direction: minimize
+    direction: maximize
 
     n_jobs: 1000
     
@@ -22,14 +22,29 @@ hydra:
 
     # define hyperparameter search space
     params:
+      model.target_covariates_use_shared_representation: choice(False, True)
+    ### ENCODER ###
       model.target_covariates_encoder_mlp_kwargs.hidden_dims: choice("16", "16-16", "16-16-16", "32", "32-32", "32-32-32", "64", "64-64", "64-64-64", "128", "128-128", "128-128-128", "256", "256-256", "256-256-256")
       model.target_covariates_latent_dim: choice(16, 32, 64)
       model.target_covariates_encoder_mlp_kwargs.use_batchnorm: choice(False, True)
-      model.target_covariates_encoder_mlp_kwargs.use_dropout: choice(True)
+      model.target_covariates_encoder_mlp_kwargs.use_dropout: choice(False, True)
       model.target_covariates_encoder_mlp_kwargs.dropout_rate: choice(0.0, 0.1, 0.25, 0.5, 0.75, 0.9)
+      model.target_covariates_encoder_mlp_kwargs.activation_class: choice(torch.nn.ReLU, torch.nn.LeakyReLU, torch.nn.ELU, torch.nn.SELU, torch.nn.GELU)
+    ### END ###
+
+    ### CLASSIFIER ###
+      model.target_covariates_predictor_kwargs.Region.hidden_dims: choice("16", "16-16", "16-16-16", "32", "32-32", "32-32-32", "64", "64-64", "64-64-64", "128", "128-128", "128-128-128", "256", "256-256", "256-256-256")
+      model.target_covariates_predictor_kwargs.Region.use_batchnorm: choice(False, True)
+      model.target_covariates_predictor_kwargs.Region.use_dropout: choice(False, True)
+      model.target_covariates_predictor_kwargs.Region.dropout_rate: choice(0.0, 0.1, 0.25, 0.5, 0.75, 0.9)
+      model.target_covariates_predictor_kwargs.Region.activation_class: choice(torch.nn.ReLU, torch.nn.LeakyReLU, torch.nn.ELU, torch.nn.SELU, torch.nn.GELU)
+    ### END ###
+
+    ### OPTIMIZER ###
       model.optimizer_kwargs.lr: choice(0.01, 0.005, 0.001, 0.0005, 0.0001, 0.00005, 0.00001)
-      # splits.kwargs.random_state: choice(42, 20913, 2481024, 191874, 12834, 2901183, 12081, 21038)
-      # splits.kwargs.split_to_retieve: choice(0, 1, 2)
+      model.optimizer_kwargs.weight_decay: choice(0.0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5)
+    ### END ###
+
+    ### TRAINING ###
       training.use_class_weights: choice(True, False)
       training.train_batch_size: choice(32, 64, 128, 256, 512, 1024, 2048, 4096, 8192)
-      +model.optimizer_kwargs.weight_decay: choice(0.0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5)

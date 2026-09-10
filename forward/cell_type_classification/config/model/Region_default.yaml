@@ -6,24 +6,25 @@ target_covariates_noise_models:
   Region: null
 target_covariates_predictor_kwargs:
   Region:
-    hidden_dims: []
-    use_batchnorm: False
+    hidden_dims: [64, 64, 64]
+    use_batchnorm: True
     use_dropout: False
-    dropout_rate: 0.0
-    activation_class: "selu"
+    dropout_rate: 0.1
+    activation_class: "relu"
     final_activation_class: "identity"
-target_covariates_use_shared_representation: False
-target_covariates_latent_dim: 16
+target_covariates_use_shared_representation: True
+target_covariates_latent_dim: 32
 target_covariates_encoder_mlp_kwargs:
-  hidden_dims: [32, 32]
+  hidden_dims: [128]
   use_batchnorm: False
-  use_dropout: False
-  dropout_rate: 0.0
-  activation_class: "selu"
+  use_dropout: True
+  dropout_rate: 0.25
+  activation_class: "relu"
   final_activation_class: "identity"
 optimizer_id: null
 optimizer_kwargs:
   lr: 0.001
+  weight_decay: 1e-05
 scheduler_id: null
 lr_scheduler_kwargs: null
 lr_scheduler_step: null

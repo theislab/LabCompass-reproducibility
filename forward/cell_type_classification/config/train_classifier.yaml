@@ -9,6 +9,4 @@ defaults:
   - model: "Region_default"
   - paths: "hpc_ood_ra4"
   - reproducibility: "default"
-#  - splits: "shuffle"
   - training: "default"
-#  - transforms: "default"

@@ -3,15 +3,13 @@
 # default (unconditional)
 defaults:
   - _self_
-#  - annotation: default
   - callbacks: default
   - data: condition_ra4
   - flow_matching: hpc
   - model: default
   - paths: hpc_ood_ra4
-#  - split: default
   - training: default
-#  - transforms: default
+  - sampling: default
   - vf: default_morphogens
   - hydra: default
   - reproducibility: default

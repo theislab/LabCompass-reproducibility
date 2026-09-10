@@ -12,7 +12,7 @@
 
 source ~/.bashrc
 
-SAMPLE_REP=${1:-"X_pca_center"}
+SAMPLE_REP=${1:-"X_train_pca"}
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
@@ -25,4 +25,4 @@ echo "Current Working Directory: $WDIR"
 
 export HYDRA_FULL_ERROR=1
 
-micromamba run -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model.py
+micromamba run -n "$ENV_NAME" python ./scripts/forward/train/train_target_prediction_model_RA_4.py

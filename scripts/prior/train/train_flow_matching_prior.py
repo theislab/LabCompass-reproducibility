@@ -10,7 +10,8 @@ from omegaconf import DictConfig
 import torch
 
 from sc_exp_design.config import NeuralVelocityFieldConfig
-from sc_exp_design.models import FlowMatching, FlowMatchingWithScore
+#from sc_exp_design.models import FlowMatching, FlowMatchingWithScore
+from sc_exp_design.models import FlowMatching
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
@@ -25,13 +26,13 @@ state_transforms = {}
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/prior/config",
+    config_path="/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/prior/config",
     config_name="train_cfm",
 )
 def main(config: DictConfig):
 
     # import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    sys.path.insert(0, "/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/shared_utils")
     from experiment_utils import get_forward_model
     from train_utils import (
         parse_mlp_config_dictionary,
@@ -65,7 +66,8 @@ def main(config: DictConfig):
     }
 
     # initialize flow matching model
-    model_cls = FlowMatchingWithScore if config.flow_matching.learn_score else FlowMatching
+    #model_cls = FlowMatchingWithScore if config.flow_matching.learn_score else FlowMatching
+    model_cls = FlowMatching
     logger.info(f"Initializing model class {model_cls}...")
     flow_matching = model_cls(
         flow_type=config.flow_matching.flow_type,
@@ -77,7 +79,7 @@ def main(config: DictConfig):
         generate_from_noise=config.flow_matching.generate_from_noise,
         noise_distribution=noise_distributions.get(config.flow_matching.noise_distribution, torch.randn),
     )
-    logger.info("Model inialized!")
+    logger.info("Model initialized!")
 
     # Model 2. prepare data
     logger.info("Preparing training data...")
@@ -85,10 +87,10 @@ def main(config: DictConfig):
         train_adata,
     )
     logger.info("Train data ready!")
-    logger.info("Preparing OOD data...")
+    logger.info("Preparing validation data...")
     for k, v in val_adata_dict.items():
         flow_matching.prepare_validation_data(k, v)
-    logger.info("OOD data ready!")
+    logger.info("Validation data ready!")
 
     # Model 3. initialize velocity field configurations and prepare additional arguments
     logger.info("Initializing neural configurations...")
@@ -162,7 +164,7 @@ def main(config: DictConfig):
         validation_cfg_guidance_strength=config.training.validation_cfg_guidance_strength,
         num_grad_accumulation_steps=config.training.num_grad_accumulation_steps,
         close_wandb_connection=False,
-        sample_groups=config.training.sample_groups,
+        #sample_groups=config.training.sample_groups,
     )
     logger.info("Model trained!")
 

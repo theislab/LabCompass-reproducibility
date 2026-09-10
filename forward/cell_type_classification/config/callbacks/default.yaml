@@ -1,5 +1,5 @@
-wandb_project_name: "OOD_RA_4"
+wandb_project_name: "best_RA_4"
 wandb_kwargs:
   entity: "i-navosha-technical-university-of-munich"
-metrics: ["micro_f1_score", "micro_recall", "micro_precision", "macro_f1_score", "macro_recall", "macro_precision"]
+metrics: ["accuracy", "weighted_f1_score", ]
 save_model: True

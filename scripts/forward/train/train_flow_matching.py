@@ -2,17 +2,21 @@ import os
 import logging
 import sys
 import traceback
+
 import scanpy as sc
+import numpy as np
+import wandb
 
 import hydra
 from omegaconf import DictConfig
 import torch
 
 from sc_exp_design.config import NeuralVelocityFieldConfig
-from sc_exp_design.models import FlowMatching
+from sc_exp_design.models import FlowMatching, TargetPredictionModel
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
-
+from tqdm import tqdm
+from sc_exp_design.constants import DataFields
 
 logging.basicConfig(
     level=logging.INFO,
@@ -86,15 +90,18 @@ def main(config: DictConfig):
         target_covariates_kwargs=resolve_omegaconf_to_dictionary(config.data.target_covariates_kwargs),
     )
     logger.info("Train data ready!")
-    logger.info("Preparing OOD data...")
+    logger.info("Preparing validation data...")
     flow_matching.prepare_validation_data("RA_4", val_adata)
-    logger.info("OOD data ready!")
+    logger.info("Validation data ready!")
     print(flow_matching.train_data.perturbation_data.keys())
 
     # Model 3. initialize velocity field configurations and prepare additional arguments
     logger.info("Initializing neural configurations...")
+    resnet_normalization = config.vf.resnet_normalization
+    if resnet_normalization == "none":
+        resnet_normalization = None
     cvf_config = NeuralVelocityFieldConfig(
-        train_adata.obsm["X_pca_center"].shape[1], # dimension of the flow, features
+        train_adata.obsm[config.data.sample_rep].shape[1], # dimension of the flow, features
         encode_state=config.vf.encode_state,
         state_encoder_output_dim=config.vf.state_encoder_output_dim,
         state_encoder_mlp_kwargs=parse_mlp_config_dictionary(activation_functions, config.vf.state_encoder_mlp_kwargs),
@@ -120,7 +127,7 @@ def main(config: DictConfig):
         conditioning_type=config.vf.conditioning_type,
         n_resnet_blocks=config.vf.n_resnet_blocks,
         resnet_dropout_prob=config.vf.resnet_dropout_prob,
-        resnet_normalization=config.vf.resnet_normalization,
+        resnet_normalization=resnet_normalization,
         use_classifier_free_guidance=config.vf.use_classifier_free_guidance,
         cfg_null_condition_token=config.vf.cfg_null_condition_token,
     )
@@ -180,6 +187,104 @@ def main(config: DictConfig):
     )
     logger.info("Model trained!")
 
+    # Generate samples from the trained model:
+    # Predict the observations for the present perturbations in the validation set
+    N = config.sampling.N
+    M = config.sampling.M
+    assert N % M == 0, f"N ({N}) must be divisible by M ({M})"
+    B = N // M # samples per populations to estimate the standard deviation of the estimates
+    regions = next(iter(config.data.target_covariates_kwargs.values()))[DataFields.TARGET_CATEGORIES]
+    num_regions = len(regions)
+
+    logger.info("Loading the trained classifier")
+    clf = TargetPredictionModel.load(config.paths.classifier_path)
+    logger.info(f"Classifier loaded! {clf}")
+
+    logger.info(f"Generating {N} samples from the trained model")
+    pred_mean_props = []
+    pred_std_props = []
+    val_treatments = val_adata.obs["condition"].unique().tolist()
+    for treatment in tqdm(val_treatments): 
+        pert_representation_val = torch.from_numpy(val_adata.uns["conditions"][treatment]).float().unsqueeze(0).expand(N, -1).to(flow_matching.device)
+        batch_dict = {
+            DataFields.PERTURBATION_DATA: {"repr_condition_conditions": pert_representation_val
+                                                                }}
+        # pushing forward the particles 
+        X_pert_pred_val = flow_matching.predict(batch_dict, 
+                                            no_grad=True,
+                                            batch_size=(N,),
+                                            num_time_steps = config.model.num_time_steps,
+                                        )
+
+        region_generated_logits = clf.predict(X_pert_pred_val)[next(iter(config.data.target_covariates_kwargs))] # could also write ["Region"]
+        region_generated_logits = region_generated_logits.reshape(M, B, num_regions)
+        region_generated_probs = torch.softmax(region_generated_logits, dim=-1)
+
+        population_props = region_generated_probs.mean(dim=1)
+        mean_props = population_props.mean(dim=0)
+        std_props = population_props.std(dim=0)
+        logger.info(f"Treatment: {treatment}, mean props: {mean_props}, std props: {std_props}")
+
+        pred_mean_props.append(mean_props)
+        pred_std_props.append(std_props)
+
+    pred_mean_props = torch.stack(pred_mean_props) 
+    pred_std_props = torch.stack(pred_std_props)
+
+    # Evaluating the hyperparameters 
+    logger.info("Evaluating hyperparameters...")
+    true_props_val = (val_adata.obs
+                      .groupby("condition", observed=True)[next(iter(config.data.target_covariates_kwargs))] 
+                      .value_counts(normalize=True)
+                      .unstack(fill_value=0)
+                      .reindex(index=val_treatments, columns=regions, fill_value=0)
+                      )
+    
+    true_props_tensor = torch.tensor(
+        true_props_val.values,
+        dtype=pred_mean_props.dtype,
+        device=pred_mean_props.device,
+        )
+    
+    eps = 1e-8 # for numerical stability
+    pred_props_safe = pred_mean_props.clamp(min=eps)
+
+    cross_entropy_per_treatment = -(true_props_tensor * torch.log(pred_props_safe)).sum(dim=1)
+    mean_cross_entropy = cross_entropy_per_treatment.mean()
+    logger.info(f"Cross entropy per treatment: {cross_entropy_per_treatment}")
+    logger.info(f"Mean cross entropy: {mean_cross_entropy.item():.6f}")
+
+    table = wandb.Table(
+        columns=[
+            "treatment",
+            "region",
+            "true_proportion",
+            "predicted_proportion",
+            "uncertainty",
+            ]
+    )
+
+    for i, treatment in enumerate(val_treatments):
+        for j, region in enumerate(regions):
+            table.add_data(
+                treatment,
+                region,
+                true_props_tensor[i, j].item(),
+                pred_mean_props[i, j].item(),
+                pred_std_props[i, j].item(),
+            )
+
+    wandb.log({
+        "Validation/predictions": table,
+        })
+
+    wandb.log({
+        "Validation/mean_cross_entropy": mean_cross_entropy.item(),
+        "Validation/mean_uncertainty": pred_std_props.mean().item(),
+        "Validation/max_uncertainty": pred_std_props.max().item(),
+        })
+    logger.info("Hyperparameters evaluated!")
+
     # model 7. save results (optional)
     if config.callbacks.save_model:
         # creating logging folder
@@ -197,7 +302,7 @@ def main(config: DictConfig):
             model_prefix=wandb_callback.run_name,
         )
         logger.info("Model dumped and run finished!")
-    return 0
+    return mean_cross_entropy.item()
 
 
 if __name__ == "__main__":

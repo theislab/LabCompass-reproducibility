@@ -1,3 +1,0 @@
-scatter_columns: ['FSC-A :: FSC - Area', 'FSC-H :: FSC - Height', 'FSC-W :: FSC - Width', 'SSC-A :: SSC - Area', 'SSC-H :: SSC - Height', 'SSC-W :: SSC - Width',]
-compute_channel_pcs: True
-epsilon: 1e-15

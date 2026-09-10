@@ -3,8 +3,8 @@
 # default (unconditional)
 defaults:
   - _self_
-  - annotation: default
   - callbacks: default
+  - annotation: default
   - flow_matching: hpc
   - hydra: default
   - model: default

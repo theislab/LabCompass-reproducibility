@@ -1,7 +1,7 @@
 num_training_steps: 200000
-valid_freq: 100000
+valid_freq: null
 train_batch_size: 2048
-validation_batch_size: 16384
+validation_batch_size: null
 state_transforms: null
 grad_steps_log_interval: 100
 num_treatments_to_load: null

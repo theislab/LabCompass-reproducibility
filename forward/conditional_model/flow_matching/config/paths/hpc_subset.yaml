@@ -1,3 +1,0 @@
-dump_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/checkpoints/conditional_model/flow_matching/${now:%Y-%m-%d}_${now:%H-%M-%S}"
-h5ad_path: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/data/gdrive/ds_HID01_logicle_100k_UMAP_ann.h5ad"
-log_dir: "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/output/logs/forward/conditional_model/${now:%Y-%m-%d}_${now:%H-%M-%S}"

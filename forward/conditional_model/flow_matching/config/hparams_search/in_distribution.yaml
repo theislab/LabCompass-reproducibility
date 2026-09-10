@@ -4,7 +4,7 @@ defaults:
   - override /hydra/sweeper/sampler: random 
   - override /hydra/sweeper: optuna 
   
-optimized_metric: all_conditions_wasserstein_distance
+optimized_metric: mean_cross_entropy
 
 hydra:
 
@@ -13,9 +13,9 @@ hydra:
 
     direction: minimize
 
-    n_jobs: 10
+    n_jobs: 25
     
-    n_trials: 10
+    n_trials: 25
 
     sampler: 
       _target_: optuna.samplers.RandomSampler

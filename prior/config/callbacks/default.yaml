@@ -1,5 +1,5 @@
-wandb_project_name: "CFM_FlowCytometry-in-distribution"
+wandb_project_name: "prior"
 wandb_kwargs:
-  entity: "haematopoiesis-cambridge"
-metrics: ["r_squared", "energy_distance", "maximum_mean_discrepancy", "wasserstein_distance", "sinkhorn_divergence"]
+  entity: "i-navosha-technical-university-of-munich"
+metrics: []
 save_model: True

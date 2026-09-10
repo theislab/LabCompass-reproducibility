@@ -1,3 +1,4 @@
-dump_dir: "/Users/lorenzo.consoli/Work/projects/collab-goettgens/dumps/${now:%Y-%m-%d}_${now:%H-%M-%S}"
-h5ad_path: "/Users/lorenzo.consoli/Work/projects/collab-goettgens/data/ds_HID01_logicle_100k_UMAP_ann.h5ad"
-log_dir: "/Users/lorenzo.consoli/Work/projects/collab-goettgens/logs/${now:%Y-%m-%d}_${now:%H-%M-%S}"
+dump_dir: "C:/Users/IliaNavosha/Projects/Output/checkpoints/${now:%Y-%m-%d}_${now:%H-%M-%S}"
+train_h5ad_path: "C:/Users/IliaNavosha/Desktop/train_adata.h5ad"
+val_h5ad_path: "C:/Users/IliaNavosha/Desktop/val_adata.h5ad"
+log_dir: "C:/Users/IliaNavosha/Projects/Output/cell_type_classification/${now:%Y-%m-%d}_${now:%H-%M-%S}"

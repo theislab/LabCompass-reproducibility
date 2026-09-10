@@ -1,7 +1,7 @@
 num_training_steps: 100000
-valid_freq: null # defaults to 1000
+valid_freq: null # defaults to number of steps
 train_batch_size: 512
-validation_batch_size: 512
+validation_batch_size: 512 # wrong. as soon as it is a number, the whole valdiation dataset is used
 state_transforms: null
 grad_steps_log_interval: 100
 use_class_weights: True

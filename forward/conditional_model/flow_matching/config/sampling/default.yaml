@@ -1,5 +1,5 @@
-N: 20000
-num_time_steps: 1000
+N: 10000 # should be a multiple of M
+M: 20 # number of populations to estimate uncertainty of the estimates
 solver_kwargs:
   method: "euler"
   atol: 1e-5

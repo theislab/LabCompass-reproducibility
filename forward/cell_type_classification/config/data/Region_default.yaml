@@ -1,5 +1,8 @@
-sample_rep: "X_pca_center"
+sample_rep: "X_train_pca"
 target_covariates:
   Region: "label"
 target_covariates_in_obsm: null
-target_covariates_kwargs: null
+target_covariates_kwargs:
+  Region: # add this if ood data only contains a subset of the unique values of the target covariates
+    target_categories : 
+      ["DRG","ENS","Forebrain","Hindbrain","Midbrain","SYM","Spinal cord","TG",]

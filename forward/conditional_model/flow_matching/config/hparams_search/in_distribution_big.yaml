@@ -4,7 +4,7 @@ defaults:
   - override /hydra/sweeper/sampler: random 
   - override /hydra/sweeper: optuna 
   
-optimized_metric: all_conditions_wasserstein_distance
+optimized_metric: mean_cross_entropy
 
 hydra:
 
@@ -13,9 +13,9 @@ hydra:
 
     direction: minimize
 
-    n_jobs: 25
+    n_jobs: 10
     
-    n_trials: 25
+    n_trials: 10
 
     sampler: 
       _target_: optuna.samplers.RandomSampler
@@ -23,7 +23,7 @@ hydra:
     # define hyperparameter search space
     params:
 
-      vf.state_encoder_mlp_kwargs.hidden_dims: choice("256-256", "512-512", "1024-1024")
+      vf.state_encoder_mlp_kwargs.hidden_dims: choice("256-256", "512-512")
 
       vf.state_encoder_output_dim: choice(128, 256, 512, 1024)
 
@@ -33,16 +33,16 @@ hydra:
 
       vf.time_encoder_output_dim: choice(128, 256, 512, 1024)
 
-      vf.time_encoder_mlp_kwargs.hidden_dims: choice("256-256", "512-512", "1024-1024")
+      vf.time_encoder_mlp_kwargs.hidden_dims: choice("256-256", "512-512")
 
       vf.perturbation_encoder_output_dim: choice(128, 256, 512, 1024)
 
-      vf.decoder_mlp_kwargs.hidden_dims: choice("128-128-128", "256-256-256", "512-512-512", "1024-1024-1204")
+      vf.decoder_mlp_kwargs.hidden_dims: choice("128-128-128", "256-256-256", "512-512-512")
       
       vf.resnet_normalization: choice("batch", "none")
 
       vf.conditioning_type: choice("concatenation", "resnet", "film")
 
-      training.train_batch_size: choice(2048, 4096, 8192)
+      training.train_batch_size: choice(512, 1024, 2048, 4096, 8192)
 
       training.num_grad_accumulation_steps: choice(100, 500, 1000)

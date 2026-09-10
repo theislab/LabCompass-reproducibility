@@ -4,6 +4,6 @@ optimizer_kwargs:
 scheduler_id: null
 lr_scheduler_kwargs: null
 lr_scheduler_step: null
-num_time_steps: 100
+num_time_steps: 1000
 solver_kwargs:
   method: "euler"
