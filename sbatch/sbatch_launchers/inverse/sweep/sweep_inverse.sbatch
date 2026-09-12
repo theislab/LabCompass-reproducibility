@@ -24,9 +24,15 @@ ENV_MANAGER="conda"
 N_SAMPLES=50
 N_FWD_SAMPLES=350
 CELL_TYPE_COLUMN=cell_type_leiden # "cell_type"
-# name of the output subfolder under project_folder/output/inverse/loss_guidance/
-# other names used previously: raw_data, new_runs_mgkpro, bloodplus_inverse,
-# bloodplus_inverse_fm_best, bloodplus_inverse_fm_old_measurements_official, bloodplus_inverse_fm_loop2
+# name of the output subfolder under project_folder/output/inverse/loss_guidance/,
+# now selectable via -d/--dump-name. Previously this was hardcoded as one of:
+# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/raw_data/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/new_runs_mgkpro/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_fm_best/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_fm_old_measurements_official/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_fm_loop2/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
+# dump_dir="$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_fm_loop3/${OPT}-${QUERY_TYPE}-${SCHEDULER}"
 DUMP_NAME="bloodplus_inverse_fm_loop3"
 
 # Parse Flags
