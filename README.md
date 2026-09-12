@@ -16,22 +16,6 @@ The method itself lives in the [`labcompass`](https://github.com/theislab/LabCom
 repository is the experimental record of applying it. Wet-lab experiments and SFC measurements were
 performed by the Göttgens Lab.
 
-```mermaid
-flowchart LR
-    D["Loop data<br/>(cumulative h5ad)"] --> F["Forward model<br/>FlowMatching"]
-    D --> C["Cell-type classifier<br/>TargetPredictionModel"]
-    F --> P["Prior over protocols<br/>FlowMatchingWithScore"]
-    P -.distill.-> M["FlowMap<br/>(few-step)"]
-    F --> I["Inverse design<br/>loss guidance"]
-    C --> I
-    P --> I
-    M -.optional.-> I
-    I --> S["Candidate protocols<br/>candidates.csv"]
-    S --> U["Uncertainty<br/>estimation"]
-    U --> W["Wet-lab validation"]
-    W -->|new loop| D
-```
-
 ---
 
 ## Repository layout
