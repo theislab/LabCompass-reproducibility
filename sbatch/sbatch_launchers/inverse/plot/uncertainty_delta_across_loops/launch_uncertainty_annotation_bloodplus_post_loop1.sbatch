@@ -19,7 +19,7 @@ EXPERIMENT=$1
 EXPERIMENT_DIR=$REPO_ROOT/project_folder/output/inverse/loss_guidance/bloodplus_inverse_fm_old_measurements_official/
 
 # Working directory
-WDIR=/home/icb/alessandro.palma/environment/collab-goettgens-SFC
+WDIR=$REPO_ROOT
 
 cd "$WDIR" || exit 1
 

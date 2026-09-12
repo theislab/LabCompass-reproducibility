@@ -18,7 +18,7 @@ EXPERIMENT=$1
 # EXPERIMENT_DIR=$REPO_ROOT/project_folder/output/inverse/loss_guidance/raw_data
 EXPERIMENT_DIR=$REPO_ROOT/project_folder/output/inverse/loss_guidance/new_runs_mgkpro
 
-WDIR=/home/icb/alessandro.palma/environment/collab-goettgens-SFC
+WDIR=$REPO_ROOT
 
 cd "$WDIR" || exit 1
 
