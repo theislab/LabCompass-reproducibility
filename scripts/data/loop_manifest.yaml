@@ -1,0 +1,86 @@
+# Declarative description of the sequential-loop dataset build.
+#
+# Each loop of the experimental design cycle contributes a new batch of measured
+# cells ("residual" data). The datasets consumed by the models are the running
+# concatenation of every loop measured so far, so loop N's dataset is
+# `concat(dataset(N-1), residual(N))`.
+#
+# `source` entries are paths *inside* the HuggingFace dataset repository (or
+# inside `--source-dir` when building from a local copy). Adjust them here if the
+# layout on the Hub changes -- the build script reads this file and needs no edit.
+
+# HuggingFace dataset repository holding the raw per-loop h5ad files.
+# https://huggingface.co/datasets/theislab/LabCompass
+hf_repo_id: theislab/LabCompass
+hf_revision: main
+
+# Output layout, written under --output-root (default: ./project_folder).
+output_subdir: output/loops/data
+
+# File names written into each loop's output directory.
+file_names:
+  residual_500k: adata_500k_residual.h5ad
+  residual_full: adata_full_residual.h5ad
+  concat_500k: adata_500k.h5ad
+  concat_full: adata_full.h5ad
+
+# Ordered chain of loops. The first entry seeds the chain (its cumulative dataset
+# is just its own measurements); every subsequent entry is concatenated onto its
+# predecessor.
+loops:
+  - name: loop0
+    output_dir: loop0
+    seed: true
+    source:
+      residual_500k: loops/loop0_500k.h5ad
+      residual_full: loops/loop0.h5ad
+
+  - name: loop1
+    output_dir: loop1
+    source:
+      residual_500k: loops/loop1_500k.h5ad
+      residual_full: loops/loop1.h5ad
+
+  - name: loop2
+    output_dir: loop2/replicate
+    source:
+      residual_500k: loops/loop2_500k.h5ad
+      residual_full: loops/loop2.h5ad
+
+  - name: loop2p5
+    output_dir: loop2p5/replicate
+    source:
+      residual_500k: loops/loop2p5_500k.h5ad
+      residual_full: loops/loop2p5.h5ad
+
+  - name: loop3
+    output_dir: loop3/replicate
+    # Loop 3 introduced protocol axes that earlier loops never varied. They are
+    # zero-filled on the accumulated data so the two sides share an obs schema.
+    fill_missing_obs_columns:
+      columns:
+        - il7_[ng_ml]
+        - mcsf_[ng_ml]
+        - ly_cocktail_[ul/well]
+      value: 0.0
+    source:
+      residual_500k: loops/loop3_500k.h5ad
+      residual_full: loops/loop3.h5ad
+
+  - name: loop4
+    output_dir: loop4/replicate
+    source:
+      residual_500k: loops/loop4_500k.h5ad
+      residual_full: loops/loop4.h5ad
+
+  - name: loop4p5
+    output_dir: loop4p5/replicate
+    source:
+      residual_500k: loops/loop4p5_500k.h5ad
+      residual_full: loops/loop4p5.h5ad
+
+  - name: loop5
+    output_dir: loop5
+    source:
+      residual_500k: loops/loop5_500k.h5ad
+      residual_full: loops/loop5.h5ad
