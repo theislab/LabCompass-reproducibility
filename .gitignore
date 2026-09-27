@@ -205,3 +205,4 @@ cython_debug/
 output/
 *.svg
 *.png
+project_folder
