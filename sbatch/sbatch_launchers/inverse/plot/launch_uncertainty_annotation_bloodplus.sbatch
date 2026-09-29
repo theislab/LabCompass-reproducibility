@@ -10,8 +10,21 @@
 #SBATCH --qos=gpu_normal
 #SBATCH --constraint="a100_80gb|h100_80gb"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# SLURM copies the batch script to a node-local spool dir, so BASH_SOURCE does
+# not point into the repo. Recover the submitted path from the job record.
+if [ -n "${SLURM_JOB_ID:-}" ]; then
+    SCRIPT_PATH="$(scontrol show job "$SLURM_JOB_ID" | awk -F= '/Command=/{print $2; exit}' | awk '{print $1}')"
+else
+    SCRIPT_PATH="${BASH_SOURCE[0]}"
+fi
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+
+if [ ! -d "$REPO_ROOT/scripts" ]; then
+    echo "ERROR: REPO_ROOT resolved to '$REPO_ROOT', which is not the repository." >&2
+    exit 1
+fi
+
 
 EXPERIMENT=$1
 
