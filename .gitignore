@@ -205,6 +205,7 @@ cython_debug/
 output/
 *.svg
 *.png
+*.pdf
 
 # machine-local symlink to the shared data/output folder (see paths setup)
 /project_folder

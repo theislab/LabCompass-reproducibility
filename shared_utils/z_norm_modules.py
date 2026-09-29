@@ -12,18 +12,21 @@ TensorParams = dict[Literal[ParamsFields.MEAN, ParamsFields.COVARIANCE], torch.T
 
 
 class ModelParam(torch.nn.Module):
-    def __init__(self, data: torch.Tensor, device: str = "cuda"):
+    def __init__(self, data: torch.Tensor, device: str | torch.device | None = None):
         super().__init__()
-        self.data = torch.nn.Parameter(data, requires_grad=True).to(device)
+        parameter = torch.nn.Parameter(data, requires_grad=True)
+        # `None` keeps the parameter wherever its data already lives, so these
+        # modules follow the model they normalise instead of assuming a GPU
+        self.data = parameter if device is None else parameter.to(device)
 
 
 class BaseZNorm(torch.nn.Module):
-    def __init__(self, params: TensorParams):
+    def __init__(self, params: TensorParams, device: str | torch.device | None = None):
         super().__init__()
         self.params = torch.nn.ModuleDict(
             {
-                ParamsFields.MEAN: ModelParam(params[ParamsFields.MEAN]),
-                ParamsFields.COVARIANCE: ModelParam(params[ParamsFields.COVARIANCE]),
+                ParamsFields.MEAN: ModelParam(params[ParamsFields.MEAN], device=device),
+                ParamsFields.COVARIANCE: ModelParam(params[ParamsFields.COVARIANCE], device=device),
             }
         )
 
@@ -61,8 +64,8 @@ class BaseWhitening(torch.nn.Module):
 
 
 class ZNorm(BaseZNorm):
-    def __init__(self, params: TensorParams):
-        super().__init__(params)
+    def __init__(self, params: TensorParams, device: str | torch.device | None = None):
+        super().__init__(params, device=device)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """"""
@@ -70,8 +73,8 @@ class ZNorm(BaseZNorm):
 
 
 class IZNorm(BaseZNorm):
-    def __init__(self, params: TensorParams):
-        super().__init__(params=params)
+    def __init__(self, params: TensorParams, device: str | torch.device | None = None):
+        super().__init__(params=params, device=device)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """"""

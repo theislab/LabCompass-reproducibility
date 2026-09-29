@@ -87,7 +87,7 @@ def get_forward_model(
             )
         ),
     }
-    izn = IZNorm(params_inv)
+    izn = IZNorm(params_inv, device=perturbation_response_prediction_model.device)
     if logger is not None:
         logger.info(f"Cellular response prediction inverse Z-standardization parameters ready {izn}!")
 
@@ -114,7 +114,7 @@ def get_forward_model(
             )
         ),
     }
-    zn = ZNorm(params_fwd)
+    zn = ZNorm(params_fwd, device=target_prediction_model.device)
     if logger is not None:
         logger.info(f"Cell Type Classifier Z-standardization parameters ready {zn}!")
 
