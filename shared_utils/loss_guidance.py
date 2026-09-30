@@ -25,7 +25,7 @@ class LossGuidedFlow:
         reg_strength=1e-3,
         n_time_steps_forward_model=10,
         solver_kwargs_forward_model={"method":"euler"},
-        target_id="cell_type",
+        target_id="Region",
     ):
         self.prior_flow = prior_flow
         self.forward_model = forward_model
@@ -38,6 +38,7 @@ class LossGuidedFlow:
         self.n_time_steps_forward_model = n_time_steps_forward_model
         self.solver_kwargs_forward_model = solver_kwargs_forward_model
         self.target_id = target_id
+        self.prior_vf = prior_flow.velocity_field
 
     def compute_target_loss(self, target_pred_dict, optimal_condition):
         """"""
@@ -214,7 +215,7 @@ class LossGuidedFlow:
             noise = None
 
         # set evaluation mode (determinism)
-        self.forward_model.target_prediction_model.resc_model["model"].eval()
+        self.forward_model.target_prediction_model.eval()
         self.forward_model.forward_model.velocity_field.eval()
 
         # handling velocity field function
@@ -243,6 +244,6 @@ class LossGuidedFlow:
         else:
             traj =  odeint(vf_fn, source, time, **solver_kwargs).detach().cpu().numpy()
             loss_history = torch.stack(self._loss_history, dim=0).detach().cpu().numpy() - Lstar
-            lambda_history = torch.stack(self._lambda_history, dim=0).squeeze().detach().cpu().numpy().T
+            lambda_history = torch.stack(self._lambda_history, dim=0).squeeze().detach().cpu().numpy()
         traj = np.permute_dims(traj, (1, 0, 2))
-        return traj, loss_history.T, lambda_history, noise
+        return traj, loss_history.T, lambda_history.T, noise

@@ -10,7 +10,7 @@ from omegaconf import DictConfig
 import torch
 
 from sc_exp_design.config import NeuralFlowMapConfig
-from sc_exp_design.models import FlowMatching, FlowMatchingWithScore, FlowMap
+from sc_exp_design.models import FlowMatching, FlowMap, FlowMatchingWithScore
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
@@ -25,13 +25,13 @@ state_transforms = {}
 
 
 @hydra.main(
-    config_path="/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/prior/config",
+    config_path="/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/prior/config",
     config_name="distill_flow_map",
 )
 def main(config: DictConfig):
 
     # import modules
-    sys.path.insert(0, "/lustre/groups/ml01/workspace/lorenzo.consoli/projects/SFC_cambridge/collab-goettgens-SFC/shared_utils")
+    sys.path.insert(0, "/home/icb/ilia.navosha/expDesign/collab-goettgens-SFC/shared_utils")
     from experiment_utils import get_forward_model
     from train_utils import (
         parse_mlp_config_dictionary,
@@ -48,7 +48,8 @@ def main(config: DictConfig):
 
     # Get teacher model
     logger.info(f"Preparing teacher model...")
-    teacher_model = FlowMatchingWithScore.load(config.paths.teacher_checkpoint_path)
+    # teacher_model = FlowMatchingWithScore.load(config.paths.teacher_checkpoint_path)
+    teacher_model = FlowMatching.load(config.paths.teacher_checkpoint_path)
 
     # get condition data from model
     val_perturbation_data_dict = {

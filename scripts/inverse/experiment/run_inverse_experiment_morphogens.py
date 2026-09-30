@@ -1,5 +1,4 @@
 from datetime import datetime
-from functools import partial
 import logging
 import os
 import sys
@@ -14,9 +13,8 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 import torch
 
-from sc_exp_design.models import FlowMatching, FlowMatchingWithScore, FlowMap
+from sc_exp_design.models import FlowMatching, FlowMatchingWithScore, FlowMap, TargetPredictionModel
 from sc_exp_design.utils import set_reproducibility
-from sc_exp_design.inverse import LossGuidedFlow
 
 # 1. Configure the logging behavior
 logging.basicConfig(
@@ -48,7 +46,6 @@ def main(config: DictConfig) -> float:
     from train_utils import resolve_omegaconf_to_dictionary
     from experiment_utils import (
         create_dir,
-        get_forward_model,
         query_forward_model,
         flatten_conf,
         get_transformed_data,
@@ -57,7 +54,8 @@ def main(config: DictConfig) -> float:
     )
     from data_utils import get_protocol_tranformations
     from plot_utils import plot_loss_history, plot_heatmap
-    from inverse_utils import loss_fn_factory, constraint_fn_factory, linear_scheduler_with_warmup
+    from forward_model import ForwardModel
+    from loss_guidance import LossGuidedFlow
 
     # Create run id 
     run_id = uuid.uuid4().hex[:8]
@@ -71,12 +69,15 @@ def main(config: DictConfig) -> float:
 
     # Get forward model
     logger.info(f"Preparing forward model...")
-    forward_model, (
-        _,
-        target_prediction_model
-    ) = get_forward_model(config, logger=logger)
+    target_prediction_model = TargetPredictionModel.load(config.paths.ct_classifier_path)
+    g_model = target_prediction_model.target_prediction_model
+    perturbation_response_prediction_model = FlowMatching.load(config.paths.perturbation_prediction_path)
+    forward_model = ForwardModel(forward_model=perturbation_response_prediction_model,
+                                 target_prediction_model=g_model,
+                                 )
     logger.info(f"Forward model ready!\n{forward_model}")
-    forward_model.target_prediction_model.resc_model["model"].eval()
+    
+    forward_model.target_prediction_model.eval()
     forward_model.forward_model.velocity_field.eval()
 
     # Prepare label encoder
@@ -100,7 +101,6 @@ def main(config: DictConfig) -> float:
 
     # Define loss function
     logger.info(f"Preparing loss function (Cross-Entropy)...")
-    #loss_fns = get_loss_fn(config)
     loss_fns = {"Region":lambda pred, target:-torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)}
     logger.info(f"Loss function ready!\n{loss_fns}")
 
@@ -122,25 +122,19 @@ def main(config: DictConfig) -> float:
     non_linearity = non_linearity_class(**resolve_omegaconf_to_dictionary(config.non_linearity.non_linearity_kwargs))
     logger.info(f"Non linearity initialized!\n{non_linearity}")
 
-    # compile loss function
-    logger.info(f"Compiling final loss function for current cell type...")
-    compute_loss, noise = loss_fn_factory(
-        loss_fns,
-        config,
-        target,
-        non_linearity,
-        forward_model,
-    )
-    logger.info(f"Loss function compiled!")
-
-    # compile constraints
-    logger.info(f"Compiling constraints for current experiment...")
-    compute_constraints = constraint_fn_factory(config, forward_model.forward_model.device, get_protocol_tranformations)
-    logger.info(f"Constraints compiled!")
-
     # inizialize dual flow
     logger.info(f"Initializing implicit guided flow...")
-    guided_flow = LossGuidedFlow(prior_flow, prior_flow_map=prior_fm)
+    guided_flow = LossGuidedFlow(prior_flow=prior_flow,
+                                 forward_model=forward_model,
+                                 loss_fn=loss_fns,
+                                 prior_flow_map=prior_fm,
+                                 fix_noise=config.loss_guidance.fix_noise,
+                                 num_forward_pass_per_sample=config.loss_guidance.num_forward_pass_per_sample,
+                                 regularization=config.loss_guidance.regularization,
+                                 reg_strength=config.loss_guidance.reg_strength,
+                                 n_time_steps_forward_model=config.loss_guidance.n_time_steps_forward_model,
+                                 solver_kwargs_forward_model=resolve_omegaconf_to_dictionary(config.loss_guidance.solver_kwargs_forward_model),
+                                )
     torch.cuda.empty_cache()
     logger.info(f"Implicit dual guided flow initialized {guided_flow}")
 
@@ -157,14 +151,6 @@ def main(config: DictConfig) -> float:
     lambda_scheduler = lambda t: lambda_scheduler_class.compute_lambda_t(t)
     logger.info(f"lambda_scheduler Ready!\n{lambda_scheduler}")
 
-    # prepare c scheduler
-    c_scheduler = partial(
-        linear_scheduler_with_warmup,
-        t_warmup=config.constraints.c_scheduler_kwargs.t_warmup,
-        vmin=config.constraints.c_scheduler_kwargs.vmin,
-        vmax=config.constraints.c_scheduler_kwargs.vmax,
-    )
-
     # sampling from guided flow
     logger.info(
         "Sampling from guided flow with configurations:\n"
@@ -174,19 +160,16 @@ def main(config: DictConfig) -> float:
         f"sde_sampling={config.sampling.sde_sampling}\n"
     )
     torch.cuda.empty_cache()
-    trajectory, loss_history, lambda_history = guided_flow.sample_posterior(
-        config.sampling.N,
-        compute_loss,
-        reg_fn_lists=compute_constraints,
-        lambda_scheduler=lambda_scheduler,
-        c_scheduler=c_scheduler,
+    trajectory, loss_history, lambda_history, noise = guided_flow.sample_posterior(
+        N=config.sampling.N,
+        optimal_condition=target,
         num_time_steps=config.sampling.num_time_steps,
         solver_kwargs=resolve_omegaconf_to_dictionary(config.sampling.solver_kwargs),
+        lambda_scheduler=lambda_scheduler_class,
+        non_linearity=None,
+        sde_sampling=config.sampling.sde_sampling,
     )
     # moving results to numpy
-    trajectory = np.permute_dims(trajectory, (1, 0, 2))
-    loss_history = loss_history.T
-    lambda_history = lambda_history.T
     torch.cuda.empty_cache()
     logger.info(f"Inverse model queried! {trajectory.shape=}, {loss_history.shape=}, {lambda_history.shape=}, {noise.shape=}")
 
@@ -219,7 +202,7 @@ def main(config: DictConfig) -> float:
     loss_history_plot_path = os.path.join(plots_dir, "loss_history.svg")
     logger.info(
         f"Creating dump directories for: \n"
-        f"\t Note: Cell type indentifier changed from \"{ct_string}\" to {ct_safe_string}.\n"
+        f"\t Note: Region indentifier changed from \"{ct_string}\" to {ct_safe_string}.\n"
         f"\t Dump directory for cell type will be created at {ct_dir}.\n"
         f"\t Dump directory for run will be created at {run_dir}.\n"
         f"\t Dump directory for run plots will be created at {plots_dir}.\n"
@@ -277,7 +260,7 @@ def main(config: DictConfig) -> float:
     )
     ct_props = fwd_query_res_dict["ct_probs"].mean(1)
     samples = np.maximum(samples, 0)
-    terminal_loss = loss_history[:, -1]
+    terminal_loss = loss_history[:,-1]
     logger.info(
         "* Post-Processed data of shape:\n"
         f"\t -> {ct_props.shape=}\n"
@@ -285,14 +268,7 @@ def main(config: DictConfig) -> float:
         f"\t -> {terminal_loss.shape=}"
     )
 
-    # Get inverse transformations to rescale the samples
-    logger.info(
-        "Retrieving transformation for medium covariates...\n"
-        fr"\t -> protocol_columns={config.annotation.protocol_columns}\n"
-        fr"\t -> $\log(1 + x)$ exp_cols={config.annotation.log1p_exp_cols}\n"
-        fr"\t -> $\log_2(1 + x)$ exp_cols={config.annotation.log21p_exp_cols}\n"
-        fr"\t -> inverse={True}"
-    )
+    # maybe add an exp-transformation to the generated dosages
     column2tranform = get_protocol_tranformations(
         config.annotation.protocol_columns,
         log1p_exp_cols=config.annotation.log1p_exp_cols,
@@ -350,7 +326,7 @@ def main(config: DictConfig) -> float:
 
     # plot loss history
     logger.info("Plotting loss history...")
-    loss_history_fig = plot_loss_history(ct_string, loss_history.detach().cpu().numpy())
+    loss_history_fig = plot_loss_history(ct_string, loss_history.detach().cpu().numpy() if isinstance(loss_history, torch.Tensor) else loss_history)
     loss_history_fig.savefig(
         loss_history_plot_path,
         dpi=300,

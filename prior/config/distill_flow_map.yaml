@@ -8,8 +8,9 @@ defaults:
   - flow_matching: hpc
   - hydra: default
   - model: default
-  - paths: hpc_full_flow_map
+  - paths: hpc_full
   - reproducibility: default
   - run: default
   - training: default
-  - vf: default
+  - vf: prior_architecture_as_cfm
+  

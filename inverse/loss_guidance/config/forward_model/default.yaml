@@ -1,4 +1,4 @@
-num_time_steps: 1000
+num_time_steps: 100
 solver_kwargs:
   method: "euler"
   atol: 1e-5

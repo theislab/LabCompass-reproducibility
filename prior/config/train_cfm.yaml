@@ -12,4 +12,4 @@ defaults:
   - reproducibility: default
   - run: default
   - training: default
-  - vf: default
+  - vf: prior_architecture_as_cfm

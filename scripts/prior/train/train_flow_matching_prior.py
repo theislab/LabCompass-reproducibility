@@ -10,8 +10,7 @@ from omegaconf import DictConfig
 import torch
 
 from sc_exp_design.config import NeuralVelocityFieldConfig
-#from sc_exp_design.models import FlowMatching, FlowMatchingWithScore
-from sc_exp_design.models import FlowMatching
+from sc_exp_design.models import FlowMatching, FlowMatchingWithScore
 from sc_exp_design.utils import set_reproducibility
 from sc_exp_design.training.callbacks import WandBLogger, MetricsCallBack, TrainingCallBacks
 
@@ -66,8 +65,7 @@ def main(config: DictConfig):
     }
 
     # initialize flow matching model
-    #model_cls = FlowMatchingWithScore if config.flow_matching.learn_score else FlowMatching
-    model_cls = FlowMatching
+    model_cls = FlowMatchingWithScore if config.flow_matching.learn_score else FlowMatching
     logger.info(f"Initializing model class {model_cls}...")
     flow_matching = model_cls(
         flow_type=config.flow_matching.flow_type,
@@ -164,7 +162,7 @@ def main(config: DictConfig):
         validation_cfg_guidance_strength=config.training.validation_cfg_guidance_strength,
         num_grad_accumulation_steps=config.training.num_grad_accumulation_steps,
         close_wandb_connection=False,
-        #sample_groups=config.training.sample_groups,
+        sample_groups=config.training.sample_groups,
     )
     logger.info("Model trained!")
 

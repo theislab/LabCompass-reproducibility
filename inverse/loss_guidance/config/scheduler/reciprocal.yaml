@@ -2,5 +2,5 @@ scheduler_id: "reciprocal"
 scheduler_kwargs:
   lambda_val: null
   lmin: null
-  lmax: 10.0
-  gamma: null
+  lmax: 5.0
+  gamma: 1.0

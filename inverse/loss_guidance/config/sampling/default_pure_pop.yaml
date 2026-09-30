@@ -1,10 +1,10 @@
-target_cell_type: "HSCs"
-N: 100
-num_time_steps: 500
+target_cell_type: "Hindbrain"
+N: 50
+num_time_steps: 100
 solver_kwargs:
   method: "euler"
 sde_sampling: False
-query_pure_cell_types: True
-mask_gradients: True
-target_probs: [0.07, 0.07, 0.00, 0.00, 0.07, 0.01, 0.07, 0.07, 0.00, 0.07, 0.07, 0.00, 0.21, 0.07, 0.07, 0.07, 0.00, 0.01, 0.07]
-mask: [False, False, True, True, False, False, False, False, True, False, False, True, True, False, False, False, True, False, False]
+query_pure_cell_types: True # doesn't influence the current implementation -- whether to query just one region or a target probabilty vector of regions
+mask_gradients: True # irrelevant in the current implementation -- used in get_loss_fn
+target_probs: [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
+mask: [True, True, True, False, True, True, True, True]

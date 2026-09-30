@@ -62,14 +62,17 @@ class ReciprocalDecayScheduler(LambdaScheduler):
     def __init__(
         self,
         lmax: float = 1.0,
+        gamma: float = 1.0,
         **kwargs,
     ):
+        if gamma <= 0.0: raise ValueError
         self.lmax = lmax
+        self.gamma = gamma
 
     def compute_lambda_t(self, t, *args, **kwargs):
         return torch.clamp(
             (1 - t)/t, min=0.0, max=self.lmax
-        )
+        ) / self.gamma 
 
 schedulers_dict = {
     "constant": ConstantLambdaScheduler,

@@ -146,7 +146,6 @@ def generate_with_condition(
     num_samples=None,
     noise=None,
     logger=None,
-    n_scatter_feats=6,
 ):
     # prepare batch data
     perturbation_reps = next(iter(forward_model.forward_model.train_data.data.perturbation_covariates))
@@ -174,11 +173,7 @@ def generate_with_condition(
         fix_noise=noise is not None,
     )
     X_gen = cforward_out[PredictionFields.PREDICTION_DATA].detach().cpu().numpy()
-    gen_ct_logits = cforward_out[PredictionFields.TARGET_PREDICTION_DATA]["cell_type"].detach().cpu().numpy()
-
-    # split channel and scatter features
-    X_channel_gen = X_gen[..., :-n_scatter_feats]
-    X_scatter_gen = X_gen[..., -n_scatter_feats:]
+    gen_ct_logits = cforward_out[PredictionFields.TARGET_PREDICTION_DATA]["Region"].detach().cpu().numpy()
 
     # compute cell type probabilities and labels
     gen_ct_probs = softmax(gen_ct_logits, axis=-1)
@@ -186,11 +181,9 @@ def generate_with_condition(
     # gen_ct_label = le_ct.inverse_transform(gen_ct_id_label.reshape(-1)).\
     #     reshape(gen_ct_id_label.shape[0], gen_ct_id_label.shape[1])
     if logger is not None:
-        logger.info(f"{X_gen.shape=}, {X_channel_gen.shape=}, {X_scatter_gen.shape=}, {gen_ct_logits.shape=}")# {gen_ct_id_label.shape=}, {gen_ct_label.shape=}")
+        logger.info(f"{X_gen.shape=}, {gen_ct_logits.shape=}")# {gen_ct_id_label.shape=}, {gen_ct_label.shape=}")
     return {
         "X": X_gen,
-        "X_channel": X_channel_gen,
-        "X_scatter": X_scatter_gen,
         "ct_logits": gen_ct_logits,
         "ct_probs": gen_ct_probs,
     }
@@ -203,7 +196,6 @@ def query_forward_model(
     num_time_steps: int,
     solver_kwargs: dict[str, Any],
     le_ct: LabelEncoder,
-    n_scatter_feats: int = 6,
     logger: logging.Logger | None = None,
     dim_to_take: int = 1,
 ):
@@ -217,7 +209,6 @@ def query_forward_model(
         le_ct,
         noise=noise,
         logger=logger,
-        n_scatter_feats=n_scatter_feats,
     )
 
 
@@ -260,14 +251,14 @@ def get_target_dict(
         target = torch.zeros((nclasses,)).float().to(device)
         target[idx] = 1.0
         target = {
-            "cell_type": target.unsqueeze(0)
+            "Region": target.unsqueeze(0)
         }
     else:
         prop = torch.tensor(
             config.sampling.target_probs
         ).float().to(device)
         target = {
-            "cell_type": prop.unsqueeze(0)
+            "Region": prop.unsqueeze(0)
         }
     return target
 
@@ -276,10 +267,10 @@ def get_loss_fn(config):
     if config.sampling.query_pure_cell_types and config.sampling.mask_gradients:
         mask = config.sampling.mask
         return  {
-            "cell_type": lambda pred, target: -torch.sum(target[..., mask]*torch.nn.functional.log_softmax(pred[..., mask], dim=-1), dim=-1)
+            "Region": lambda pred, target: -torch.sum(target[..., mask]*torch.nn.functional.log_softmax(pred[..., mask], dim=-1), dim=-1)
         }
     return {
-        "cell_type": lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
+        "Region": lambda pred, target: -torch.sum(target*torch.nn.functional.log_softmax(pred, dim=-1), dim=-1)
     }
 
 
@@ -317,12 +308,12 @@ def get_adata_from_idx(X_true, adata_g, ct_le, fwd_results, min_loss_idx, comput
     X = np.concat((X_gen, X_true), axis=0)
     X_channel = X[:, :-n_scatter_feats]
     X_scatter = X[:, -n_scatter_feats:]
-    G = np.concatenate((ct_label_gen, adata_g.obs["cell_type"].values), axis=0)
+    G = np.concatenate((ct_label_gen, adata_g.obs["Region"].values), axis=0)
     ct_adata_gen = sc.AnnData(
         X=X_channel,
         obsm={"X_scatter": X_scatter},
         obs={
-            "cell_type": G,
+            "Region": G,
             "data_type": ["gen"]*X_gen.shape[0] + \
                 ["real"]*len(adata_g)
         },
@@ -696,7 +687,7 @@ def compute_condition_means(
                 batch = torch.from_numpy(X_cond[i:i+BATCH_SIZE]).cuda()
                 if rescale_func is not None:
                     batch = rescale_func(batch)
-                logits = target_prediction_model.target_prediction_model(batch)["cell_type"]
+                logits = target_prediction_model.target_prediction_model(batch)["Region"]
                 probs = torch.nn.functional.softmax(logits, dim=1)
                 all_probs.append(probs)
         g_probs = torch.cat(all_probs, dim=0)
@@ -715,7 +706,7 @@ def clean_name(ct):
 def get_observed_proportions_aligned(adata, cond_ids, unique_cond_ids, classes):
     """Return DataFrame of observed proportions for each condition (aligned by cond_id)."""
     obs_props = {clean_name(ct) + "_observed": [] for ct in classes}
-    cell_types = adata.obs["cell_type"].values
+    cell_types = adata.obs["Region"].values
     
     for cond_id in unique_cond_ids:
         idx = np.where(cond_ids == cond_id)[0]
