@@ -7,4 +7,4 @@ perturbation_prediction_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpo
 # ct_classifier_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/cell_type_classifier/2026-03-04_15-35-17/warm-puddle-624_TargetPredictionModel.pkl"
 ct_classifier_path: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/cell_type_classifier/2026-03-06_23-26-55/pious-totem-280_TargetPredictionModel.pkl"
 dump_dir: "${oc.env:REPO_ROOT}/project_folder/output/forward/flow_matching/requested_protocols"
-condition_metadata_path: "${oc.env:REPO_ROOT}/project_folder/data/gdrive/table_metadata_theis_unmix8.xlsx" 
+condition_metadata_path: "${oc.env:REPO_ROOT}/project_folder/derived/marker_panel_metadata.xlsx" 
