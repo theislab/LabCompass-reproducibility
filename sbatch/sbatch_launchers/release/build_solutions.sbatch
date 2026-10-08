@@ -28,7 +28,7 @@ if [ ! -d "$REPO_ROOT/scripts" ]; then
 fi
 
 LOOP="${1:?Usage: sbatch build_solutions.sbatch <loop-name>}"
-ENV_NAME="${2:-sc_exp_design_12}"
+ENV_NAME="${2:-labcompass}"
 
 cd "$REPO_ROOT" || exit 1
 echo "Building solutions table for ${LOOP} on $(hostname)"

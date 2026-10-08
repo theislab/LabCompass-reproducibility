@@ -3,7 +3,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="labcompass"
 PATHS="bloodplus_loop3_old_clf"
 USE_FM=0
 # ENV_MANAGER="micromamba"

@@ -28,7 +28,7 @@ fi
 # ---- 1. Define defaults ----
 TARGET_CELL_TYPE="late_MgkPro"
 SCHEDULER="reciprocal"
-ENV_NAME="sc_exp_design"
+ENV_NAME="labcompass"
 PATHS="loop1"
 ENV_MANAGER="micromamba"
 N_SAMPLES=50 

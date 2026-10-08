@@ -31,7 +31,7 @@ SAMPLE_REP=${1:-"X_channel_standardized+X_scatter_standardized"}
 
 echo "Running experiments on sample: $SAMPLE_REP"
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="labcompass"
 echo "Using environment: $ENV_NAME"
 
 WDIR=$REPO_ROOT

@@ -36,7 +36,7 @@ WDIR=$REPO_ROOT
 cd "$WDIR" || exit 1
 
 source ~/.bashrc
-conda activate sc_exp_design_12
+conda activate labcompass
 
 echo "Running experiment: $EXPERIMENT"
 echo "Experiment dir: $EXPERIMENT_DIR"

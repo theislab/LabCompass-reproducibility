@@ -29,7 +29,7 @@ fi
  
 # ── Environment ──────────────────────────────────────────────────────────────
 source ~/.bashrc
-conda activate sc_exp_design_12
+conda activate labcompass
  
 # ── Paths ────────────────────────────────────────────────────────────────────
 PROJECT_DIR="$REPO_ROOT"

@@ -33,7 +33,7 @@ if [ ! -d "$REPO_ROOT/scripts/data" ]; then
 fi
 
 LOOP="${1:?Usage: sbatch slim_checkpoints.sbatch <loop-name>}"
-ENV_NAME="${2:-sc_exp_design_12}"
+ENV_NAME="${2:-labcompass}"
 
 cd "$REPO_ROOT" || exit 1
 

@@ -22,7 +22,7 @@ echo "BASE_DIR: ${BASE_DIR}"
 echo "grid_size: ${grid_size}"
 
 
-conda run -n sc_exp_design --no-capture-output \
+conda run -n labcompass --no-capture-output \
     python "$PY_SCRIPT" \
         --target_cell_type "$TARGET_CT" \
         --run "$RUN_ID" \

@@ -68,7 +68,7 @@ done
 
 echo "Running experiments on sample: $SAMPLE_REP, condition: $CONDITION_MODE, ood col: $PROTOCOL_AXIS, ood val: $UNIQUE_VALUE, hparams: ${HPARAMSEARCH}, loop: ${LOOP}"
 
-ENV_NAME="sc_exp_design"
+ENV_NAME="labcompass"
 echo "Using environment: $ENV_NAME"
 
 WDIR=$REPO_ROOT

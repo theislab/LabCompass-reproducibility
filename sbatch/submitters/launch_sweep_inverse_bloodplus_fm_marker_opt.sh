@@ -7,7 +7,7 @@ set -eu
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
-ENV_NAME="sc_exp_design"
+ENV_NAME="labcompass"
 PATHS="bloodplus"          # base name; will append _fm if USE_FM=1
 USE_FM=1
 ENV_MANAGER="micromamba"

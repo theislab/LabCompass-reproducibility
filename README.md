@@ -298,7 +298,7 @@ which sweeps target cell types × schedulers × optimisation types × query type
 | `-nf, --n-fwd-samples` | `350` | Forward passes per candidate. |
 | `-ctc, --ct-column` | `cell_type_leiden` | Cell-type annotation column. |
 | `-d, --dump-name` | `bloodplus_inverse_fm_loop3` | Output subfolder under `output/inverse/loss_guidance/`. |
-| `-e, --env-name` | `sc_exp_design` | Conda environment to run in. |
+| `-e, --env-name` | `labcompass` | Conda environment to run in. |
 | `-p, --paths` | `default` | `paths` config group selecting the checkpoint set. |
 
 > `sweep_inverse.sbatch` force-appends `annotation=bloodplus_loop3` to the Hydra command and derives
@@ -384,16 +384,21 @@ regenerate those into its `plots/` folder.
 ## What is published
 
 Everything needed to reproduce the paper is on the Hub at
-[**theislab/LabCompass**](https://huggingface.co/datasets/theislab/LabCompass), in three parts:
+[**theislab/LabCompass**](https://huggingface.co/datasets/theislab/LabCompass), in four parts:
 
 | Prefix | Contents | Size |
 | --- | --- | --- |
 | `loops/` | The SFC measurements, one `h5ad` per loop plus a subsampled variant. | ~60 GB |
+| `derived/` | Processed inputs the analysis needs that cannot be rebuilt from `loops/`: the annotated and filtered subsets for loops 0–1, the loop-2 reannotation used to train the classifier, and the 103 unique protocols used to snap designs onto realisable concentrations. | 1.8 GB |
 | `checkpoints/` | The trained models, one folder per loop: forward model, cell-type classifier, prior, and distilled flow map. | 13 GB |
 | `solutions/` | Every protocol the inverse design generated — ~1.07 M designs, one gzipped CSV per loop. | 445 MB |
 
-So the three stages of the pipeline each have their published artefact: measurements in, models in
-the middle, designs out.
+So each stage of the pipeline has its published artefact: measurements in, the processed inputs and
+models in the middle, designs out.
+
+The `derived/` files are expected at `project_folder/derived/` — the same names, so the layout here
+mirrors the Hub. They are published rather than regenerated because the annotation and filtering
+steps that produced them are not part of the pipeline code.
 
 **Checkpoints are inference-only.** The training data the original checkpoints carried inside them
 has been stripped, which is why files that were 113 GB on disk are about 1 GB here. Network weights

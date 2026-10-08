@@ -29,7 +29,7 @@ fi
  
 # ── Environment ──────────────────────────────────────────────────────────────
 source ~/.bashrc
-conda activate sc_exp_design_12
+conda activate labcompass
 
 export HYDRA_FULL_ERROR=1
  

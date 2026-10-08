@@ -6,7 +6,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-ENV_NAME="sc_exp_design_12"
+ENV_NAME="labcompass"
 
 while [[ $# -gt 0 ]]; do
   case $1 in

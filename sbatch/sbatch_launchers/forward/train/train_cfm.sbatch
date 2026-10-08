@@ -34,7 +34,7 @@ CONDITION_MODE="protocol_concat"
 RERUN_EXP=1
 NEW_MEASUREMENTS_FLAG=0
 RUN_NAME="no-name"
-ENV_NAME="sc_exp_design"
+ENV_NAME="labcompass"
 
 # Parse Flags
 while [[ $# -gt 0 ]]; do
