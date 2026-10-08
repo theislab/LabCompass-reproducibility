@@ -21,7 +21,7 @@ Each round — a **loop** — proposes new culture protocols, runs them at the b
 resulting cells. The measurements from each loop are published here as a separate file.
 
 - **Code and full reproduction pipeline:** <https://github.com/theislab/LabCompass>
-- **Contents:** per-loop measurements in `loops/`, trained models in `checkpoints/`
+- **Contents:** per-loop measurements in `loops/`, trained models in `checkpoints/`, designed protocols in `solutions/`
 - **Wet-lab experiments and measurements:** Göttgens Lab
 - **License:** CC-BY-4.0
 
@@ -175,6 +175,81 @@ model = FlowMatching.load(path)
 
 In the reproduction repository these are wired up through the `paths` config group, so pointing a run
 at a downloaded loop is a matter of overriding the four checkpoint paths.
+
+## Designed protocols (`solutions/`)
+
+`solutions/` contains **every candidate protocol LabCompass generated**, across all sweeps behind the
+paper — about 1.07 million designs. The raw output is a tree of ~16,000 run directories; each loop is
+flattened here into a single gzipped CSV, with the directory structure turned into columns.
+
+| File | Designs | Runs | Size |
+| --- | --- | --- | --- |
+| `solutions/loop0.csv.gz` | 74,400 | 744 | 35 MB |
+| `solutions/loop1.csv.gz` | 373,900 | 3,111 | 169 MB |
+| `solutions/loop2.csv.gz` | 69,012 | 1,386 | 32 MB |
+| `solutions/loop2p5.csv.gz` | 152,050 | 3,041 | 53 MB |
+| `solutions/loop3.csv.gz` | 195,000 | 3,900 | 86 MB |
+| `solutions/loop4.csv.gz` | 208,700 | 4,174 | 91 MB |
+
+Each row is one designed protocol. Column counts differ between loops (170–187) because the design
+space and the cell-type panel both grew over the campaign, which is why these are six files rather
+than one.
+
+### Columns
+
+- **Provenance** — `loop`, `experiment_type` (the optimisation variant and guidance schedule, e.g.
+  `penalized_all_axes-pure_populations-constant`), `cell_type` (the target the run optimised for),
+  `run_id`, and `uncertainty_scoring`.
+- **The design** — one column per protocol axis (`tpo_[ng_ml]`, `um171_[nm]`, `o2_[%]`,
+  `days_of_culture`, …), plus `:rescaled` variants.
+- **Predicted outcome** — `<cell_type>_prop` for every cell type in the panel, and `loss`.
+- **Uncertainty** — `<cell_type>_prop_std`, `target_ct_loss_mean`, `target_ct_loss_std`,
+  `ct_prop_total_variance`.
+- **Configuration** — ~96 `cfg:*` columns recording the resolved hydra config for that run, so every
+  design can be traced back to exactly how it was produced.
+
+### These are unfiltered
+
+Nothing here has been filtered or ranked. The paper's analysis applies thresholds *downstream* —
+minimum predicted enrichment, oxygenation and culture-duration bounds, and a margin on the measured
+design range — and those thresholds differ per loop and per target cell type. Publishing the full
+search record keeps that choice in the reader's hands, and preserves the configurations that did not
+work alongside those that did.
+
+The `uncertainty_scoring` column says how each row was scored:
+
+- `same_loop` — scored under that loop's own forward model, the usual case.
+- `next_loop` — the same candidates re-scored under a *later* loop's model. This is what shows
+  predictive uncertainty falling as data accumulates; present for loops 0 and 1.
+- `none` — uncertainty estimation never ran for that run, so the `_std` columns are empty. This
+  affects **roughly half of loop 2.5** (71,450 of 152,050 rows); the designs and their predicted
+  proportions are still there.
+
+### Not included
+
+The per-run `.npz` files holding the guidance trajectories and per-candidate forward samples are not
+published — roughly 157 GB, around thirty times everything else, and needed only for trajectory and
+sensitivity plots. They can be regenerated from the published `checkpoints/`.
+
+### Loading
+
+```python
+import pandas as pd
+from huggingface_hub import hf_hub_download
+
+path = hf_hub_download(
+    repo_id="theislab/LabCompass",
+    filename="solutions/loop3.csv.gz",
+    repo_type="dataset",
+)
+designs = pd.read_csv(path)
+
+# e.g. the most promising MgkPro designs that carry a scored uncertainty
+mgk = designs[
+    (designs["cell_type"] == "late_MgkPro")
+    & (designs["uncertainty_scoring"] == "same_loop")
+].nlargest(20, "late_MgkPro_prop")
+```
 
 ## Citation
 

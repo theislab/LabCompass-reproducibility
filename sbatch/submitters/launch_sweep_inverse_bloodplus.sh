@@ -8,16 +8,22 @@ PATHS="bloodplus"
 # PATHS="new_measurements"
 
 # Parse Flags
-case $1 in
--e|--env-name)
-    ENV_NAME="$2"
-    shift 2
-    ;;
--p|--paths)
-    PATHS="$2"
-    shift 2
-    ;;
-esac
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  -e|--env-name)
+      ENV_NAME="$2"
+      shift 2
+      ;;
+  -p|--paths)
+      PATHS="$2"
+      shift 2
+      ;;
+  *)
+      echo "Unknown parameter passed: $1"
+      exit 1
+      ;;
+  esac
+done
 
 echo "Conda environment set to ${ENV_NAME}"
 echo "Paths set to ${PATHS}"

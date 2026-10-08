@@ -414,19 +414,8 @@ checkpoints → designed protocols → figures.
 
 ## Known rough edges
 
-Real issues in the current scripts, listed so they don't cost you an afternoon:
-
-- **`forward/train/train_cfm.sbatch`** re-assigns `ENV_NAME="sc_exp_design"` *after* flag parsing, so
-  `-e/--env-name` is silently ignored.
-- **`inverse/sweep/sweep_inverse_sgd.sbatch`** passes `+sgd_init_from_data="${init_from_data}"`, but
-  the variable it computes is `sgd_init_from_data` — the override expands to empty. The command also
-  ends in a dangling `\`.
-- **`uncertainty_estimation.py`** requires `--true_concentration_path`, but the only use of it is
-  commented out.
-- Flag parsing in `sbatch/submitters/` is inconsistent: only `launch_sweep_inverse.sh` uses a proper
-  `while` loop and accepts several flags. Four (`launch_sweep_inverse_bloodplus{,_fm,_fm_loop2,_fm_old_measurement}.sh`)
-  use a bare `case $1`, so only the **first** flag is honoured. The rest
-  (`uncertainty_launcher.sh`, both `uncertainty_delta_across_loops/*.sh`, `…_fm_marker_opt.sh`) parse
-  no flags at all and take a positional argument instead. `uncertainty_launcher.sh` additionally uses
-  a relative `../sbatch_launchers/…` path, so it only works when run from `sbatch/submitters/`.
+- Several `sbatch/submitters/` scripts take a positional argument rather than flags
+  (`uncertainty_launcher.sh`, both `uncertainty_delta_across_loops/*.sh`, `…_fm_marker_opt.sh`), and
+  `uncertainty_launcher.sh` uses a relative `../sbatch_launchers/…` path, so it only works when run
+  from `sbatch/submitters/`.
 - Checkpoint paths in the `paths` config groups point at specific dated runs and must be overridden.

@@ -142,7 +142,7 @@ $CMD python scripts/inverse/experiment/${script_name}.py \
     --multirun \
     +launcher=${launcher} \
     +sgd_grids="${hparam_search}" \
-    +sgd_init_from_data="${init_from_data}" \
+    +sgd_init_from_data="${sgd_init_from_data}" \
     annotation="${annotation}" \
     constraints="${constraints}" \
     forward_model="${forward_model}" \
@@ -157,4 +157,4 @@ $CMD python scripts/inverse/experiment/${script_name}.py \
     sampling.target_cell_type='"'"${TARGET_CELL_TYPE}"'"' \
     sampling.query_pure_cell_types=True \
     sampling.mask_gradients=False \
-    sampling.N="${N_SAMPLES}" \
+    sampling.N="${N_SAMPLES}" 

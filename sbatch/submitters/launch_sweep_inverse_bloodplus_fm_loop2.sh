@@ -11,20 +11,26 @@ ENV_MANAGER="conda"
 # PATHS="new_measurements"
 
 # Parse Flags
-case $1 in
--e|--env-name)
-    ENV_NAME="$2"
-    shift 2
-    ;;
--p|--paths)
-    PATHS="$2"
-    shift 2
-    ;;
--f|--use-fm)
-    USE_FM="$2"
-    shift 2
-    ;;
-esac
+while [[ $# -gt 0 ]]; do
+  case $1 in
+  -e|--env-name)
+      ENV_NAME="$2"
+      shift 2
+      ;;
+  -p|--paths)
+      PATHS="$2"
+      shift 2
+      ;;
+  -f|--use-fm)
+      USE_FM="$2"
+      shift 2
+      ;;
+  *)
+      echo "Unknown parameter passed: $1"
+      exit 1
+      ;;
+  esac
+done
 
 # set paths for flow map
 if [[ $USE_FM -eq 1 ]]; then

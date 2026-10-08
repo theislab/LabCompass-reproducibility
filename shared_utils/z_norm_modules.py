@@ -40,13 +40,13 @@ class BaseZNorm(torch.nn.Module):
 
 
 class BaseWhitening(torch.nn.Module):
-    def __init__(self, params: TensorParams):
+    def __init__(self, params: TensorParams, device: str | torch.device | None = None):
         super().__init__()
         self.params = torch.nn.ModuleDict(
             {
-                "mean": ModelParam(params["mean"]),
-                "W": ModelParam(params["W"]),
-                "iW": ModelParam(params["iW"]),
+                "mean": ModelParam(params["mean"], device=device),
+                "W": ModelParam(params["W"], device=device),
+                "iW": ModelParam(params["iW"], device=device),
             }
         )
 
@@ -82,8 +82,8 @@ class IZNorm(BaseZNorm):
 
 
 class Whitening(BaseWhitening):
-    def __init__(self, params: TensorParams):
-        super().__init__(params=params)
+    def __init__(self, params: TensorParams, device: str | torch.device | None = None):
+        super().__init__(params=params, device=device)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """"""
@@ -91,8 +91,8 @@ class Whitening(BaseWhitening):
 
 
 class IWhitening(BaseWhitening):
-    def __init__(self, params: TensorParams):
-        super().__init__(params=params)
+    def __init__(self, params: TensorParams, device: str | torch.device | None = None):
+        super().__init__(params=params, device=device)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """"""

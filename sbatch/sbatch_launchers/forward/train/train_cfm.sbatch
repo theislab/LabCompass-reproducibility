@@ -97,8 +97,6 @@ else
 fi
 
 
-ENV_NAME="sc_exp_design"
-
 WDIR=$REPO_ROOT
 cd "$WDIR" || exit 1
 
