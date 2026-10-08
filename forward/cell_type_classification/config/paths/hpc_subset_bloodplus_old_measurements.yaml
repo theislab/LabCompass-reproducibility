@@ -1,3 +1,3 @@
 dump_dir: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/cell_type_classifier/${now:%Y-%m-%d}_${now:%H-%M-%S}"
-h5ad_path: "${oc.env:REPO_ROOT}/project_folder/data/gdrive/new_dataset/BloodPlus_celltype_pm_500k_filtered_old_experiments_.h5ad"
+h5ad_path: "${oc.env:REPO_ROOT}/project_folder/derived/loop0_annotated_500k.h5ad"
 log_dir: "${oc.env:REPO_ROOT}/project_folder/output/logs/forward/cell_type_classifier/${now:%Y-%m-%d}_${now:%H-%M-%S}"

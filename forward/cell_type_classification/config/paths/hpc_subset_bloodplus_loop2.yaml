@@ -1,3 +1,3 @@
 dump_dir: "${oc.env:REPO_ROOT}/project_folder/output/checkpoints/cell_type_classifier_loop2/${now:%Y-%m-%d}_${now:%H-%M-%S}"
-h5ad_path: "${oc.env:REPO_ROOT}/project_folder/output/miscellaneous_new/BloodPlus_Loop2_logicle_reannot.h5ad"
+h5ad_path: "${oc.env:REPO_ROOT}/project_folder/derived/loop2_reannotated.h5ad"
 log_dir: "${oc.env:REPO_ROOT}/project_folder/output/logs/forward/cell_type_classifier_loop2/${now:%Y-%m-%d}_${now:%H-%M-%S}"

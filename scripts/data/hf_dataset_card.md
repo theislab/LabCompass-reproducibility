@@ -21,7 +21,7 @@ Each round — a **loop** — proposes new culture protocols, runs them at the b
 resulting cells. The measurements from each loop are published here as a separate file.
 
 - **Code and full reproduction pipeline:** <https://github.com/theislab/LabCompass>
-- **Contents:** per-loop measurements in `loops/`, trained models in `checkpoints/`, designed protocols in `solutions/`
+- **Contents:** per-loop measurements in `loops/`, trained models in `checkpoints/`, derived datasets in `derived/`, designed protocols in `solutions/`
 - **Wet-lab experiments and measurements:** Göttgens Lab
 - **License:** CC-BY-4.0
 
@@ -175,6 +175,25 @@ model = FlowMatching.load(path)
 
 In the reproduction repository these are wired up through the `paths` config group, so pointing a run
 at a downloaded loop is a matter of overriding the four checkpoint paths.
+
+## Derived datasets (`derived/`)
+
+Processed artefacts the analysis depends on that are **not reconstructible** from `loops/` alone,
+because the annotation and filtering steps that produced them are not part of the pipeline code.
+
+| File | Contents | Size |
+| --- | --- | --- |
+| `derived/loop0_annotated_500k.h5ad` | Subsampled, annotated and filtered cells for the 116 designs of the initial screen. | 0.51 GB |
+| `derived/loop1_annotated_500k.h5ad` | The same, extended to the 122 designs available at loop 1. | 0.54 GB |
+| `derived/loop2_reannotated.h5ad` | Loop 2 cells after the cell-type reannotation; carries `cell_type_leiden` and `is_reannot_leiden`. This is the cell-type classifier's training input. | 0.75 GB |
+| `derived/unique_protocols.h5ad` | The 103 unique protocols actually run, across 15 design axes. Used to snap generated designs onto realisable concentrations. | <1 MB |
+
+The `*_annotated_500k` files carry cell-type labels (`cell_type`, `leiden`, `leiden_sub`) on a
+subsample of the full measurements, and have had low-quality cells removed — which is why their cell
+counts are lower than the corresponding `loops/` files and their `obs` has more columns.
+
+In the reproduction repository these are expected at `project_folder/derived/`, mirroring the layout
+here.
 
 ## Designed protocols (`solutions/`)
 
