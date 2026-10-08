@@ -73,18 +73,20 @@ Two packages must be installed from source:
 | `scopt` | <https://github.com/theislab/scOpt> | Optimisation methods used by the SGD baseline. |
 
 ```bash
-conda create -n labcompass python=3.12 && conda activate labcompass
+conda env create -f environment.yml && conda activate labcompass
 git clone https://github.com/theislab/LabCompass.git && pip install -e LabCompass
 git clone https://github.com/theislab/scOpt.git      && pip install -e scOpt
 ```
 
-The reference environment used for the paper runs Python 3.12.9 with `torch==2.10.0`,
-`anndata==0.12.10`, `scanpy==1.12`, `hydra-core==1.3.2`, `omegaconf==2.3.0`, `cloudpickle==3.1.2`,
-`numpy==2.3.5`, `pandas==2.3.3`, `scikit-learn==1.8.0`, `wandb==0.25.0`, `huggingface-hub==1.31.0`,
-and — for the sweeps — `optuna==2.10.1`, `hydra-optuna-sweeper==1.2.0`, `hydra-submitit-launcher==1.2.0`.
+`environment.yml` pins the 26 packages this repository imports directly.
+`environment.lock.txt` is a full freeze of all 250 packages in the environment that produced the
+paper's results — exact, but platform-specific, so it is there to audit versions rather than to
+install from.
 
-> **Note.** This repository does not yet ship an `environment.yml` / `requirements.txt`. Pinning the
-> versions above into one is the remaining step for a fully reproducible setup.
+> **GPU builds.** The pinned `torch==2.10.0` is the CUDA 12.8 build used on the cluster. On a machine
+> with different CUDA, or none, install torch first following the
+> [PyTorch instructions](https://pytorch.org/get-started/locally/) and drop the torch line from
+> `environment.yml`.
 
 ### Weights & Biases
 
@@ -389,7 +391,7 @@ Everything needed to reproduce the paper is on the Hub at
 | Prefix | Contents | Size |
 | --- | --- | --- |
 | `loops/` | The SFC measurements, one `h5ad` per loop plus a subsampled variant. | ~60 GB |
-| `derived/` | Processed inputs the analysis needs that cannot be rebuilt from `loops/`: the annotated and filtered subsets for loops 0–1, the loop-2 reannotation used to train the classifier, and the 103 unique protocols used to snap designs onto realisable concentrations. | 1.8 GB |
+| `derived/` | Processed inputs the analysis needs that cannot be rebuilt from `loops/`: the cell-type-annotated measurements for loops 2–4.5 (`derived/annotated/`, the only files carrying a `cell_type` column), the annotated and filtered subsets for loops 0–1, the loop-2 reannotation used to train the classifier, the marker-panel metadata, and the 103 unique protocols used to snap designs onto realisable concentrations. | 4.7 GB |
 | `checkpoints/` | The trained models, one folder per loop: forward model, cell-type classifier, prior, and distilled flow map. | 13 GB |
 | `solutions/` | Every protocol the inverse design generated — ~1.07 M designs, one gzipped CSV per loop. | 445 MB |
 

@@ -187,10 +187,16 @@ because the annotation and filtering steps that produced them are not part of th
 | `derived/loop1_annotated_500k.h5ad` | The same, extended to the 122 designs available at loop 1. | 0.54 GB |
 | `derived/loop2_reannotated.h5ad` | Loop 2 cells after the cell-type reannotation; carries `cell_type_leiden` and `is_reannot_leiden`. This is the cell-type classifier's training input. | 0.75 GB |
 | `derived/unique_protocols.h5ad` | The 103 unique protocols actually run, across 15 design axes. Used to snap generated designs onto realisable concentrations. | <1 MB |
+| `derived/annotated/loop{2,2p5,3,4,4p5}_annotated.h5ad` | The per-loop measurements **with cell-type labels and embeddings** — the plain `loops/` files carry no `cell_type` column. Every analysis that asks whether a designed protocol enriched its target reads these. | 0.58 GB each |
+| `derived/marker_panel_metadata.xlsx` | Marker panel / unmixing metadata, required by the marker-optimisation analyses. | <1 MB |
 
 The `*_annotated_500k` files carry cell-type labels (`cell_type`, `leiden`, `leiden_sub`) on a
 subsample of the full measurements, and have had low-quality cells removed — which is why their cell
 counts are lower than the corresponding `loops/` files and their `obs` has more columns.
+
+The `annotated/` files are the same cells as the corresponding `loops/` file, with `cell_type` added
+plus `X_pca`/`X_umap`. They exist because annotation was applied in the analysis notebooks rather
+than in the pipeline, so they cannot be rebuilt from `loops/` by running `build_loop_datasets.py`.
 
 In the reproduction repository these are expected at `project_folder/derived/`, mirroring the layout
 here.
