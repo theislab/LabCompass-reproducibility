@@ -36,7 +36,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-PATH_ADATA = str(REPO_ROOT / "project_folder" / "data/gdrive/new_dataset/BloodPlus_Logicle_pm_.h5ad")
+PATH_ADATA = str(REPO_ROOT / "project_folder" / "output/loops/data/loop1/adata_full.h5ad")
 ROOT_DIR = str(REPO_ROOT)
 NON_LINEARITIES_REGISTRY = {
     "identity": torch.nn.Identity,

@@ -106,7 +106,22 @@ no conversion needed.
 
 Each stage below consumes the artefacts of the previous one. The config key that carries each
 dependency is named explicitly, because **the checkpoint paths shipped in the `paths` configs point
-at specific dated runs** — you will need to override them with the paths your own runs produced.
+at specific dated runs** — point them either at the published checkpoints (below) or at whatever your
+own runs produced.
+
+**You do not have to run every stage.** The trained models are published, so you can start wherever
+you like: download `checkpoints/loop3/` and go straight to inverse design (Step 3), or skip the
+pipeline entirely and read the designs it produced from `solutions/` (see
+[What is published](#what-is-published)). Steps 1–2 are only needed if you want to retrain.
+
+```bash
+# e.g. fetch one loop's models and point a run at them
+python - <<'PY'
+from huggingface_hub import snapshot_download
+print(snapshot_download("theislab/LabCompass", repo_type="dataset",
+                        allow_patterns="checkpoints/loop3/*"))
+PY
+```
 
 Stages are shown both as a direct `python` invocation (easiest to debug) and as the SLURM wrapper
 (what you actually want on the cluster).
@@ -366,49 +381,43 @@ regenerate those into its `plots/` folder.
 
 ---
 
-## Distributing the designed protocols
+## What is published
 
-The analysis notebooks read inverse-design outputs that took GPU-days to produce and, more
-importantly, that **cannot be regenerated exactly** — sampling is stochastic, and the protocols that
-were actually executed in the wet lab are a specific historical draw. Telling readers to "just run
-the sweep yourself" would silently break the link between the published figures and the experiments
-that produced them. But the full sweep output is also far too large to ship wholesale.
+Everything needed to reproduce the paper is on the Hub at
+[**theislab/LabCompass**](https://huggingface.co/datasets/theislab/LabCompass), in three parts:
 
-The sensible split follows the size/regenerability boundary:
+| Prefix | Contents | Size |
+| --- | --- | --- |
+| `loops/` | The SFC measurements, one `h5ad` per loop plus a subsampled variant. | ~60 GB |
+| `checkpoints/` | The trained models, one folder per loop: forward model, cell-type classifier, prior, and distilled flow map. | 13 GB |
+| `solutions/` | Every protocol the inverse design generated — ~1.07 M designs, one gzipped CSV per loop. | 445 MB |
 
-**Publish — small, and the actual scientific claim.**
-`candidates.csv` and `candidates_with_uncertainties.csv` for every run the paper builds on, plus the
-per-run `config.yaml` that records exactly how each was produced. These are kilobyte-to-megabyte
-tabular files. They make every analysis notebook runnable, and they *are* the result: the designed
-protocols, their predicted target proportions, and their uncertainties. Ship the executed protocols —
-the ones that went to the bench — as a separate curated table, since those carry the most scientific
-weight and are what most readers will want.
+So the three stages of the pipeline each have their published artefact: measurements in, models in
+the middle, designs out.
 
-**Don't publish — large, and reproducible in kind.**
-`inverse_results.npz` and `fwd_results.npz`, i.e. the full guidance trajectories and per-candidate
-forward samples. These dominate the footprint, are only needed for trajectory and sensitivity plots,
-and anyone who wants them can regenerate equivalents with Step 3. Document that, rather than
-uploading tens of gigabytes that will be downloaded by almost nobody.
+**Checkpoints are inference-only.** The training data the original checkpoints carried inside them
+has been stripped, which is why files that were 113 GB on disk are about 1 GB here. Network weights
+are bitwise unchanged — every checkpoint was verified tensor-by-tensor against its original and
+exercised end-to-end through `get_forward_model` — and everything inference reads is intact. What you
+cannot do is retrain a prior from them, since that reads the forward model's embedded training set;
+retrain the forward model from `loops/` instead. They are also CPU-resident, so they load anywhere.
 
-**Where.** The same dataset repository as the measurements
-([`theislab/LabCompass`](https://huggingface.co/datasets/theislab/LabCompass)), under a `solutions/`
-prefix alongside the existing `loops/`, mirroring the
-`<dump_name>/<experiment_type>/<cell_type>/<run_id>/` layout the notebooks already expect — one
-place, one access story, and versioned by revision so a paper can cite an exact state.
-For a citable archival copy with a DOI, mirror that same tree to Zenodo at submission; the usual
-arrangement is HuggingFace for working access and Zenodo for the frozen, citable snapshot.
+Two things to watch: the loop 3 and 4 checkpoints were trained on the expanded design space and need
+`annotation=bloodplus_loop3`, and the loop 2.5 solutions are only about half covered by uncertainty
+estimation — visible in the data as `uncertainty_scoring == "none"` rather than silently absent.
 
-**What makes it trustworthy.** Keep each run's `config.yaml` next to its CSVs — it names the exact
-checkpoints, seeds and hyperparameters behind that run. Publish the model checkpoints from Steps 1–2
-alongside the data, since without them neither the inverse sweep nor the uncertainty re-scoring can be
-re-run at all. Together with `loop_manifest.yaml`, that closes the loop: raw measurements → datasets →
-checkpoints → designed protocols → figures.
+**Solutions are unfiltered.** Every candidate from every sweep is included, not just the ones the
+paper used. Filtering is a downstream decision — the thresholds differ per loop and per target cell
+type — so the choice stays with the reader, and the configurations that did not work are preserved
+alongside those that did. Each row carries its provenance (`loop`, `experiment_type`, `cell_type`,
+`run_id`) and the ~96 `cfg:*` columns recording the resolved config behind it.
 
-> **Open question for the release:** whether to publish *every* sweep run or only those the paper
-> draws on. Publishing all of it is more honest about the search actually performed — including the
-> configurations that did not work — at the cost of a much larger and less navigable archive. A
-> reasonable middle ground is to publish all `candidates.csv` (they are small) and curate only which
-> runs the notebooks point at by default.
+**What is deliberately absent.** The per-run `.npz` files holding guidance trajectories and
+per-candidate forward samples — roughly 157 GB, about thirty times everything else combined, needed
+only for trajectory and sensitivity plots, and regenerable from the published checkpoints via Step 3.
+
+For a citable archival copy with a DOI, the usual arrangement is to mirror the same tree to Zenodo at
+submission: HuggingFace for working access, Zenodo for the frozen snapshot.
 
 ---
 
