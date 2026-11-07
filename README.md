@@ -252,8 +252,17 @@ python scripts/prior/train/distill_flow_map_prior.py \
 > always pass it explicitly.
 
 The sbatch wrappers `prior/train_prior.sbatch` and `prior/train_flow_map.sbatch` forward `"$@"` to
-Hydra but **append `annotation=loop3`**, which overrides any `annotation=` you pass.
+Hydra and **append `annotation=loop3`**. They reject conflicting explicit annotation overrides
+before sourcing the shell environment or activating Conda, rather than silently replacing them.
+No override, or the literal `annotation=loop3`, retains the pinned behavior. Conflicting
+`+annotation=` / `++annotation=` values and `~annotation` deletion overrides are rejected too.
 `flow_maps/train_flow_maps.sbatch` is the same distillation without that forced override.
+
+The launcher argument checks can be tested without Conda, Python training, data or SLURM:
+
+```bash
+bash tests/test_prior_launchers.sh
+```
 
 ### Step 3 — Inverse design
 

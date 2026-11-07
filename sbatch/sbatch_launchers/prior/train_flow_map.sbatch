@@ -11,6 +11,19 @@
 #SBATCH --time=1-00:00:00
 #SBATCH --constraint="h100_80gb"
 
+# Keep the pinned annotation explicit instead of silently overriding a request.
+for override in "$@"; do
+    case "$override" in
+        annotation=*|+annotation=*|++annotation=*)
+            [ "${override#*=}" = "loop3" ] && continue
+            ;;
+        '~annotation'|'~annotation='*) ;;
+        *) continue ;;
+    esac
+    printf 'ERROR: This launcher pins annotation=loop3; conflicting override: %s\n' "$override" >&2
+    exit 2
+done
+
 # SLURM copies the batch script to a node-local spool dir, so BASH_SOURCE does
 # not point into the repo. Recover the submitted path from the job record.
 if [ -n "${SLURM_JOB_ID:-}" ]; then
